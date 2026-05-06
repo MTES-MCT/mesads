@@ -23,6 +23,8 @@ class ConsultationADSSearchView(ListView):
         departement = None
         if self.request.GET.get("departement"):
             departement = self.request.GET.get("departement")
+        elif self.request.GET:
+            departement = None
         elif self.request.user.prefecture_consultation:
             departement = self.request.user.prefecture_consultation.id
         return {
