@@ -21,9 +21,12 @@ class CommuneAutocompleteView(autocomplete.Select2QuerySetView):
             # * "35 - melesse"
             # * "35 - mele"
 
+            params = [self.q]
+
             departement_filter = ""
             if departement:
-                departement_filter = f"AND LOWER(departement) = '{departement}'"
+                departement_filter = "AND LOWER(departement) = %s"
+                params.append(departement)
 
             sql = (
                 f"SELECT * FROM {Commune.objects.model._meta.db_table} "
@@ -34,7 +37,7 @@ class CommuneAutocompleteView(autocomplete.Select2QuerySetView):
             )
             qs = Commune.objects.raw(
                 sql,
-                [self.q],
+                params,
             )
             return qs
 
