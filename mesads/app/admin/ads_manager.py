@@ -33,7 +33,6 @@ class ADSCount(admin.SimpleListFilter):
         except (ValueError, TypeError):
             return queryset
 
-        queryset = queryset.annotate(ads_count=Count("ads"))
         return queryset.filter(ads_count__gte=count_filter)
 
 
