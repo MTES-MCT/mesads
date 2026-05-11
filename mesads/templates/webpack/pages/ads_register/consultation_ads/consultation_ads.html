@@ -1,0 +1,72 @@
+{% extends "base_container.html" %}
+{% load show_pagination_links boolean_display %}
+{% block body-content %}
+
+  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
+    <button
+      class="fr-breadcrumb__button"
+      aria-expanded="false"
+      aria-controls="breadcrumb-1"
+    >
+      Voir le fil d'Ariane
+    </button>
+    <div class="fr-collapse" id="breadcrumb-1">
+      <ol class="fr-breadcrumb__list">
+        <li>
+          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link" href="{% url 'app.consultation_search' %}">Autorisations de stationnement</a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link" aria-current="page">ADS #{{ads.number}} - {{ads.ads_manager.human_name}}</a>
+        </li>
+      </ol>
+    </div>
+  </nav>
+
+
+  <div class="fr-grid-row fr-grid-row--gutters fr-mb-5v">
+    <div class="fr-col-12 fr-col-lg-8">
+      <h1>ADS #{{ads.number}} - {{ads.ads_manager.human_name}}</h1>
+
+      <a
+        class="fr-btn fr-btn--secondary fr-mb-2v"
+        target="_blank"
+        href="{% url 'app.consultation_ads_export' ads_id=ads.id %}"
+        title="Télécharger l'ADS {{ads.number}} au format PDF"
+        aria-label="Télécharger l'ADS {{ads.number}} au format PDF"
+      >
+        Télécharger l'ADS (pdf)
+      </a>
+
+      <div class="fr-notice fr-notice--info">
+        <div class="fr-container">
+          <div class="fr-notice__body">
+            <p>
+              <span class="fr-notice__title">Confidentialité et protection des données</span>
+              <br>
+              <span class="fr-notice__desc">L’outil MesADS est utilisé comme un outil interne d’aide à la vérification, sans valeur probante propre et sans référence explicite dans les actes ou documents officiels.</span>
+            </p>
+            <button onclick="const notice = this.parentNode.parentNode.parentNode; notice.parentNode.removeChild(notice)" title="Masquer le message" type="button" class="fr-btn--close fr-btn">Masquer le message</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="fr-col-12 fr-col-lg-4 flex justify-center">
+      <div>
+        <img 
+          class="homepage-img"
+          alt=""
+          src="../../../images/logo_inspecteur.png"
+        />
+
+      </div>
+    </div>
+  </div>
+
+  {% include "pages/ads_register/ads_lecture_seule.html" %}
+
+
+{% endblock body-content %}
