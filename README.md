@@ -6,7 +6,7 @@ Couverture minimale garantie (≥ 95%)
 
 Ce dépôt contient le code source de MesADS, disponible sur https://mesads.beta.gouv.fr
 
-MesADS est un service public numérique qui permet aux administrations de gérer les Autorisations de Stationnement (ADS) pour les taxis, et aux propriétaires de véhicules relais de les enregistrer.
+MesADS est un service public numérique qui permet aux administrations de gérer les Autorisations de Stationnement (ADS) pour les taxis, gérer les listes d'attentes des demandeurs d'ADS, et aux propriétaires de véhicules relais de les enregistrer.
 
 ## Registre ADS
 
