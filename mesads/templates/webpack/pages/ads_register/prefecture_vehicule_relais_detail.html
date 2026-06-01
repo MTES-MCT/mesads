@@ -115,4 +115,17 @@
       </div>
     </div>
   </div>
+  <div class="fr-input-group">
+    <ul class="fr-btns-group">
+      <li>
+        <a href="{% url 'vehicules-relais.proprietaire.vehicule.edit' proprietaire_id=vehicule.proprietaire_id vehicule_numero=vehicule.numero %}" class="fr-btn">
+            Modifier le véhicule
+        </a>
+      </li>
+      <li>
+        <a class="fr-link fr-icon-delete-line fr-link--icon-left !text-[var(--text-default-error)]"
+            href="{% url 'vehicules-relais.proprietaire.vehicule.delete' proprietaire_id=vehicule.proprietaire_id vehicule_numero=vehicule.numero %}">Supprimer ce véhicule</a>
+      </li>
+    </ul>
+  </div>
 {% endblock body-content %}
