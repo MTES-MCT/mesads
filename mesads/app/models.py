@@ -913,10 +913,12 @@ class ADSUpdateLog(SoftDeleteMixin, models.Model):
                 debug_missing_fields.append(
                     ADS.immatriculation_plate.field.verbose_name
                 )
+            """
             if ads.vehicle_compatible_pmr is None:
                 debug_missing_fields.append(
                     ADS.vehicle_compatible_pmr.field.verbose_name
                 )
+            """
             if ads.eco_vehicle is None:
                 debug_missing_fields.append(ADS.eco_vehicle.field.verbose_name)
             if len(ads_users) == 0:
