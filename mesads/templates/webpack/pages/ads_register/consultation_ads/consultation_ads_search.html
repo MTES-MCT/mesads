@@ -85,13 +85,14 @@
                 <th> Titulaire </th>
                 <th> Immatriculation </th>
                 <th>Actions</th>
+                <th>Statut</th>
               </tr>
             </thead>
             <tbody>
               {% for ads in results %}
               <tr id="table-ads-row-key-{{forloop.counter}}" data-row-key="{{forloop.counter}}">
                 <td> {{ads.ads_manager.human_name}} </td>
-                <td> {{ads.ads_creation_date}} </td>
+                <td> {{ads.ads_creation_date|default_if_none:'Inconnu'}} </td>
                 <td> {{ ads.accepted_cpam|boolean_display }}</td>
                 <td> {{ ads.owner_name }} </td>
                 <td> {{ ads.immatriculation_plate }} </td>
@@ -112,6 +113,15 @@
                       Télécharger
                     </a>
                   </div>
+                </td>
+                <td>
+                  {% if not ads.latest_update_log_is_complete %}
+                    <p class="fr-badge fr-badge--pink-macaron whitespace-nowrap">Incomplète</p>
+                  {% elif ads.latest_update_log_is_outdated or ads.latest_update_log is None %}
+                    <p class="fr-badge fr-badge--pink-macaron whitespace-nowrap">Mise à jour datant de plus d'un an</p>
+                  {% else %}
+                    <p class="fr-badge fr-badge--blue-cumulus whitespace-nowrap">Complète</p>
+                  {% endif %}
                 </td>
               </tr>
               {% endfor %}

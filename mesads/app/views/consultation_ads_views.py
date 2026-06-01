@@ -1,8 +1,20 @@
 import re
+from datetime import timedelta
 
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles import finders
-from django.db.models import Q, Subquery
+from django.db.models import (
+    BooleanField,
+    Case,
+    DateTimeField,
+    ExpressionWrapper,
+    OuterRef,
+    Q,
+    Subquery,
+    Value,
+    When,
+)
+from django.db.models.functions import Now
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -10,7 +22,7 @@ from django.views.generic import DetailView, ListView, View
 from weasyprint import CSS, HTML
 
 from mesads.app.forms import ConsultationADSForm
-from mesads.app.models import ADS
+from mesads.app.models import ADS, ADSUpdateLog
 from mesads.fradm.models import EPCI, Aeroport, Commune, Prefecture
 
 
@@ -117,6 +129,27 @@ class ConsultationADSSearchView(ListView):
             qs = qs.filter(owner_siret=siret)
         if numero:
             qs = qs.filter(number=numero)
+
+        latest_log_qs = ADSUpdateLog.objects.filter(ads=OuterRef("pk")).order_by(
+            "-update_at"
+        )
+        qs = qs.annotate(
+            latest_update_log=Subquery(latest_log_qs.values("update_at")[:1]),
+            latest_update_log_is_complete=Subquery(
+                latest_log_qs.values("is_complete")[:1]
+            ),
+            latest_update_log_is_outdated=Case(
+                When(
+                    latest_update_log__lt=ExpressionWrapper(
+                        Now() - timedelta(days=ADSUpdateLog.OUTDATED_LOG_DAYS),
+                        output_field=DateTimeField(),
+                    ),
+                    then=Value(True),
+                ),
+                default=Value(False),
+                output_field=BooleanField(),
+            ),
+        )
         return qs
 
     def get_context_data(self, **kwargs):
