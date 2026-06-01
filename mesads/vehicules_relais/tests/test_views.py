@@ -3,6 +3,7 @@ import io
 
 import PyPDF2
 
+from mesads.app.models import ADSManagerAdministrator
 from mesads.fradm.models import Commune, Prefecture
 from mesads.vehicules_relais.models import Proprietaire, Vehicule
 
@@ -427,6 +428,28 @@ class TestProprietaireVehiculeDeleteView(ClientTestCase):
         self.assertEqual(resp.status_code, 200)
 
         resp = self.proprietaire_client.post(
+            f"/relais/proprietaire/{self.proprietaire.id}/vehicules/{vehicule.numero}/supprimer"
+        )
+        self.assertEqual(resp.status_code, 302)
+        vehicule.refresh_from_db()
+        self.assertIsNotNone(vehicule.deleted_at)
+
+    def test_view_as_prefecture(self):
+        prefecture_client, prefecture_user = self.create_client()
+        departement = Prefecture.objects.first()
+        administrator = ADSManagerAdministrator.objects.create(prefecture=departement)
+        administrator.users.add(prefecture_user)
+        vehicule = Vehicule.objects.create(
+            proprietaire=self.proprietaire,
+            departement=departement,
+        )
+
+        resp = prefecture_client.get(
+            f"/relais/proprietaire/{self.proprietaire.id}/vehicules/{vehicule.numero}/supprimer"
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        resp = prefecture_client.post(
             f"/relais/proprietaire/{self.proprietaire.id}/vehicules/{vehicule.numero}/supprimer"
         )
         self.assertEqual(resp.status_code, 302)
