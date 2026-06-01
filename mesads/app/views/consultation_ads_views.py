@@ -30,6 +30,7 @@ class ConsultationADSSearchView(ListView):
         return {
             "departement": departement,
             "commune": self.request.GET.get("commune", ""),
+            "ads_aeroport": self.request.GET.get("ads_aeroport", False),
             "immatriculation": self.request.GET.get("immatriculation", ""),
             "conducteur": self.request.GET.get("conducteur", ""),
             "siret": self.request.GET.get("siret", ""),
@@ -43,27 +44,37 @@ class ConsultationADSSearchView(ListView):
         qs = ADS.objects.all()
         departement = self.request.GET.get("departement")
         commune = self.request.GET.get("commune")
+        ads_aeroport = self.request.GET.get("ads_aeroport")
         immatriculation = self.request.GET.get("immatriculation")
         conducteur = self.request.GET.get("conducteur")
         siret = self.request.GET.get("siret")
         numero = self.request.GET.get("numero")
 
+        content_type_commune = ContentType.objects.get_for_model(Commune)
+        content_type_prefecture = ContentType.objects.get_for_model(Prefecture)
+        content_type_epci = ContentType.objects.get_for_model(EPCI)
+        content_type_aeroport = ContentType.objects.get_for_model(Aeroport)
+
         if departement:
             qs = qs.filter(ads_manager__administrator__prefecture__id=departement)
         if commune:
-            content_type_commune = ContentType.objects.get_for_model(Commune)
-            content_type_prefecture = ContentType.objects.get_for_model(Prefecture)
-            content_type_epci = ContentType.objects.get_for_model(EPCI)
-            content_type_aeroport = ContentType.objects.get_for_model(Aeroport)
+            splitted_terms = re.findall(r"\w+", commune.strip())
 
-            communes_ids = Commune.objects.filter(libelle__icontains=commune).values(
-                "pk"
-            )
-            prefectures_ids = Prefecture.objects.filter(
-                libelle__icontains=commune
-            ).values("pk")
-            epcis_ids = EPCI.objects.filter(name__icontains=commune).values("pk")
-            aeroport_ids = Aeroport.objects.filter(name__icontains=commune).values("pk")
+            communes = Commune.objects
+            prefectures = Prefecture.objects
+            epcis = EPCI.objects
+            aeroports = Aeroport.objects
+
+            for term in splitted_terms:
+                communes = communes.filter(libelle__unaccent__icontains=term)
+                prefectures = prefectures.filter(libelle__unaccent__icontains=term)
+                epcis = epcis.filter(name__unaccent__icontains=term)
+                aeroports = aeroports.filter(name__unaccent__icontains=term)
+
+            communes_ids = communes.values("pk")
+            prefectures_ids = prefectures.values("pk")
+            epcis_ids = epcis.values("pk")
+            aeroport_ids = aeroports.values("pk")
 
             qs = qs.filter(
                 Q(
@@ -84,13 +95,23 @@ class ConsultationADSSearchView(ListView):
                 )
                 | Q(epci_commune__libelle__icontains=commune)
             )
+
+        if ads_aeroport:
+            qs = qs.filter(
+                ads_manager__content_type__in=[
+                    content_type_prefecture,
+                    content_type_aeroport,
+                ]
+            )
+
         if immatriculation:
             qs = qs.filter(immatriculation_plate=immatriculation)
         if conducteur:
             terms = re.findall(r"\w+", conducteur.strip())
             for term in terms:
                 qs = qs.filter(
-                    Q(owner_name__icontains=term) | Q(adsuser__name__icontains=term)
+                    Q(owner_name__unaccent__icontains=term)
+                    | Q(adsuser__name__unaccent__icontains=term)
                 )
         if siret:
             qs = qs.filter(owner_siret=siret)

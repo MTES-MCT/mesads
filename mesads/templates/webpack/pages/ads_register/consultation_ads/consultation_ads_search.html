@@ -33,7 +33,7 @@
             <p>
               <span class="fr-notice__title">Confidentialité et protection des données</span>
               <br>
-              <span class="fr-notice__desc">L’outil MesADS est utilisé comme un outil interne d’aide à la  vérification, sans valeur probante propre et sans référence explicite  dans les actes ou documents officiels.</span>
+              <span class="fr-notice__desc">L’outil MesADS est utilisé comme un outil interne d’aide à la vérification, sans valeur probante propre et sans référence explicite dans les actes ou documents officiels.</span>
             </p>
             <button onclick="const notice = this.parentNode.parentNode.parentNode; notice.parentNode.removeChild(notice)" title="Masquer le message" type="button" class="fr-btn--close fr-btn">Masquer le message</button>
           </div>
@@ -57,6 +57,7 @@
     
     {% include "form_fields/select.html" with field=form.departement field_errors=form.errors.departement required=form.fields.departement.required bold=True %}
     {% include "form_fields/string.html" with field=form.commune field_errors=form.errors.commune required=form.fields.commune.required %}
+    {% include "form_fields/bool.html" with field=form.ads_aeroport field_errors=form.errors.ads_aeroport required=form.fields.ads_aeroport.required %}
     {% include "form_fields/string.html" with field=form.immatriculation field_errors=form.errors.immatriculation required=form.fields.immatriculation.required %}
     {% include "form_fields/string.html" with field=form.conducteur field_errors=form.errors.conducteur required=form.fields.conducteur.required %}
     {% include "form_fields/string.html" with field=form.siret field_errors=form.errors.siret required=form.fields.siret.required %}
