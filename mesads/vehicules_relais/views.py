@@ -100,9 +100,16 @@ class VehiculeView(TemplateView):
     template_name = "pages/vehicules_relais/user_vehicule.html"
 
     def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["vehicule"] = get_object_or_404(Vehicule, numero=kwargs["numero"])
-        return ctx
+        context = super().get_context_data(**kwargs)
+        vehicule = get_object_or_404(Vehicule, numero=kwargs["numero"])
+
+        if self.request.user.is_authenticated:
+            administrator = self.request.user.adsmanageradministrator_set.first()
+            if administrator and administrator.prefecture == vehicule.departement:
+                context["show_links_edition"] = True
+
+        context["vehicule"] = vehicule
+        return context
 
 
 class ProprietaireListView(ListView):
@@ -273,6 +280,13 @@ class ProprietaireVehiculeDeleteView(RevisionMixin, DeleteView):
         return ctx
 
     def get_success_url(self):
+        administrator = self.request.user.adsmanageradministrator_set.first()
+        if administrator:
+            return reverse(
+                "app.ads-manager-admin.vehicules_relais",
+                kwargs={"prefecture_id": administrator.prefecture.id},
+            )
+
         return reverse(
             "vehicules-relais.proprietaire.detail",
             kwargs={

@@ -464,6 +464,11 @@ class ConsultationADSForm(forms.Form):
     )
 
     commune = forms.CharField(label="Commune", required=False)
+
+    ads_aeroport = forms.BooleanField(
+        label="Rechercher dans les ADS aéroports", required=False
+    )
+
     immatriculation = forms.CharField(
         label="Immatriculation du véhicule", required=False
     )

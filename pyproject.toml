@@ -44,6 +44,7 @@ omit = [
     # Commandes a destination de la preprod pour peupler des données
     "mesads/app/management/commands/ads_donnees_test.py",
     "mesads/app/management/commands/load_ads_managers.py",
+    "mesads/app/management/commands/import_creation_update_ads.py",
     "mesads/fradm/management/commands/load_*.py",
 ]
 

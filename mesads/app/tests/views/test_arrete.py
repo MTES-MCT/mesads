@@ -9,13 +9,17 @@ from mesads.unittest import ClientTestCase
 class TestArretesListView(ClientTestCase):
     def test_permissions(self):
         for client_name, client, expected_status in (
-            ("anonymous", self.anonymous_client, http.HTTPStatus.FOUND),
-            ("auth", self.auth_client, http.HTTPStatus.NOT_FOUND),
-            ("ads_manager 35", self.ads_manager_city35_client, http.HTTPStatus.OK),
+            ("anonymous", self.anonymous_client, http.HTTPStatus.FOUND.value),
+            ("auth", self.auth_client, http.HTTPStatus.NOT_FOUND.value),
+            (
+                "ads_manager 35",
+                self.ads_manager_city35_client,
+                http.HTTPStatus.OK.value,
+            ),
             (
                 "ads_manager_administrator 35",
                 self.ads_manager_administrator_35_client,
-                http.HTTPStatus.OK,
+                http.HTTPStatus.OK.value,
             ),
         ):
             with self.subTest(client_name=client_name, expected_status=expected_status):

@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import path
 
 from . import views
-from .decorators import proprietaire_required
+from .decorators import proprietaire_or_prefecture_required, proprietaire_required
 
 urlpatterns = [
     path(
@@ -60,12 +60,16 @@ urlpatterns = [
     ),
     path(
         "proprietaire/<int:proprietaire_id>/vehicules/<str:vehicule_numero>",
-        proprietaire_required(views.ProprietaireVehiculeUpdateView.as_view()),
+        proprietaire_or_prefecture_required(
+            views.ProprietaireVehiculeUpdateView.as_view()
+        ),
         name="vehicules-relais.proprietaire.vehicule.edit",
     ),
     path(
         "proprietaire/<int:proprietaire_id>/vehicules/<str:vehicule_numero>/supprimer",
-        proprietaire_required(views.ProprietaireVehiculeDeleteView.as_view()),
+        proprietaire_or_prefecture_required(
+            views.ProprietaireVehiculeDeleteView.as_view()
+        ),
         name="vehicules-relais.proprietaire.vehicule.delete",
     ),
     path(
@@ -77,7 +81,9 @@ urlpatterns = [
     ),
     path(
         "proprietaire/<int:proprietaire_id>/vehicules/<str:vehicule_numero>/recepisse",
-        proprietaire_required(views.ProprietaireVehiculeRecepisseView.as_view()),
+        proprietaire_or_prefecture_required(
+            views.ProprietaireVehiculeRecepisseView.as_view()
+        ),
         name="vehicules-relais.proprietaire.vehicule.recepisse",
     ),
 ]
