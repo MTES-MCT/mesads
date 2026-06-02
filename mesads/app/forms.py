@@ -475,3 +475,7 @@ class ConsultationADSForm(forms.Form):
     conducteur = forms.CharField(label="Conducteur", required=False)
     siret = forms.CharField(label="SIRET", required=False)
     numero = forms.CharField(label="Numéro de l'ADS", required=False)
+
+
+class ADSImportForm(forms.Form):
+    file = forms.FileField(label="Fichier à importer")
