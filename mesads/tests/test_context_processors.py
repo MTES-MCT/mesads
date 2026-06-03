@@ -17,6 +17,7 @@ EXCLUDE_MODULES = [
     r"^(app.*|auth_.*|users_.*|fradm_.*|vehicules_relais_.*|newsletters_.*)_recover$",
     r"^(app.*|auth_.*|users_.*|fradm_.*|vehicules_relais_.*|newsletters_.*)_recoverlist$",
     r"^(app.*|auth_.*|users_.*|fradm_.*|vehicules_relais_.*|newsletters_.*)_revision$",
+    r"^(app.*|auth_.*|users_.*|fradm_.*|vehicules_relais_.*|newsletters_.*)_import$",
     r"^ads-updates",
     r"^api",
     r"^authtoken",

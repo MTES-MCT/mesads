@@ -1,14 +1,17 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.db.models import Count, Q
-from django.urls import reverse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import path, reverse
 from django.utils.safestring import mark_safe
 
 from mesads.fradm.models import EPCI, Aeroport, Commune, Prefecture
 
+from ..forms import ADSImportForm
 from ..models import (
     ADSManager,
     ADSManagerDecree,
 )
+from ..services.import_ads import import_ads_from_excel
 
 
 class ADSCount(admin.SimpleListFilter):
@@ -273,4 +276,63 @@ class ADSManagerAdmin(admin.ModelAdmin):
         )
         return mark_safe(
             f'<a href="{url}">Voir les {obj.inscriptions_count} inscriptions</a>'
+        )
+
+    def get_urls(self):
+        urls = super().get_urls()
+
+        custom_urls = [
+            path(
+                "<path:object_id>/import/",
+                self.admin_site.admin_view(self.import_view),
+                name="app_adsmanager_import",
+            ),
+        ]
+        return custom_urls + urls
+
+    def import_view(self, request, object_id):
+        obj = get_object_or_404(ADSManager, pk=object_id)
+        if request.method == "POST":
+            form = ADSImportForm(request.POST, request.FILES)
+
+            if form.is_valid():
+                uploaded_file = form.cleaned_data["file"]
+
+                try:
+                    import_ads_from_excel(uploaded_file, obj, request.user)
+                except Exception as exc:
+                    self.message_user(
+                        request,
+                        f"Erreur pendant l'import : {exc}",
+                        level=messages.ERROR,
+                    )
+                else:
+                    self.message_user(
+                        request,
+                        "Import effectué avec succès.",
+                        level=messages.SUCCESS,
+                    )
+
+                return redirect(
+                    reverse(
+                        "admin:app_adsmanager_change",
+                        args=[obj.pk],
+                    )
+                )
+
+        else:
+            form = ADSImportForm()
+
+        context = {
+            **self.admin_site.each_context(request),
+            "opts": self.model._meta,
+            "original": obj,
+            "title": f"Importer un fichier pour {obj}",
+            "form": form,
+        }
+
+        return render(
+            request,
+            "admin/app/adsmanager/import.html",
+            context,
         )
