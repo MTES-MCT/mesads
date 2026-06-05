@@ -3,6 +3,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles import finders
 from django.db import IntegrityError, transaction
 from django.db.models import Case, Count, F, IntegerField, Q, Value, When
@@ -33,6 +34,7 @@ from mesads.app.models import (
     WAITING_LIST_UNIQUE_ERROR_MESSAGE,
     ADSLegalFile,
     ADSManager,
+    ADSManagerRequest,
     ADSUpdateLog,
     ADSUser,
     InscriptionListeAttente,
@@ -270,15 +272,42 @@ class InscriptionTraitementListeAttenteView(TemplateView):
             self.request.POST, self.request.FILES, ads_manager=inscription.ads_manager
         )
         if form.is_valid():
+            ads_manager = inscription.ads_manager
+            epci_commune = None
+            if ads_manager.epci_delegate:
+                content_type = ContentType.objects.get_for_model(
+                    ads_manager.epci_delegate
+                )
+                req = ADSManagerRequest.objects.filter(
+                    ads_manager__content_type=content_type,
+                    ads_manager__object_id=ads_manager.epci_delegate.pk,
+                    user=self.request.user,
+                    accepted=True,
+                ).first()
+                if req:
+                    ads_manager = req.ads_manager
+                    epci_commune = inscription.ads_manager.content_object
+                else:
+                    messages.error(
+                        self.request,
+                        (
+                            "Vous n'avez pas les permissions nécessaires "
+                            "pour créer une ADS pour"
+                            f" {ads_manager.epci_delegate.display_fulltext()}"
+                        ),
+                    )
+                    return self._response_invalid_form(form, **kwargs)
+
             data = form.cleaned_data
             ads = ADS.objects.create(
                 number=form.cleaned_data["numero"],
-                ads_manager=inscription.ads_manager,
+                ads_manager=ads_manager,
                 ads_creation_date=data["date_attribution"],
                 ads_in_use=True,
                 owner_name=f"{inscription.nom} {inscription.prenom}",
                 owner_phone=inscription.numero_telephone,
                 owner_email=inscription.email,
+                epci_commune=epci_commune,
             )
             ADSLegalFile.objects.create(
                 ads=ads,
@@ -305,7 +334,7 @@ class InscriptionTraitementListeAttenteView(TemplateView):
             return HttpResponseRedirect(
                 redirect_to=reverse(
                     "app.ads.detail",
-                    kwargs={"manager_id": inscription.ads_manager.id, "ads_id": ads.id},
+                    kwargs={"manager_id": ads_manager.id, "ads_id": ads.id},
                 )
             )
         else:
