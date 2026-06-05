@@ -1247,6 +1247,107 @@ class TestTraitementDemandeView(ClientTestCase):
             fetch_redirect_response=True,
         )
 
+    def test_post_traitement_demande_view_etape_3_ok_epci_delegate(self):
+        today = datetime.date.today()
+        epci = ADSManagerFactory(for_epci=True)
+        ads_manager = self.ads_manager
+        ads_manager.epci_delegate = epci.content_object
+        epci_fr = epci.content_object
+        commune = self.ads_manager.content_object
+        epci_fr.departement = "01"
+        epci_fr.save()
+        commune.departement = "01"
+        commune.save()
+        ads_manager.save()
+        ADSManagerRequestFactory(user=self.user, ads_manager=epci)
+        inscription = InscriptionListeAttenteFactory(
+            ads_manager=self.ads_manager,
+            date_depot_inscription=today - relativedelta(years=1),
+            date_dernier_renouvellement=today,
+            date_contact=today,
+            delai_reponse=15,
+            status=InscriptionListeAttente.REPONSE_OK,
+        )
+        self.assertEqual(ADS.objects.count(), 0)
+        self.assertEqual(ADSUser.objects.count(), 0)
+        self.assertEqual(ADSLegalFile.objects.count(), 0)
+        self.assertEqual(ADSUpdateLog.objects.count(), 0)
+
+        response = self.client.post(
+            reverse(
+                "app.liste_attente_traitement_demande",
+                kwargs={
+                    "manager_id": self.ads_manager.id,
+                    "inscription_id": inscription.id,
+                },
+            ),
+            data={
+                "action": "attribution_ads",
+                "numero": "1",
+                "date_attribution": today,
+                "arrete": SimpleUploadedFile(
+                    "arrete.pdf", b"Contenu arrete", content_type="application/pdf"
+                ),
+            },
+        )
+        self.assertEqual(ADS.objects.count(), 1)
+        ads = ADS.objects.last()
+        self.assertEqual(ads.ads_manager, epci)
+        self.assertEqual(ads.epci_commune, self.ads_manager.content_object)
+
+        self.assertRedirects(
+            response,
+            expected_url=reverse(
+                "app.ads.detail",
+                kwargs={"manager_id": epci.id, "ads_id": ads.id},
+            ),
+            status_code=http.HTTPStatus.FOUND,
+            target_status_code=http.HTTPStatus.OK,
+            fetch_redirect_response=True,
+        )
+
+    def test_post_traitement_demande_view_etape_3_epci_delegate_not_ok(self):
+        today = datetime.date.today()
+        epci = ADSManagerFactory(for_epci=True)
+        ads_manager = self.ads_manager
+        ads_manager.epci_delegate = epci.content_object
+        ads_manager.save()
+        inscription = InscriptionListeAttenteFactory(
+            ads_manager=self.ads_manager,
+            date_depot_inscription=today - relativedelta(years=1),
+            date_dernier_renouvellement=today,
+            date_contact=today,
+            delai_reponse=15,
+            status=InscriptionListeAttente.REPONSE_OK,
+        )
+        self.assertEqual(ADS.objects.count(), 0)
+        self.assertEqual(ADSUser.objects.count(), 0)
+        self.assertEqual(ADSLegalFile.objects.count(), 0)
+        self.assertEqual(ADSUpdateLog.objects.count(), 0)
+
+        response = self.client.post(
+            reverse(
+                "app.liste_attente_traitement_demande",
+                kwargs={
+                    "manager_id": self.ads_manager.id,
+                    "inscription_id": inscription.id,
+                },
+            ),
+            data={
+                "action": "attribution_ads",
+                "numero": "1",
+                "date_attribution": today,
+                "arrete": SimpleUploadedFile(
+                    "arrete.pdf", b"Contenu arrete", content_type="application/pdf"
+                ),
+            },
+        )
+        self.assertEqual(response.status_code, http.HTTPStatus.OK)
+        self.assertEqual(ADS.objects.count(), 0)
+        self.assertEqual(ADSUser.objects.count(), 0)
+        self.assertEqual(ADSLegalFile.objects.count(), 0)
+        self.assertEqual(ADSUpdateLog.objects.count(), 0)
+
 
 class TestListesAttentePubliquesView(ClientTestCase):
     def test_get_listes_attente_publique(self):
