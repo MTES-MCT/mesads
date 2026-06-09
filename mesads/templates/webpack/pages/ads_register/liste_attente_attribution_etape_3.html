@@ -14,6 +14,25 @@
 
   <hr />
 
+  {% if ads_manager.epci_delegate %}
+  <div class="fr-notice fr-notice--info">
+  <div class="fr-container">
+    <div class="fr-notice__body">
+      <p>
+        <span class="fr-notice__title">Attribution de l'ADS</span>
+        <span class="fr-notice__desc">
+          La demande d'ADS a été faite sur une commune ayant délégué la gestion de ses autorisation de stationnement à 
+          l'EPCI {{ads_manager.epci_delegate}}. Par conséquent, l'ADS sera ajouté à la liste des ADS de l'EPCI, 
+          si vous en êtes également gestionnaire. 
+          Si votre administration gère elle même ses ADS, vous pouvez renseigner l'information sur la page 
+          <a href="{% url 'app.ads-manager.detail' manager_id=ads_manager.id %}">Liste des ADS</a> avant de procéder à l'attribution.</span>
+      </p>
+    </div>
+  </div>
+</div>
+<hr />
+  {% endif %}
+
   <form class="mt-2" method="post" enctype="multipart/form-data">
 
     {% csrf_token %}
