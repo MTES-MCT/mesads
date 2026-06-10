@@ -240,6 +240,28 @@
           </fieldset>
         </template>
 
+        <template x-if="ads_in_use === 'true' && ads_before_2014">
+          <fieldset class="fr-mb-3w fr-pt-1w fr-pb-2w fr-pl-2w fr-pr-2w border border-neutral-300">
+            <legend class="text-2xl font-semibold">Location gérance</legend>
+
+            {% include "form_fields/bool.html" with x_model="location" empty_option=True field=form.location field_errors=form.errors.location required=form.fields.location.required readonly=ads_manager.is_locked bold=True %}
+            
+            <template x-if="location === true">
+              <span>
+              {% include "form_fields/string.html" with field=form.locataire_nom field_errors=form.errors.locataire_nom required=form.fields.locataire_nom.required readonly=ads_manager.is_locked bold=True %}
+              {% include "form_fields/string.html" with field=form.locataire_siret field_errors=form.errors.locataire_siret required=form.fields.locataire_siret.required readonly=ads_manager.is_locked bold=True %}
+              {% include "form_fields/date.html" with field=form.locataire_date field_errors=form.errors.locataire_date required=form.fields.locataire_date.required readonly=ads_manager.is_locked %}
+              
+              {% include "form_fields/string.html" with field=form.locataire_email field_errors=form.errors.locataire_email required=form.fields.locataire_email.required readonly=ads_manager.is_locked bold=True %}
+              {% include "form_fields/string.html" with field=form.locataire_phone field_errors=form.errors.locataire_phone required=form.fields.locataire_phone.required readonly=ads_manager.is_locked bold=True %}
+              
+              </span>
+
+            </template>
+          </fieldset>
+        </template>
+        
+
         <template x-if="ads_in_use === 'true'">
           <fieldset class="fr-mb-3w fr-pt-1w fr-pb-2w fr-pl-2w fr-pr-2w border border-neutral-300">
             <legend class="text-2xl font-semibold">Le véhicule</legend>
@@ -310,19 +332,9 @@
                                 value="titulaire_exploitant" />
                         </template>
 
-                        <!-- Date location gérance -->
-                        <template x-if="status === 'locataire_gerant'">
-                          {% include "form_fields/date.html" with field=ads_user_form.date_location_gerance field_errors=ads_user_form.errors.date_location_gerance required=ads_user_form.fields.date_location_gerance.required readonly=ads_man%}
-                        </template>
-
                         <!-- User name -->
                         <template x-if="ads_before_2014 && status !== 'titulaire_exploitant'">
                           {% include "form_fields/string.html" with field=ads_user_form.name field_errors=ads_user_form.errors.name required=ads_user_form.fields.name.required readonly=ads_manager.is_locked %}
-                        </template>
-
-                        <!-- User SIRET -->
-                        <template x-if="ads_before_2014 && status !== 'titulaire_exploitant' && status !== 'legal_representative' && status !== 'salarie' ">
-                          {% include "form_fields/string.html" with field=ads_user_form.siret field_errors=ads_user_form.errors.siret required=ads_user_form.fields.siret.required readonly=ads_manager.is_locked %}
                         </template>
 
                         <!-- Professional licence number -->
@@ -474,7 +486,8 @@
   <script id="data" type="application/json">
   {
     "ads_creation_date": "{{ form.ads_creation_date.value|str_to_date|date:"Y-m-d"|default:"" }}",
-    "ads_in_use": "{% if form.ads_in_use.value is True %}true{% elif form.ads_in_use.value is False %}false{% endif %}"
+    "ads_in_use": "{% if form.ads_in_use.value is True %}true{% elif form.ads_in_use.value is False %}false{% endif %}",
+    "location": "{% if form.location.value is True %}true{% elif form.location.value is False %}false{% endif %}"
   }
   </script>
   <script src="./ads.ts"></script>

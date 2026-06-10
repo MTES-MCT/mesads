@@ -556,6 +556,7 @@ class ADS(SmartValidationMixin, CharFieldsStripperMixin, SoftDeleteMixin, models
 
     SMART_VALIDATION_WATCHED_FIELDS = {
         "owner_siret": lambda _, siret: validate_siret(siret),
+        "locataire_siret": lambda _, siret: validate_siret(siret),
     }
 
     number = models.CharField(
@@ -694,6 +695,43 @@ class ADS(SmartValidationMixin, CharFieldsStripperMixin, SoftDeleteMixin, models
         blank=True,
         null=False,
         verbose_name="Email du titulaire de l'ADS",
+    )
+
+    location = models.BooleanField(
+        blank=True, default=False, verbose_name="L'ADS est elle en location?"
+    )
+    locataire_nom = models.CharField(
+        max_length=512,
+        blank=True,
+        default="",
+        verbose_name="Nom du locataire de l'ADS (personne physique ou morale)",
+    )
+    locataire_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Date du contrat de location",
+    )
+    locataire_siret = models.CharField(
+        max_length=128,
+        blank=True,
+        default="",
+        verbose_name="SIRET du locataire de l'ADS",
+        help_text=(
+            "Nous validons ce numéro en consultant les données officielles de "
+            "l'INSEE. Indiquez le numéro de SIRET (14 chiffres) sans espace. "
+        ),
+    )
+    locataire_email = models.CharField(
+        max_length=128,
+        blank=True,
+        default="",
+        verbose_name="Email du locataire de l'ADS",
+    )
+    locataire_phone = models.CharField(
+        max_length=128,
+        blank=True,
+        default="",
+        verbose_name="Téléphone fixe du locataire de l'ADS",
     )
 
     notes = models.TextField(
@@ -1016,7 +1054,6 @@ class ADSLegalFile(
 
 @reversion.register
 class ADSUser(
-    SmartValidationMixin,
     CharFieldsStripperMixin,
     SoftDeleteMixin,
     models.Model,
@@ -1028,10 +1065,6 @@ class ADSUser(
     """
 
     ads = models.ForeignKey(ADS, on_delete=models.CASCADE)
-
-    SMART_VALIDATION_WATCHED_FIELDS = {
-        "siret": lambda _, siret: validate_siret(siret),
-    }
 
     TITULAIRE_EXPLOITANT = "titulaire_exploitant"
     LEGAL_REPRESENTATIVE = "legal_representative"
@@ -1078,26 +1111,23 @@ class ADSUser(
         null=False,
         verbose_name="Nom du conducteur",
     )
-    siret = models.CharField(
-        max_length=128,
-        blank=True,
-        null=False,
-        verbose_name="SIRET de l'exploitant de l'ADS",
-        help_text=(
-            "Nous validons ce numéro en consultant les données officielles de "
-            "l'INSEE. Indiquez le numéro de SIRET (14 chiffres) sans espace. "
-        ),
-    )
     license_number = models.CharField(
         max_length=64,
         blank=True,
         null=False,
         verbose_name="Numéro de la carte professionnelle",
     )
-    date_location_gerance = models.DateField(
+
+    siret = models.CharField(
+        max_length=128,
         blank=True,
-        null=True,
-        verbose_name="Date du contrat de location-gérance",
+        null=False,
+        default="",
+        verbose_name="SIRET de l'exploitant de l'ADS",
+        help_text=(
+            "Nous validons ce numéro en consultant les données officielles de "
+            "l'INSEE. Indiquez le numéro de SIRET (14 chiffres) sans espace. "
+        ),
     )
 
     class Meta:
@@ -1132,78 +1162,6 @@ class ADSUser(
                 violation_error_message=(
                     "Le nom du conducteur ne peut être renseigné "
                     "que s'il ne s'agit pas du titulaire de l'ADS."
-                ),
-            ),
-            # SIRET should be empty if status = 'titulaire_exploitant', because the
-            # value is expected to be provided in ADS.owner_siret
-            models.CheckConstraint(
-                check=(
-                    Q(
-                        deleted_at__isnull=False,
-                    )
-                    | Q(
-                        status="titulaire_exploitant",
-                        siret="",
-                    )
-                    | ~Q(
-                        status="titulaire_exploitant",
-                    )
-                ),
-                name="siret_empty_for_titulaire_exploitant",
-                violation_error_message=(
-                    "Le SIRET du conducteur ne peut pas "
-                    "être renseigné pour le titulaire de l'ADS."
-                ),
-            ),
-            # SIRET should be empty if status = 'legal_representative', because
-            # the value is expected to be provided in ADS.owner_siret
-            models.CheckConstraint(
-                check=(
-                    Q(
-                        deleted_at__isnull=False,
-                    )
-                    | Q(
-                        status="legal_representative",
-                        siret="",
-                    )
-                    | ~Q(
-                        status="legal_representative",
-                    )
-                ),
-                name="siret_empty_for_legal_representative",
-                violation_error_message=(
-                    "Le SIRET du conducteur ne peut pas être "
-                    "renseigné pour le représentant légal de la société."
-                ),
-            ),
-            # SIRET should be empty if status = 'salarie',
-            # because employees don't have a SIRET number
-            models.CheckConstraint(
-                check=(
-                    Q(
-                        deleted_at__isnull=False,
-                    )
-                    | Q(
-                        status="salarie",
-                        siret="",
-                    )
-                    | ~Q(
-                        status="salarie",
-                    )
-                ),
-                name="siret_empty_for_salarie",
-                violation_error_message=(
-                    "Le SIRET du conducteur ne peut pas être renseigné pour un salarié."
-                ),
-            ),
-            # date_location_gerance can only be set for locataire_gerant
-            models.CheckConstraint(
-                check=Q(date_location_gerance__isnull=True)
-                | Q(date_location_gerance__isnull=False, status="locataire_gerant"),
-                name="ads_location_gerance_set_only_for_locataire_gerant",
-                violation_error_message=(
-                    "La date du contrat de location-gérance ne peut "
-                    "être renseignée que pour un locataire-gérant."
                 ),
             ),
         ]

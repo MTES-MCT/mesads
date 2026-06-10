@@ -330,68 +330,6 @@ class TestADSView(ClientTestCase):
         self.ads.refresh_from_db()
         self.assertEqual(self.ads.owner_name, "Old name")
 
-    def test_strip_ads_user_charfields(self):
-        """If all the fields of a ADS user are empty, the entry should be
-        removed."""
-        ads_user = ADSUser.objects.create(
-            ads=self.ads, status="autre", name="Paul", siret="12312312312312"
-        )
-
-        # Fields should be changed during this POST, since the values are not empty
-        resp = self.ads_manager_city35_client.post(
-            f"/registre_ads/gestion/{self.ads_manager_city35.id}/ads/{self.ads.id}",
-            {
-                "number": self.ads.id,
-                "certify": "true",
-                "ads_in_use": "true",
-                "adsuser_set-TOTAL_FORMS": 10,
-                "adsuser_set-INITIAL_FORMS": 1,
-                "adsuser_set-MIN_NUM_FORMS": 0,
-                "adsuser_set-MAX_NUM_FORMS": 10,
-                "adsuser_set-0-id": ads_user.id,
-                "adsuser_set-0-status": "",
-                "adsuser_set-0-name": "Paul",
-                "adsuser_set-0-siret": "12312312312312",
-                "adslegalfile_set-TOTAL_FORMS": 10,
-                "adslegalfile_set-INITIAL_FORMS": 0,
-                "adslegalfile_set-MIN_NUM_FORMS": 0,
-                "adslegalfile_set-MAX_NUM_FORMS": 10,
-            },
-        )
-
-        self.assertEqual(resp.status_code, 302)
-        ads_user.refresh_from_db()
-        self.assertEqual(ads_user.name, "Paul")
-        self.assertEqual(ads_user.siret, "12312312312312")
-
-        # However now they should be stripped
-        resp = self.ads_manager_city35_client.post(
-            f"/registre_ads/gestion/{self.ads_manager_city35.id}/ads/{self.ads.id}",
-            {
-                "number": self.ads.id,
-                "certify": "true",
-                "ads_in_use": "true",
-                "adsuser_set-TOTAL_FORMS": 10,
-                "adsuser_set-INITIAL_FORMS": 1,
-                "adsuser_set-MIN_NUM_FORMS": 0,
-                "adsuser_set-MAX_NUM_FORMS": 10,
-                "adsuser_set-0-id": ads_user.id,
-                "adsuser_set-0-status": "",
-                "adsuser_set-0-name": "  Paul  ",
-                "adsuser_set-0-siret": "-",
-                "adslegalfile_set-TOTAL_FORMS": 10,
-                "adslegalfile_set-INITIAL_FORMS": 0,
-                "adslegalfile_set-MIN_NUM_FORMS": 0,
-                "adslegalfile_set-MAX_NUM_FORMS": 10,
-            },
-        )
-
-        self.assertEqual(resp.status_code, 302)
-        ads_user.refresh_from_db()
-        # Fields should not have been changed during the previous POST
-        self.assertEqual(ads_user.name, "Paul")
-        self.assertEqual(ads_user.siret, "")
-
     def test_update_ads_legal_file(self):
         legal_file = ADSLegalFile.objects.create(
             ads=self.ads, file=SimpleUploadedFile("file.pdf", b"Content")
@@ -505,35 +443,6 @@ class TestADSView(ClientTestCase):
 
         epci_ads.refresh_from_db()
         self.assertEqual(epci_ads.epci_commune, valid_commune)
-
-    def test_create_ads_user_invalid_siret(self):
-        resp = self.ads_manager_city35_client.post(
-            f"/registre_ads/gestion/{self.ads_manager_city35.id}/ads/{self.ads.id}",
-            {
-                "number": self.ads.id,
-                "certify": "true",
-                "ads_in_use": "true",
-                "adsuser_set-TOTAL_FORMS": 10,
-                "adsuser_set-INITIAL_FORMS": 1,
-                "adsuser_set-MIN_NUM_FORMS": 0,
-                "adsuser_set-MAX_NUM_FORMS": 10,
-                "adsuser_set-0-id": "",
-                "adsuser_set-0-status": "",
-                "adsuser_set-0-name": "",
-                "adsuser_set-0-siret": "1234",
-                "adsuser_set-0-license_number": "",
-                "adslegalfile_set-TOTAL_FORMS": 10,
-                "adslegalfile_set-INITIAL_FORMS": 0,
-                "adslegalfile_set-MIN_NUM_FORMS": 0,
-                "adslegalfile_set-MAX_NUM_FORMS": 10,
-            },
-        )
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(
-            ["Un SIRET doit être composé de 14 numéros"],
-            resp.context["ads_users_formset"].forms[0].errors["siret"],
-        )
-        self.assertEqual(ADSUser.objects.count(), 0)
 
     def test_get_incorrect_ads_manager(self):
         """If user requests /registre_ads/gestion/xxx/ads/yyy but xxx is an
@@ -772,9 +681,8 @@ class TestADSCreateView(ClientTestCase):
                 "adsuser_set-INITIAL_FORMS": 0,
                 "adsuser_set-MIN_NUM_FORMS": 0,
                 "adsuser_set-MAX_NUM_FORMS": 10,
-                "adsuser_set-0-status": "cooperateur",
+                "adsuser_set-0-status": ADSUser.LOCATAIRE_GERANT,
                 "adsuser_set-0-name": "Paul",
-                "adsuser_set-0-siret": "12312312312312",
                 "adslegalfile_set-TOTAL_FORMS": 10,
                 "adslegalfile_set-INITIAL_FORMS": 0,
                 "adslegalfile_set-MIN_NUM_FORMS": 0,
@@ -789,9 +697,8 @@ class TestADSCreateView(ClientTestCase):
 
         self.assertEqual(ADSUser.objects.count(), 1)
         new_ads_user = ADSUser.objects.get()
-        self.assertEqual(new_ads_user.status, "cooperateur")
+        self.assertEqual(new_ads_user.status, ADSUser.LOCATAIRE_GERANT)
         self.assertEqual(new_ads_user.name, "Paul")
-        self.assertEqual(new_ads_user.siret, "12312312312312")
 
     def test_create_with_two_titulaires(self):
         resp = self.ads_manager_city35_client.post(

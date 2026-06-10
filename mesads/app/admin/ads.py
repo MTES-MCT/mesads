@@ -147,7 +147,6 @@ class ADSAdmin(CompareVersionAdmin):
                 <tr>
                     <td>{ads_user.status}</td>
                     <td>{ads_user.name}</td>
-                    <td>{ads_user.siret}</td>
                     <td>{ads_user.license_number}</td>
                 </tr>
             """

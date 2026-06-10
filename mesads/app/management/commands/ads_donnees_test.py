@@ -127,7 +127,6 @@ class Command(BaseCommand):
                                 ads_id=ads["id"],
                                 status=status,
                                 name=f"{f.last_name()} {f.first_name()}",
-                                siret="",
                                 license_number="123456",
                             )
                         )
@@ -139,7 +138,6 @@ class Command(BaseCommand):
                             ads_id=ads["id"],
                             status="titulaire_exploitant",
                             name="",  # vide comme dans ta version
-                            siret="",
                             license_number="123456",
                         )
                     )
