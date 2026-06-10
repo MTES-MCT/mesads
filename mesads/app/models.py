@@ -344,6 +344,17 @@ class ADSManagerAdministrator(models.Model):
         help_text="Nombre de gestionnaires ADS attendus pour cette préfecture.",
     )
 
+    notify_verification_enabled = models.BooleanField(
+        default=False,
+        blank=True,
+        verbose_name="Activer les notifications pour la vérification",
+        help_text=(
+            "Si cette case est cochée, un mail sera envoyé mensuellement aux "
+            "gestionnaires attachés à cette préfecture pour les notifier si au "
+            "moins une de leur ADS n'est pas complète et à jour"
+        ),
+    )
+
     class Meta:
         verbose_name = "Administrateur des gestionnaires ADS"
         verbose_name_plural = "Administrateurs des gestionnaires ADS"
@@ -934,7 +945,7 @@ class ADSUpdateLog(SoftDeleteMixin, models.Model):
                                 f"{ADSUser.license_number.field.verbose_name}"
                             )
                         )
-        ADSUpdateLog.objects.create(
+        return ADSUpdateLog.objects.create(
             ads=ads,
             user=user,
             serialized=serialized,
