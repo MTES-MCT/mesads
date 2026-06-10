@@ -39,6 +39,7 @@ class ADSManagerAdministratorAdmin(admin.ModelAdmin):
 
     fields = (
         "prefecture",
+        "notify_verification_enabled",
         "expected_ads_count",
         "ads_managers_link",
         "display_ads_count",

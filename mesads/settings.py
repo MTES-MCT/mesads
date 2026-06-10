@@ -157,6 +157,7 @@ CRON_CLASSES = [
     "mesads.app.crons.ImportDataForParis",
     "mesads.app.crons.DeleteOldUsers",
     "mesads.app.crons.NotificationListeAttente",
+    "mesads.app.crons.NotificationVerification",
 ]
 
 AUTH_USER_MODEL = "users.User"
