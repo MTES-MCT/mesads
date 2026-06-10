@@ -138,6 +138,7 @@ class ADSManagerAdministratorListeGestionnaires(ListView):
                 ),
             )
             .order_by("content_type")
+            .distinct()
         )
         search = self.request.GET.get("search")
 
