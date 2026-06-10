@@ -121,6 +121,12 @@ class ADSForm(forms.ModelForm):
             "owner_phone",
             "owner_mobile",
             "owner_email",
+            "location",
+            "locataire_nom",
+            "locataire_siret",
+            "locataire_date",
+            "locataire_email",
+            "locataire_phone",
             "notes",
             # It is important to leave "deleted_at" in the fields, otherwise
             # django.db.models.constraints.CheckConstraint.validate() will silently skip
@@ -204,9 +210,7 @@ ADSUserFormSet = inlineformset_factory(
     fields=(
         "status",
         "name",
-        "siret",
         "license_number",
-        "date_location_gerance",
         "deleted_at",
     ),
     can_delete=True,

@@ -6,6 +6,7 @@ SetupFormsetFiles();
 type DataType = {
   ads_creation_date: string;
   ads_in_use: string;
+  location: boolean;
 };
 
 const data = JSON.parse(
@@ -29,6 +30,7 @@ Alpine.data("get_x_data", () => ({
   },
 
   ads_in_use: data.ads_in_use,
+  location: data.location,
 
   extraADSUserForms: 0,
 }));
