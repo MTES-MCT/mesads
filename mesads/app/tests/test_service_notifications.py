@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 
 import pytest
+from django.utils import timezone
 
 from mesads.app.services.notifications import notify_prefectures_gestionnaires
 from mesads.users.tests.factories import UserFactory
@@ -94,7 +95,7 @@ def test_notify_verification_ads_outdated(mailoutbox):
     )
     ads_log = ADSUpdateLog.create_for_ads(ads, request_pref.user)
     ADSUpdateLog.objects.filter(pk=ads_log.pk).update(
-        update_at=date.today() - timedelta(days=365)
+        update_at=timezone.now() - timedelta(days=365)
     )
     administrator.notify_verification_enabled = True
     administrator.save()

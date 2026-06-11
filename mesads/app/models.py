@@ -719,7 +719,7 @@ class ADS(SmartValidationMixin, CharFieldsStripperMixin, SoftDeleteMixin, models
                 violation_error_message=ADS_UNIQUE_ERROR_MESSAGE,
             ),
             models.CheckConstraint(
-                check=Q(ads_creation_date__isnull=True)
+                condition=Q(ads_creation_date__isnull=True)
                 | Q(attribution_date__isnull=True)
                 | Q(ads_creation_date__lte=F("attribution_date")),
                 name="ads_creation_date_before_attribution_date",
@@ -741,7 +741,7 @@ class ADS(SmartValidationMixin, CharFieldsStripperMixin, SoftDeleteMixin, models
             # - For unknown creation date, we allow attribution date to be set or
             # not to avoid blocking the creation when we don't know the creation date
             models.CheckConstraint(
-                check=(
+                condition=(
                     Q(
                         ads_creation_date__isnull=False,
                         ads_creation_date__gte=date(2014, 10, 1),
@@ -765,7 +765,7 @@ class ADS(SmartValidationMixin, CharFieldsStripperMixin, SoftDeleteMixin, models
             # - For unknown creation date, we allow attribution date to be set
             # or not to avoid blocking the creation when we don't know the creation date
             models.CheckConstraint(
-                check=(
+                condition=(
                     Q(
                         ads_creation_date__isnull=False,
                         ads_creation_date__gte=date(2014, 10, 1),
@@ -786,7 +786,7 @@ class ADS(SmartValidationMixin, CharFieldsStripperMixin, SoftDeleteMixin, models
             # Check renewal date content: if set,
             # renewal date must be after the creation date
             models.CheckConstraint(
-                check=Q(ads_renew_date__isnull=True)
+                condition=Q(ads_renew_date__isnull=True)
                 | Q(ads_renew_date__gte=F("ads_creation_date")),
                 name="renew_date_after_creation_date",
                 violation_error_message=(
@@ -1116,7 +1116,7 @@ class ADSUser(
             # name should be empty if status = 'titulaire_exploitant', because
             # the value is expected to be provided in ADS.owner_name
             models.CheckConstraint(
-                check=(
+                condition=(
                     Q(
                         deleted_at__isnull=False,
                     )
@@ -1137,7 +1137,7 @@ class ADSUser(
             # SIRET should be empty if status = 'titulaire_exploitant', because the
             # value is expected to be provided in ADS.owner_siret
             models.CheckConstraint(
-                check=(
+                condition=(
                     Q(
                         deleted_at__isnull=False,
                     )
@@ -1158,7 +1158,7 @@ class ADSUser(
             # SIRET should be empty if status = 'legal_representative', because
             # the value is expected to be provided in ADS.owner_siret
             models.CheckConstraint(
-                check=(
+                condition=(
                     Q(
                         deleted_at__isnull=False,
                     )
@@ -1179,7 +1179,7 @@ class ADSUser(
             # SIRET should be empty if status = 'salarie',
             # because employees don't have a SIRET number
             models.CheckConstraint(
-                check=(
+                condition=(
                     Q(
                         deleted_at__isnull=False,
                     )
@@ -1198,7 +1198,7 @@ class ADSUser(
             ),
             # date_location_gerance can only be set for locataire_gerant
             models.CheckConstraint(
-                check=Q(date_location_gerance__isnull=True)
+                condition=Q(date_location_gerance__isnull=True)
                 | Q(date_location_gerance__isnull=False, status="locataire_gerant"),
                 name="ads_location_gerance_set_only_for_locataire_gerant",
                 violation_error_message=(

@@ -1,6 +1,6 @@
-import pkg_resources
 import yaml
 from django import template
+from django.conf import settings
 from django.template import Template
 from django.urls import resolve
 from django.urls.exceptions import Resolver404
@@ -12,7 +12,7 @@ register = template.Library()
 @register.simple_tag(takes_context=True)
 def html_metadata(context):
     """Return the HTML title and meta description."""
-    data = pkg_resources.resource_string(__name__, "../../html_metadata.yml")
+    data = (settings.PROJECT_DIR / "html_metadata.yml").read_bytes()
     metadata = yaml.safe_load(data)
     request = context["request"]
 

@@ -117,13 +117,12 @@ class DemandeArchiveesView(ListView):
     template_name = "pages/ads_register/liste_attente_archivees.html"
     model = InscriptionListeAttente
     paginate_by = 50
-    ordering = ["-deleted_at"]
     context_object_name = "inscriptions"
 
     def get_queryset(self):
         qs = InscriptionListeAttente.with_deleted.filter(
             ads_manager__id=self.kwargs["manager_id"], deleted_at__isnull=False
-        )
+        ).order_by("-deleted_at")
 
         search = self.request.GET.get("search", "").strip()
         if not search:
