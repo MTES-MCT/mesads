@@ -3,6 +3,7 @@ from datetime import date
 from django.contrib import admin
 from django.db.models import Count
 from django.urls import reverse
+from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 from reversion_compare.admin import CompareVersionAdmin
 
@@ -141,28 +142,39 @@ class ADSAdmin(CompareVersionAdmin):
         if not ads_users:
             return "-"
 
-        content = ""
-        for ads_user in ads_users:
-            content += f"""
-                <tr>
-                    <td>{ads_user.status}</td>
-                    <td>{ads_user.name}</td>
-                    <td>{ads_user.siret}</td>
-                    <td>{ads_user.license_number}</td>
-                </tr>
+        ads_users_html = format_html_join(
+            "\n",
             """
-        return mark_safe(
-            f"""
-        <table>
-            <tr>
-                <th>Statut</th>
-                <th>Nom</th>
-                <th>SIRET</th>
-                <th>Carte pro</th>
-            </tr>
-            {content}
-        </table>
-        """
+                <tr>
+                    <td>{}</td>
+                    <td>{}</td>
+                    <td>{}</td>
+                    <td>{}</td>
+                </tr>
+            """,
+            (
+                (
+                    ads_user.status,
+                    ads_user.name,
+                    ads_user.siret,
+                    ads_user.license_number,
+                )
+                for ads_user in ads_users
+            ),
+        )
+        return format_html(
+            """
+            <table>
+                <tr>
+                    <th>Statut</th>
+                    <th>Nom</th>
+                    <th>SIRET</th>
+                    <th>Carte pro</th>
+                </tr>
+                {}
+            </table>
+            """,
+            ads_users_html,
         )
 
     @admin.display(description="Voir sur le site public")
