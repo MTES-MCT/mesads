@@ -227,7 +227,8 @@ ADSLegalFileFormSet = inlineformset_factory(
 class ADSManagerDecreeForm(forms.Form):
     file = forms.FileField(label="Fichier")
     date_arrete = forms.DateField(
-        label="Date de prise de l'arrêté", validators=[MaxValueValidator(date.today())]
+        label="Date de prise de l'arrêté",
+        validators=[MaxValueValidator(limit_value=date.today)],
     )
     nombre_ads = forms.IntegerField(
         label="Nombre d'ADS autorisées par l'arrêté", min_value=0
