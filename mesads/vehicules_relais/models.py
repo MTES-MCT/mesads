@@ -7,11 +7,13 @@ from django.db import models
 from markdownx.models import MarkdownxField
 
 from mesads.app.models import (
+    validate_siret,
+)
+from mesads.common.mixins import (
     CharFieldsStripperMixin,
     SmartValidationMixin,
     SoftDeleteManager,
     SoftDeleteMixin,
-    validate_siret,
 )
 from mesads.fradm.models import Commune, Prefecture
 

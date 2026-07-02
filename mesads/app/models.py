@@ -13,102 +13,17 @@ from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Count, F, IntegerField, OuterRef, Q, Subquery, Value
-from django.db.models.functions import Coalesce
+from django.db.models import F, Q
 from django.utils import timezone
 from django.utils.html import mark_safe
 from django_cleanup import cleanup
 
+from mesads.common.mixins import (
+    CharFieldsStripperMixin,
+    SmartValidationMixin,
+    SoftDeleteMixin,
+)
 from mesads.fradm.models import EPCI, Aeroport, Commune, Prefecture
-
-
-class SoftDeleteManager(models.Manager):
-    """Manager to add a soft delete feature to a model.
-
-    This manager overrides the `get_queryset` method to filter out objects that
-    have a `deleted_at` field set.
-    """
-
-    def get_queryset(self):
-        return super().get_queryset().filter(deleted_at__isnull=True)
-
-
-class SoftDeleteMixin(models.Model):
-    """Mixin to add a soft delete feature to a model.
-
-    This mixin adds a `deleted_at` field to the model, and overrides the
-    `delete` method to set the field to True instead of actually deleting the
-    object.
-    """
-
-    deleted_at = models.DateTimeField(
-        blank=True,
-        null=True,
-        default=None,
-        verbose_name="Date de suppression",
-        help_text=(
-            "Date de suppression de l'objet. "
-            "Si cette date est renseignée, l'objet est considéré comme supprimé."
-        ),
-    )
-
-    with_deleted = models.Manager()
-    objects = SoftDeleteManager()
-
-    class Meta:
-        default_manager_name = "objects"
-        abstract = True
-
-    def delete(self, using=None, keep_parents=False):
-        self.deleted_at = timezone.now()
-        self.save()
-
-
-class SmartValidationMixin:
-    """Override clean() to only validate fields that have changed."""
-
-    SMART_VALIDATION_WATCHED_FIELDS = None
-
-    def __init__(self, *args, **kwargs):
-        """Store the initial value for the watched fields."""
-        assert self.SMART_VALIDATION_WATCHED_FIELDS
-        super().__init__(*args, **kwargs)
-        self.__smart_validation_initial_values = {
-            name: getattr(self, name)
-            for name in self.SMART_VALIDATION_WATCHED_FIELDS.keys()
-        }
-
-    def clean(self, *args, **kwargs):
-        """If any of the watched fields changed, revalidate it."""
-        super().clean(*args, **kwargs)
-        for key, initial_value in self.__smart_validation_initial_values.items():
-            if getattr(self, key) != initial_value:
-                validator = self.SMART_VALIDATION_WATCHED_FIELDS[key]
-                try:
-                    validator(self, getattr(self, key))
-                except Exception as exc:
-                    raise ValidationError({key: exc})
-
-
-class CharFieldsStripperMixin:
-    """Strip all char fields."""
-
-    def clean(self, *args, **kwargs):
-        for field in self._meta.fields:
-            if isinstance(field, models.CharField):
-                value = getattr(self, field.name)
-                # Usually our CharFields are not nullable, but make sure we
-                # don't attempt to strip None.
-                if value is not None:
-                    stripped = self.strip(value)
-                    setattr(self, field.name, stripped)
-        return super().clean(*args, **kwargs)
-
-    def strip(self, value):
-        value = value.strip()
-        if value == "-":
-            value = ""
-        return value
 
 
 def validate_no_ads_declared(ads_manager, value):
@@ -361,38 +276,6 @@ class ADSManagerAdministrator(models.Model):
 
     def __str__(self):
         return f"Administrateur des gestionnaires de la préfecture {self.prefecture}"
-
-    def ordered_adsmanager_set(self):
-        """Function helper to get the adsmanager set order by the administration
-        name."""
-        latest_complete = Subquery(
-            ADSUpdateLog.objects.filter(ads=OuterRef("pk"))
-            .order_by("-update_at")
-            .values("is_complete")[:1],
-            output_field=models.BooleanField(),
-        )
-
-        # 2) count how many ADS under this manager have latest_complete=True
-        completed_ads = (
-            ADS.objects.filter(ads_manager=OuterRef("pk"))
-            .annotate(latest_complete=latest_complete)
-            .filter(latest_complete=True)
-            .values("ads_manager")
-            .annotate(total=Count("pk"))
-            .values("total")[:1]
-        )
-
-        return (
-            self.adsmanager_set.prefetch_related("content_object", "ads_set")
-            .filter(Q(commune__type_commune="COM") | Q(commune__isnull=True))
-            .annotate(
-                # if no ADS or none complete, default to 0
-                complete_updates_count=Coalesce(
-                    Subquery(completed_ads, output_field=IntegerField()), Value(0)
-                )
-            )
-            .order_by("commune__libelle", "epci__name", "prefecture__libelle")
-        )
 
 
 class DemandeAcces(models.Model):
@@ -719,7 +602,7 @@ class ADS(SmartValidationMixin, CharFieldsStripperMixin, SoftDeleteMixin, models
                 violation_error_message=ADS_UNIQUE_ERROR_MESSAGE,
             ),
             models.CheckConstraint(
-                check=Q(ads_creation_date__isnull=True)
+                condition=Q(ads_creation_date__isnull=True)
                 | Q(attribution_date__isnull=True)
                 | Q(ads_creation_date__lte=F("attribution_date")),
                 name="ads_creation_date_before_attribution_date",
@@ -741,7 +624,7 @@ class ADS(SmartValidationMixin, CharFieldsStripperMixin, SoftDeleteMixin, models
             # - For unknown creation date, we allow attribution date to be set or
             # not to avoid blocking the creation when we don't know the creation date
             models.CheckConstraint(
-                check=(
+                condition=(
                     Q(
                         ads_creation_date__isnull=False,
                         ads_creation_date__gte=date(2014, 10, 1),
@@ -765,7 +648,7 @@ class ADS(SmartValidationMixin, CharFieldsStripperMixin, SoftDeleteMixin, models
             # - For unknown creation date, we allow attribution date to be set
             # or not to avoid blocking the creation when we don't know the creation date
             models.CheckConstraint(
-                check=(
+                condition=(
                     Q(
                         ads_creation_date__isnull=False,
                         ads_creation_date__gte=date(2014, 10, 1),
@@ -786,7 +669,7 @@ class ADS(SmartValidationMixin, CharFieldsStripperMixin, SoftDeleteMixin, models
             # Check renewal date content: if set,
             # renewal date must be after the creation date
             models.CheckConstraint(
-                check=Q(ads_renew_date__isnull=True)
+                condition=Q(ads_renew_date__isnull=True)
                 | Q(ads_renew_date__gte=F("ads_creation_date")),
                 name="renew_date_after_creation_date",
                 violation_error_message=(
@@ -1116,7 +999,7 @@ class ADSUser(
             # name should be empty if status = 'titulaire_exploitant', because
             # the value is expected to be provided in ADS.owner_name
             models.CheckConstraint(
-                check=(
+                condition=(
                     Q(
                         deleted_at__isnull=False,
                     )
@@ -1137,7 +1020,7 @@ class ADSUser(
             # SIRET should be empty if status = 'titulaire_exploitant', because the
             # value is expected to be provided in ADS.owner_siret
             models.CheckConstraint(
-                check=(
+                condition=(
                     Q(
                         deleted_at__isnull=False,
                     )
@@ -1158,7 +1041,7 @@ class ADSUser(
             # SIRET should be empty if status = 'legal_representative', because
             # the value is expected to be provided in ADS.owner_siret
             models.CheckConstraint(
-                check=(
+                condition=(
                     Q(
                         deleted_at__isnull=False,
                     )
@@ -1179,7 +1062,7 @@ class ADSUser(
             # SIRET should be empty if status = 'salarie',
             # because employees don't have a SIRET number
             models.CheckConstraint(
-                check=(
+                condition=(
                     Q(
                         deleted_at__isnull=False,
                     )
@@ -1198,7 +1081,7 @@ class ADSUser(
             ),
             # date_location_gerance can only be set for locataire_gerant
             models.CheckConstraint(
-                check=Q(date_location_gerance__isnull=True)
+                condition=Q(date_location_gerance__isnull=True)
                 | Q(date_location_gerance__isnull=False, status="locataire_gerant"),
                 name="ads_location_gerance_set_only_for_locataire_gerant",
                 violation_error_message=(

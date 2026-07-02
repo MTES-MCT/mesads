@@ -150,7 +150,7 @@ class ConsultationADSSearchView(ListView):
                 output_field=BooleanField(),
             ),
         )
-        return qs
+        return qs.order_by("ads_manager")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

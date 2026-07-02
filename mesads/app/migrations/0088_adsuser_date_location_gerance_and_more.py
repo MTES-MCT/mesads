@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="adsuser",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     ("date_location_gerance__isnull", True),
                     models.Q(
                         ("date_location_gerance__isnull", False),

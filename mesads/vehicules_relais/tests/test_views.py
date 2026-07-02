@@ -1,7 +1,7 @@
 import datetime
 import io
 
-import PyPDF2
+from pypdf import PdfReader
 
 from mesads.app.models import ADSManagerAdministrator
 from mesads.fradm.models import Commune, Prefecture
@@ -494,6 +494,6 @@ class TestProprietaireVehiculeRecepisseView(ClientTestCase):
         self.assertEqual(resp.status_code, 200)
 
         pdf = io.BytesIO(resp.content)
-        reader = PyPDF2.PdfReader(pdf)
+        reader = PdfReader(pdf)
         # Make sure there are only 2 pages in the PDF generated
         self.assertEqual(len(reader.pages), 2)

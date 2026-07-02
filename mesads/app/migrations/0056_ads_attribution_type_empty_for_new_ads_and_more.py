@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="ads",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(
                         ("ads_creation_date__gte", datetime.date(2014, 10, 1)),
                         ("ads_creation_date__isnull", False),
@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="ads",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     ("attribution_type", "paid"),
                     models.Q(
                         models.Q(("attribution_type", "paid"), _negated=True),
@@ -51,7 +51,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="ads",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(
                         ("ads_creation_date__gte", datetime.date(2014, 10, 1)),
                         ("ads_creation_date__isnull", False),
@@ -73,7 +73,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="ads",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(
                         ("ads_creation_date__gte", datetime.date(2014, 10, 1)),
                         ("ads_creation_date__isnull", False),
