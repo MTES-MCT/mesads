@@ -20,7 +20,9 @@ from .models import (
     ADSLegalFile,
     ADSManager,
     ADSUser,
+    EntreeRegistreTransaction,
     InscriptionListeAttente,
+    validate_siret,
 )
 from .widgets import BooleanSelect
 
@@ -491,3 +493,111 @@ class ConsultationADSForm(forms.Form):
 
 class ADSImportForm(forms.Form):
     file = forms.FileField(label="Fichier à importer")
+
+
+class ADSChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        label = f"ADS-{obj.number}"
+        if obj.owner_name:
+            label = f"{label} -- {obj.owner_name}"
+        if obj.owner_siret:
+            label = f"{label} -- {obj.owner_siret}"
+        return label
+
+
+class TransactionADSForm(forms.ModelForm):
+    class Meta:
+        model = EntreeRegistreTransaction
+        fields = ["ads"]
+
+    def __init__(self, *args, ads_manager=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if ads_manager:
+            self.fields["ads"].queryset = ADS.objects.filter(
+                ads_manager=ads_manager, ads_creation_date__lt=date(2014, 10, 1)
+            )
+
+
+COMPLETION_STATUTS = {
+    "1": "Complet",
+    "0": "Incomplet",
+}
+
+
+class TransactionDocumentsForm(forms.ModelForm):
+    documents_complet = forms.TypedChoiceField(
+        label="Indiquez l'état du dossier en fonction des pièces sélectionnées.",
+        choices=[
+            ("true", "Complet"),
+            ("false", "Incomplet"),
+        ],
+        coerce=lambda value: value == "true",
+        widget=forms.RadioSelect,
+        required=True,
+    )
+
+    class Meta:
+        model = EntreeRegistreTransaction
+        fields = [
+            "demande_cession",
+            "justificatif_exploitation",
+            "piece_identite",
+            "justificatif_montant",
+            "kbis_ou_siren",
+            "attestation_aptitude_professionnelle",
+            "justificatif_liquidation_judiciaire",
+            "autres_documents",
+            "autres_documents_description",
+            "documents_complet",
+        ]
+
+
+class TransactionEnregistrementForm(forms.ModelForm):
+    def clean_siret_nouvel_exploitant(self):
+        siret = self.cleaned_data["siret_nouvel_exploitant"]
+        validate_siret(siret)
+        return siret
+
+    class Meta:
+        model = EntreeRegistreTransaction
+        fields = [
+            "date_transaction",
+            "montant_transaction",
+            "ancien_exploitant",
+            "nouvel_exploitant",
+            "siret_nouvel_exploitant",
+        ]
+
+
+class TransactionUpdateForm(forms.ModelForm):
+    class Meta:
+        model = EntreeRegistreTransaction
+        fields = [
+            "ads",
+            "date_transaction",
+            "montant_transaction",
+            "ancien_exploitant",
+            "nouvel_exploitant",
+            "siret_nouvel_exploitant",
+        ]
+
+    def __init__(self, *args, ads_manager=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if ads_manager:
+            self.fields["ads"].queryset = ADS.objects.filter(
+                ads_manager=ads_manager, ads_creation_date__lt=date(2014, 10, 1)
+            )
+
+    def clean_siret_nouvel_exploitant(self):
+        siret = self.cleaned_data["siret_nouvel_exploitant"]
+        validate_siret(siret)
+        return siret
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.statut = EntreeRegistreTransaction.ENREGISTREE
+        if commit:
+            instance.save()
+        return instance

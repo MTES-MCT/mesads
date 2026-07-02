@@ -32,6 +32,7 @@
 
   {% if not ads_manager.is_locked and not ads_manager.no_ads_declared %}
 
+    <h2>Fonctionnalités de gestion</h2>
     <div class="fr-container mb-2">
       <div class="fr-grid-row fr-grid-row--gutters">
         <div class="fr-col-12 fr-col-md-4">
@@ -39,9 +40,32 @@
             <div class="fr-card__body">
               <div class="fr-card__content">
                 <h2 class="fr-card__title">
+                  Arrêté délimitant le nombre d'ADS
+                </h2>
+                <p class="fr-card__desc">
+                  {% if dernier_arrete and dernier_arrete.nombre_ads %}<strong>Nombre d'ADS autorisées: {{dernier_arrete.nombre_ads}}</strong> {% else %} Nombre d'ADS autorisées inconnu. {% endif %}
+                </p>
+                <div class="fr-card__end">
+                  <span>
+                    <a
+                      href="{% url 'app.ads-manager.decree.detail' manager_id=ads_manager.id %}"
+                      class="fr-link fr-icon-arrow-right-line fr-link--icon-right"
+                    >
+                      Consulter l'arrêté
+                    </a>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="fr-col-12 fr-col-md-4">
+          <div class="fr-card">
+            <div class="fr-card__body">
+              <div class="fr-card__content">
+                <h2 class="fr-card__title">
                   Liste d'attente
                 </h2>
-                <p class="fr-card__desc">La liste d'attente vous permet de gérer les demandes d'ADS en cours.</p>
                 <p class="fr-card__desc">
                   <strong>Nombre d'inscriptions : {{inscriptions_count}}</strong>
                 </p>
@@ -51,7 +75,7 @@
                       href="{% url 'app.liste_attente' manager_id=ads_manager.id %}"
                       class="fr-link fr-icon-arrow-right-line fr-link--icon-right"
                     >
-                      Consulter la liste d'attente
+                      Consulter ou modifier
                     </a>
                   </span>
                 </div>
@@ -59,15 +83,45 @@
             </div>
           </div>
         </div>
-
         <div class="fr-col-12 fr-col-md-4">
+          <div class="fr-card">
+            <div class="fr-card__body">
+              <div class="fr-card__content">
+                <h2 class="fr-card__title">
+                  Registre des transactions
+                </h2>
+                <p class="fr-card__desc">
+                  Consulter et enregistrer directement une transaction
+                </p>
+                <div class="fr-card__end">
+                  <span>
+                    <a
+                      href="{% url 'app.transaction-liste' manager_id=ads_manager.id %}"
+                      class="fr-link fr-icon-arrow-right-line fr-link--icon-right"
+                    >
+                      Accéder au registre
+                    </a>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Aides à la gestion</h2>
+
+    <div class="fr-container mb-2">
+      <div class="fr-grid-row fr-grid-row--gutters">
+
+        <div class="fr-col-12 fr-col-md-6">
           <div class="fr-card">
             <div class="fr-card__body">
               <div class="fr-card__content">
                 <h2 class="fr-card__title">
                   Modèles d'arrếtés
                 </h2>
-                <p class="fr-card__desc">Un arrêté est un acte juridique final par lequel une autorisation est accordée, modifiée ou refusée.</p>
                 <div class="fr-card__end">
                   <span>
                     <a
@@ -82,27 +136,24 @@
             </div>
           </div>
         </div>
-
-        <div class="fr-col-12 fr-col-md-4">
+        
+        <div class="fr-col-12 fr-col-md-6">
           <div class="fr-card">
             <div class="fr-card__body">
               <div class="fr-card__content">
                 <h2 class="fr-card__title">
-                  Arrêté délimitant le nombre d'ADS
+                  Enregistrer une transaction
                 </h2>
                 <p class="fr-card__desc">
-                  {% if dernier_arrete and dernier_arrete.nombre_ads %}<strong>Nombre d'ADS autorisées: {{dernier_arrete.nombre_ads}}</strong> {% else %} Nombre d'ADS autorisées inconnu. {% endif %}
-                </p>
-                <p class="fr-card__desc">
-                  Un arrêté spécifique est nécessaire pour définir le nombre d'ADS de votre administration.
+                  Guide pas à pas pour vous accompagner à l'enregistrement d'une transaction dans le cas d'une cession à titre onéreux.
                 </p>
                 <div class="fr-card__end">
                   <span>
                     <a
-                      href="{% url 'app.ads-manager.decree.detail' manager_id=ads_manager.id %}"
+                      href="{% url 'app.transaction-choix-ads' manager_id=ads_manager.id %}"
                       class="fr-link fr-icon-arrow-right-line fr-link--icon-right"
                     >
-                      Consulter ou modifier l'arrêté
+                      Démarrer le pas à pas
                     </a>
                   </span>
                 </div>
@@ -111,29 +162,6 @@
           </div>
         </div>
 
-        <div class="fr-col-12 fr-col-md-4">
-          <div class="fr-card fr-card--download">
-            <div class="fr-card__body">
-              <div class="fr-card__content">
-                <h2 class="fr-card__title">
-                  Télécharger toutes les ADS de l'administration
-                </h2>
-                <div class="fr-card__end">
-                  <span>
-                    <a
-                      href="{% url 'app.exports.ads-manager' manager_id=ads_manager.id %}"
-                      class="fr-link fr-icon-arrow-down-line fr-link--icon-right"
-                    >
-                      Télécharger (excel)
-                    </a>
-                  </span>
-                </div>
-                <div class="fr-card__start">
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -143,12 +171,19 @@
     Mes autorisations de stationnement (ADS)
   </h2>
 
-  <div class="flex justify-end">
+  <div class="flex justify-end gap-2">
     <a
       href="{% url 'app.ads.create' manager_id=ads_manager.id %}"
       class="fr-btn fr-btn--secondary fr-btn--icon-right fr-icon-add-line"
     >
       Ajouter une ADS
+    </a>
+
+    <a
+      href="{% url 'app.exports.ads-manager' manager_id=ads_manager.id %}"
+      class="fr-btn fr-btn--secondary fr-btn--icon-right fr-icon-arrow-down-line"
+    >
+      Télécharger toutes les ADS (excel)
     </a>
   </div>
 
