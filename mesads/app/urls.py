@@ -134,6 +134,41 @@ url_gestionnaire = [
         ads_manager_required(views.TelechargementArreteView.as_view()),
         name="app.arrete-download",
     ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/",
+        ads_manager_required(views.TransactionListView.as_view()),
+        name="app.transaction-liste",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/creation",
+        ads_manager_required(views.TransactionCreateView.as_view()),
+        name="app.transaction-creation",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/selection-ads",
+        ads_manager_required(views.TransactionSelectionADSFormView.as_view()),
+        name="app.transaction-choix-ads",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/documents",
+        ads_manager_required(views.TransactionDocumentsFormView.as_view()),
+        name="app.transaction-documents",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/enregistrement",
+        ads_manager_required(views.TransactionEnregistrementFormView.as_view()),
+        name="app.transaction-enregistrement",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/confirmation",
+        ads_manager_required(views.TransactionConfirmationView.as_view()),
+        name="app.transaction-confirmation",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>",
+        ads_manager_required(views.TransactionEditView.as_view()),
+        name="app.transaction-edition",
+    ),
 ]
 
 url_liste_attente = [

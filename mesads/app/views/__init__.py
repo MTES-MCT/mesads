@@ -60,3 +60,12 @@ from .public import (  # noqa: F401
     ReglementationView,
     StatsView,
 )
+from .registre_transactions import (  # noqa: F401
+    TransactionConfirmationView,
+    TransactionCreateView,
+    TransactionDocumentsFormView,
+    TransactionEditView,
+    TransactionEnregistrementFormView,
+    TransactionListView,
+    TransactionSelectionADSFormView,
+)
