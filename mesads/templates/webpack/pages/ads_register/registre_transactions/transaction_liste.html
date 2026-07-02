@@ -1,0 +1,173 @@
+{% extends "base_container.html" %}
+{% load show_pagination_links registre_transaction %}
+{% block body-content %}
+
+  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
+    <button
+      class="fr-breadcrumb__button"
+      aria-expanded="false"
+      aria-controls="breadcrumb-1"
+    >
+      Voir le fil d'Ariane
+    </button>
+    <div class="fr-collapse" id="breadcrumb-1">
+      <ol class="fr-breadcrumb__list">
+        <li>
+          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link"
+            href="{% url 'app.ads-manager.administrations' %}">
+            Vos administrations en gestion
+          </a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link"
+            href="{% url 'app.ads-manager.detail' manager_id=ads_manager.id %}">
+            {{ ads_manager.content_object.display_text|capfirst }}
+          </a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link" aria-current="page">Registre des transactions</a>
+        </li>
+      </ol>
+    </div>
+  </nav>
+
+  <h1>Registre des transactions</h1>
+
+  <div class="flex justify-end gap-2">
+    <button aria-controls="modal-enregistrement-transaction" data-fr-opened="false" type="button" class="fr-btn">Enregistrer une transaction</button>
+    <dialog id="modal-enregistrement-transaction" class="fr-modal" aria-labelledby="modal-enregistrement-transaction-title" data-fr-concealing-backdrop="true">
+      <div class="fr-container fr-container--fluid fr-container-md">
+        <div class="fr-grid-row fr-grid-row--center">
+          <div class="fr-col-12 fr-col-md-10 fr-col-lg-8">
+            <div class="fr-modal__body">
+              <div class="fr-modal__header">
+                <button aria-controls="modal-enregistrement-transaction" title="Fermer" type="button" id="button-5" class="fr-btn--close fr-btn">Fermer</button>
+              </div>
+              <div class="fr-modal__content">
+                <h2 id="modal-enregistrement-transaction-title" class="fr-modal__title">
+                  Enregistrer une transaction
+                </h2>
+                <p>
+                  Choisissez la méthode d'enregistrement la plus adaptée à votre situation. Vous pourrez vérifier et compléter les informations avant enregistrement.
+                </p>
+
+                <div class="fr-container mb-2">
+                  <div class="fr-grid-row fr-grid-row--gutters">
+
+                    <div class="fr-col-12 fr-col-md-6">
+                      <div class="fr-tile fr-enlarge-link" id="tile-reglementation">
+                        <div class="fr-tile__body">
+                          <div class="fr-tile__content">
+                            <h3 class="fr-tile__title">
+                              <a href="{% url 'app.transaction-creation' manager_id=ads_manager.id %}">Saisie directe dans le registre des transactions</a>
+                            </h3>
+                            <p class="fr-tile__detail">
+                              Dossier de cession déjà instruit en dehors de l'outil.
+                            </p>
+                            <p class="fr-tile__detail">
+                              Permet d'enregistrer directement les informations dans le registre public.
+                            </p>
+                          </div>
+                        </div>
+                        <div class="fr-tile__header">
+                          <div class="fr-tile__pictogram">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="fr-col-12 fr-col-md-6">
+                      <div class="fr-tile fr-enlarge-link" id="tile-reglementation">
+                        <div class="fr-tile__body">
+                          <div class="fr-tile__content">
+                            <h3 class="fr-tile__title">
+                              <a href="{% url 'app.transaction-choix-ads' manager_id=ads_manager.id %}">Pas à pas pour l'enregistrement</a>
+                            </h3>
+                            <p class="fr-tile__detail">
+                              Nouvelle transaction avec démarche accompagnée.
+                            </p>
+                            <p class="fr-tile__detail">
+                              Un parcours guidé vous aide à saisir et vérifier toutes les informations nécessaires.
+                            </p>
+                          </div>
+                        </div>
+                        <div class="fr-tile__header">
+                          <div class="fr-tile__pictogram">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </dialog>
+  </div>
+
+  <div class="fr-table fr-table--no-scroll fr-table--multiline fr-table--no-caption" id="table-0-component">
+    <div class="fr-table__wrapper">
+      <div class="fr-table__container">
+        <div class="fr-table__content">
+          <table id="table-0">
+            <caption> Liste des transactions pour {{ads_manager.content_object.display_text}}  </caption>
+            <thead>
+              <tr>
+                <th> ADS </th>
+                <th> Date </th>
+                <th> Ancien exploitant (titulaire) </th>
+                <th> Nouvel exploitant présente </th>
+                <th> SIRET successeur </th>
+                <th> Montant </th>
+                <th> Statut </th>
+                <th> Action </th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for entree in entrees %}
+                <tr>
+                  <td>
+                    <a href="{% url 'app.ads.detail' manager_id=ads_manager.id ads_id=entree.ads.id %}">
+                      {{entree.ads.number}}
+                    </a>
+                  </td>
+                  <td> {{entree.date_transaction|default_if_none:""}} </td>
+                  <td> {{entree.ancien_exploitant}} </td>
+                  <td> {{entree.nouvel_exploitant}} </td>
+                  <td> {{entree.siret_nouvel_exploitant}} </td>
+                  <td> {{entree.montant_transaction|default_if_none:""}} </td>
+                  <td>
+                    {% if entree.is_brouillon %}
+                      <p class="fr-badge fr-badge--warning fr-badge--no-icon">Brouillon</p>
+                    {% else %}
+                      <p class="fr-badge fr-badge--success fr-badge--no-icon">Enregistrée</p>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <a
+                      class="fr-btn fr-btn--secondary fr-icon-pencil-line fr-btn--icon-left full-width"
+                      aria-label="Modifier l'entree {{entree.id}} pour l'ADS {{ entree.ads.number }}"
+                      href="{% modification_url entree %}"
+                    >
+                      Modifier
+                    </a>
+                  </td>
+                </tr>
+
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+{% endblock body-content %}

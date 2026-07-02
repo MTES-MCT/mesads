@@ -1,0 +1,112 @@
+{% extends "base_container.html" %}
+{% load show_pagination_links %}
+{% block body-content %}
+
+  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
+    <button
+      class="fr-breadcrumb__button"
+      aria-expanded="false"
+      aria-controls="breadcrumb-1"
+    >
+      Voir le fil d'Ariane
+    </button>
+    <div class="fr-collapse" id="breadcrumb-1">
+      <ol class="fr-breadcrumb__list">
+        <li>
+          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link"
+            href="{% url 'app.ads-manager.administrations' %}">
+            Vos administrations en gestion
+          </a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link"
+            href="{% url 'app.ads-manager.detail' manager_id=ads_manager.id %}">
+            {{ ads_manager.content_object.display_text|capfirst }}
+          </a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link" aria-current="page">Ajouter une transaction</a>
+        </li>
+      </ol>
+    </div>
+  </nav>
+
+  <h1>Ajouter une transaction</h1>
+
+  <div>
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="fr-container mb-2">
+        <div class="fr-grid-row fr-grid-row--gutters">
+          <div class="fr-col-12 fr-col-md-6">
+            {% include "form_fields/select.html" with empty_option=True field=form.ads field_errors=form.errors.ads required=form.fields.ads.required bold=True %}
+
+            {% include "form_fields/date.html" with field=form.date_transaction field_errors=form.errors.date_transaction required=form.fields.date_transaction.required %}
+            
+            <div class="fr-input-group" id="input-group-34">
+              <label class="fr-label" for="{{ form.montant_transaction.id_for_label }}"> {{form.montant_transaction.label}}</label>
+              <div class="fr-input-wrap fr-icon fr-icon-money-euro-circle-line">
+                <input
+                  class="fr-input{% if form.errors.montant_transaction %} fr-input--error{% endif %}"
+                  pattern="[0-9]*"
+                  inputmode="numeric"
+                  aria-describedby="{{ form.montant_transaction.id_for_label }}-messages"
+                  id="{{ form.montant_transaction.id_for_label }}"
+                  name="{{ form.montant_transaction.html_name }}"
+                  value="{{ form.montant_transaction.value|default:"" }}"
+                  step=".01"
+                  type="number">
+              </div>
+              <div class="fr-messages-group" id="{{ form.montant_transaction.id_for_label }}-messages" aria-live="polite">
+                {% for error in form.errors.montant_transaction %}
+                  <p class="fr-message fr-message--error">{{ error }}</p>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          <div class="fr-col-12 fr-col-md-6">
+            <fieldset class="border-1 border-solid rounded-sm border-stone-300 p-2 mb-2">
+              <legend>Ancien exploitant (titulaire)</legend>
+              {% include "form_fields/string.html" with field=form.ancien_exploitant field_errors=form.errors.ancien_exploitant required=form.fields.ancien_exploitant.required %}
+
+            </fieldset>
+
+            <fieldset class="border-1 border-solid rounded-sm border-stone-300 p-2 mb-2">
+              <legend>Nouvel exploitant présenté</legend>
+              {% include "form_fields/string.html" with field=form.nouvel_exploitant field_errors=form.errors.nouvel_exploitant required=form.fields.nouvel_exploitant.required %}
+              {% include "form_fields/string.html" with field=form.siret_nouvel_exploitant field_errors=form.errors.siret_nouvel_exploitant required=form.fields.siret_nouvel_exploitant.required %}
+
+            </fieldset>
+          </div>
+        </div>
+      </div>
+    
+      <div class="w-full text-center">
+        <div class="fr-my-6v">
+          <a 
+            href="{% url 'app.transaction-liste' manager_id=ads_manager.id %}"
+            class="fr-btn fr-btn--secondary fr-mr-4v"
+          >
+            Annuler
+          </a>
+          <button
+            type="submit"
+            class="fr-btn" 
+            id="button-validation"
+            name="action"
+            value="validate"
+          >
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+
+
+{% endblock body-content %}
