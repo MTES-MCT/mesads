@@ -108,6 +108,13 @@ class ADSManager(SmartValidationMixin, models.Model):
             "d'attente de l'administration soit publique."
         ),
     )
+    registre_transaction_publique = models.BooleanField(
+        default=False,
+        help_text=(
+            "Cochez cette case pour que le registre des "
+            "transactions de l'administration soit publique."
+        ),
+    )
 
     class Meta:
         verbose_name = "Gestionnaire ADS"
@@ -680,7 +687,7 @@ class ADS(SmartValidationMixin, CharFieldsStripperMixin, SoftDeleteMixin, models
         ]
 
     def __str__(self):
-        return f"ADS {self.id}"
+        return f"ADS-{self.number} -- {self.owner_name}"
 
     def save(self, check=True, *args, **kwargs):
         if check:
@@ -773,7 +780,7 @@ class ADSUpdateLog(SoftDeleteMixin, models.Model):
 
     # Number of days after which the log is considered outdated and should be reviewed
     # by the user
-    OUTDATED_LOG_DAYS = 365
+    OUTDATED_LOG_DAYS = 365 * 2
 
     class Meta:
         verbose_name = "Mise à jour ADS"
@@ -1451,3 +1458,119 @@ class InscriptionListeAttente(CharFieldsStripperMixin, SoftDeleteMixin):
 
     def is_duplicated(self):
         return self.get_duplicatas().exists()
+
+
+class EntreeRegistreTransaction(CharFieldsStripperMixin, SoftDeleteMixin):
+    ads = models.ForeignKey(
+        ADS,
+        on_delete=models.RESTRICT,
+        related_name="transactions",
+        verbose_name="ADS",
+    )
+
+    date_transaction = models.DateField(
+        verbose_name="Date de la transaction",
+        help_text="Date effective de la cession",
+        default=None,
+        blank=True,
+        null=True,
+    )
+
+    montant_transaction = models.DecimalField(
+        blank=True,
+        null=True,
+        default=None,
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Montant de la transaction",
+        help_text="Montant en euros, hors taxes",
+    )
+
+    ancien_exploitant = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="Nom - Prénom ou Dénomination sociale",
+    )
+
+    nouvel_exploitant = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="Nom - Prénom ou Dénomination sociale",
+    )
+    siret_nouvel_exploitant = models.CharField(
+        max_length=128,
+        blank=True,
+        default="",
+        verbose_name="Numéro SIRET",
+        help_text=("14 chiffres - Obligatoire pour les personnes morales. "),
+    )
+
+    demande_cession = models.BooleanField(
+        default=False, verbose_name="Demande de cession signée par le cédant"
+    )
+
+    justificatif_exploitation = models.BooleanField(
+        default=False,
+        verbose_name="Justificatif de l'exploitation effective et continue",
+    )
+
+    piece_identite = models.BooleanField(
+        default=False, verbose_name="Pièce d'identité du cessionnaire"
+    )
+
+    justificatif_montant = models.BooleanField(
+        default=False, verbose_name="Justificatif du montant de la transaction"
+    )
+
+    kbis_ou_siren = models.BooleanField(
+        default=False, verbose_name="Extrait Kbis ou justificatif SIREN (si société)"
+    )
+
+    attestation_aptitude_professionnelle = models.BooleanField(
+        default=False,
+        verbose_name="Attestation d'aptitude professionnelle du cessionnaire",
+    )
+
+    justificatif_liquidation_judiciaire = models.BooleanField(
+        default=False, verbose_name="Justificatif de la liquidation judiciaire"
+    )
+
+    autres_documents = models.BooleanField(default=False, verbose_name="Autres")
+
+    autres_documents_description = models.CharField(
+        max_length=255,
+        default="",
+        blank=True,
+        verbose_name="Autres Documents",
+        help_text="Précisez le(s) document(s)",
+    )
+
+    documents_complet = models.BooleanField(
+        default=False,
+        verbose_name="Indiquez l'état du dossier en fonction des pièces sélectionnées.",
+    )
+
+    BROUILLON = "brouillon"
+    ENREGISTREE = "enregistree"
+
+    STATUTS = [
+        (
+            BROUILLON,
+            "Brouillon",
+        ),
+        (ENREGISTREE, "Enregistrée"),
+    ]
+
+    statut = models.CharField(
+        max_length=255,
+        choices=STATUTS,
+        blank=True,
+        default=BROUILLON,
+        verbose_name="Statut de la transaction",
+    )
+
+    @property
+    def is_brouillon(self):
+        return self.statut == self.BROUILLON

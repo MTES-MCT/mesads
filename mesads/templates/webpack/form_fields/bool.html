@@ -11,6 +11,7 @@
     aria-describedby="{{field.id_for_label}}-messages"
     {% if field.value %}checked{% endif %}
     {% if readonly %}disabled{% endif %}
+    {% if extra_classes %}class="{{extra_classes}}"{% endif %}
   />
   
   <label class="fr-label" for="{{ field.id_for_label }}">

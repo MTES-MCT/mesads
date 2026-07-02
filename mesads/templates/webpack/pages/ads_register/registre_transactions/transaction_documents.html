@@ -1,0 +1,216 @@
+{% extends "base_container.html" %}
+{% load show_pagination_links %}
+{% block body-content %}
+
+  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
+    <button
+      class="fr-breadcrumb__button"
+      aria-expanded="false"
+      aria-controls="breadcrumb-1"
+    >
+      Voir le fil d'Ariane
+    </button>
+    <div class="fr-collapse" id="breadcrumb-1">
+      <ol class="fr-breadcrumb__list">
+        <li>
+          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link"
+            href="{% url 'app.ads-manager.administrations' %}">
+            Vos administrations en gestion
+          </a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link"
+            href="{% url 'app.ads-manager.detail' manager_id=ads_manager.id %}">
+            {{ ads_manager.content_object.display_text|capfirst }}
+          </a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link" aria-current="page">Enregistrer une transaction</a>
+        </li>
+      </ol>
+    </div>
+  </nav>
+
+  <h1>Enregistrer une transaction</h1>
+
+  <div class="fr-stepper">
+    <h2 class="fr-stepper__title"> Réglementation et pièces <span class="fr-stepper__state">Étape 2 sur 4</span>
+    </h2>
+    <div class="fr-stepper__steps" data-fr-current-step="2" data-fr-steps="4"></div>
+    <p class="fr-stepper__details"><span class="fr-text--bold">Étape suivante :</span> Enregistrement</p>
+  </div>
+
+  <div>
+    <h2>Réglementation applicable et vérification du dossier</h2>
+
+    <div>
+      <div class="border-1 border-solid rounded-sm border-stone-300 p-2 mb-3">
+        <h3>Rappel réglementaire</h3>
+        <p>
+          La cession d'une ADS est conditionnée à l'apport de la preuve d'une exploitation effective et continue pendant 
+          <strong>15 ans</strong> à compter de la date de création de l'ADS ou 
+          <strong>5 ans</strong> à compter de sa dernière attribution.
+        </p>
+        <p>
+          Par dérogation, la cession peut être opérée avant ce délai dans 4 situations : <a href="{% url 'app.reglementation' %}#attribution-de-lads">Voir les dérogations</a>
+        </p>
+
+        <hr/>
+        <p>Obligations lors de la cession </p>
+        <p>
+          Avant la délivrance de l'ADS au nouveau titulaire, l'autorité compétente doit répertorier la transaction dans 
+          le registre public des transactions tenu en mairie, avec :
+        </p>
+        <ul>
+          <li>le montant de la transaction</li>
+          <li>les noms et raisons sociales du titulaire et du successeur présenté</li>
+          <li>le numéro unique d'identification (SIREN) attribué au successeur présenté</li>
+        </ul>
+    </div>
+    
+    <form method="post">
+      {% csrf_token %}
+
+      <fieldset class="border-1 border-solid rounded-sm border-stone-300 p-2 mb-2">
+        <legend>Vérification des pièces du dossier</legend>
+        {% include "form_fields/bool.html" with field=form.demande_cession field_errors=form.errors.demande_cession required=form.fields.demande_cession.required %}
+        {% include "form_fields/bool.html" with field=form.justificatif_exploitation field_errors=form.errors.justificatif_exploitation required=form.fields.justificatif_exploitation.required %}
+        {% include "form_fields/bool.html" with field=form.piece_identite field_errors=form.errors.piece_identite required=form.fields.piece_identite.required  %}
+        {% include "form_fields/bool.html" with field=form.justificatif_montant field_errors=form.errors.justificatif_montant required=form.fields.justificatif_montant.required  %}
+        {% include "form_fields/bool.html" with field=form.kbis_ou_siren field_errors=form.errors.kbis_ou_siren required=form.fields.kbis_ou_siren.required  %}
+        {% include "form_fields/bool.html" with field=form.attestation_aptitude_professionnelle field_errors=form.errors.attestation_aptitude_professionnelle required=form.fields.attestation_aptitude_professionnelle.required  %}
+        {% include "form_fields/bool.html" with field=form.justificatif_liquidation_judiciaire field_errors=form.errors.justificatif_liquidation_judiciaire required=form.fields.justificatif_liquidation_judiciaire.required  %}
+        {% include "form_fields/bool.html" with field=form.autres_documents field_errors=form.errors.autres_documents required=form.fields.autres_documents.required  %}
+
+        {% include "form_fields/string.html" with field=form.autres_documents_description field_errors=form.errors.autres_documents_description required=form.fields.autres_documents_description.required %}
+
+
+      </fieldset>
+
+      <fieldset class="fr-fieldset" id="{{ form.documents_complet.id_for_label }}_fieldset" aria-describedby="completion-hint">
+        <legend class="fr-fieldset__legend fr-text--regular">
+          {{ form.documents_complet.label }}
+        </legend>
+
+        {% for radio in form.documents_complet %}
+          <div class="fr-fieldset__element fr-fieldset__element--inline">
+            <div class="fr-radio-group">
+              {{ radio.tag }}
+              <label class="fr-label" for="{{ radio.id_for_label }}">
+                {{ radio.choice_label }}
+              </label>
+            </div>
+          </div>
+        {% endfor %}
+
+        {% if form.errors.documents_complet %}
+          <div class="fr-messages-group" id="{{ form.documents_complet.id_for_label }}-messages" aria-live="assertive">
+            {% for error in form.errors.documents_complet %}
+              <p class="fr-message fr-message--error">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </fieldset>
+      <p class="fr-hint-text" id="completion-hint">
+        Cochez toutes les pièces requises pour pouvoir marquer le dossier comme complet.
+      </p>
+
+      <div id="bloc-incomplet" class="fr-mt-2w" hidden>
+        <div class="fr-notice fr-notice--warning">
+          <div class="fr-container">
+            <div class="fr-notice__body">
+              <p>
+                <span class="fr-notice__title">Dossier incomplet: </span>
+                <span class="fr-notice__desc">Vous pouvez générer un modèle de courrier pour informer le demandeur des pièces manquantes.</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <a 
+          href=""
+          class="fr-btn fr-btn--secondary fr-mt-4v"
+        >
+          Générer un modèle de courrier
+        </a>
+      </div>
+
+      
+      
+
+      
+    
+      <div class="w-full text-center">
+        <div class="fr-my-6v">
+          <a 
+            href="{% url 'app.transaction-liste' manager_id=ads_manager.id %}"
+            class="fr-btn fr-btn--secondary fr-mr-4v"
+          >
+            Annuler
+          </a>
+          <button
+            type="submit"
+            class="fr-btn fr-btn--secondary fr-mr-4v"
+            name="action"
+            value="draft"
+          >
+            Enregistrer en brouillon
+          </button>
+          <button
+            type="submit"
+            class="fr-btn" 
+            id="button-validation"
+            name="action"
+            value="validate"
+          >
+            Continuer
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+
+    const radioInputs = document.querySelectorAll('input[name="documents_complet"]');
+
+    const buttonValidation = document.getElementById("button-validation");
+
+    const blocIncomplet = document.getElementById("bloc-incomplet");
+
+    function getSelectedRadioValue() {
+      const checkedInput = document.querySelector('input[name="documents_complet"]:checked');
+      return checkedInput ? checkedInput.value : null;
+    }
+
+    function updateFormState() {
+      const value = getSelectedRadioValue();
+
+      const isComplet = value == "true";
+
+      // Bouton "Valider" activé uniquement si le dossier est complet.
+      if (buttonValidation) {
+        buttonValidation.disabled = !isComplet;
+      }
+
+      // Affichage conditionnel des blocs.
+      if (blocIncomplet) {
+        blocIncomplet.hidden = isComplet;
+      }
+    }
+
+    radioInputs.forEach((radioInput) => {
+      radioInput.addEventListener("change", updateFormState);
+    });
+
+    updateFormState();
+  });
+</script>
+
+
+
+{% endblock body-content %}
