@@ -68,19 +68,20 @@ class ExcelExporter:
                 ws.write(row_index, col, value, format)
             row_index += 1
 
-        ws.add_table(
-            0,
-            0,
-            row_index - 1,
-            len(headers) - 1,
-            {
-                "header_row": True,
-                "autofilter": True,
-                "name": table_name,
-                "style": None,
-                "columns": [{"header": h} for h in headers],
-            },
-        )
+        if rows:
+            ws.add_table(
+                0,
+                0,
+                row_index - 1,
+                len(headers) - 1,
+                {
+                    "header_row": True,
+                    "autofilter": True,
+                    "name": table_name,
+                    "style": None,
+                    "columns": [{"header": h} for h in headers],
+                },
+            )
         ws.autofit()
 
     def get(self, request, *args, **kwargs):

@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="ads",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     ("ads_creation_date__isnull", True),
                     ("attribution_date__isnull", True),
                     ("ads_creation_date__lte", models.F("attribution_date")),

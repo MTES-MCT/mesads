@@ -1,0 +1,54 @@
+{% extends "base_mail.mjml" %}
+
+{% block title %}
+{% if is_new_ads %}
+Nouvelle ADS enregistrée
+{% else %}
+ADS existante mise à jour
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<mj-column>
+  <mj-text>
+    <p>
+        Bonjour,
+    </p>
+    <p>
+      Vous êtes le gestionnaire ADS de {{ads_manager.human_name}}.
+    </p>
+
+    <p>
+      Nous avons constaté que certaines ADS de votre administration ne sont pas complètes, ou n'ont pas été vérifiées depuis plus d'un an.
+    </p>
+
+    <p>
+    Afin de renforcer la fiabilité des données que vous enregistrez sur MesADS, nous avons besoin que les informations suivantes soient renseignés:
+    </p>
+    <ul>
+      <li>Date de création de l'ADS</li>
+      <li>Nom et prénom du titulaire, ou le nom de la personne morale possédant l'ADS</li>
+      <li>Le SIRET de la personne physique ou morale possédant l'ADS</li>
+      <li>La plaque d'immatriculation du véhicule</li>
+      <li>Type de véhicule: électrique/hybride ou non.</li>
+      <li>Au moins un conducteur renseigné, avec son numéro de carte professionnelle, ainsi que son nom et prénom si il ne s'agit pas du titulaire de l'ADS.</li>
+    </ul>
+
+    <p>
+      Il vous est demandé de vérifier l'actualité des données au moins une fois par an, en cochant la case située à la fin de chaque formulaire d'enregistrement des ADS.  
+    </p>
+    <p>
+      Nous vous rappelons qu'en tant qu'autorité compétente, vous êtes tenus de nous transmettre les données relatives au ADS (article L3121-11-1 Code des transports)
+    </p>
+    <p>
+      Nous vous remercions par avance de bien vouloir les compléter et les vérifier en vous rendant sur la page suivante:
+    </p>
+  </mj-text>
+
+  <mj-button
+    href="{{ BASE_URL }}{% url 'app.ads-manager.detail' manager_id=ads_manager.id %}"
+  >
+    {{ads_manager.human_name}}
+  </mj-button>
+</mj-column>
+{% endblock %}

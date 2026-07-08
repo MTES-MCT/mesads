@@ -8,7 +8,7 @@ packages = [{include = "mesads"}]
 [tool.poetry.group.dev.dependencies]
 pytest-django = "~4.11"
 pytest-cov = "~7.0"
-pypdf2 = "^3.0.1"
+pypdf = "^6.13.2"
 pytest-xdist = "^3.8.0"
 django-debug-toolbar = "~6.2"
 coverage = {version = "~7.13", extras = ["toml"]}
@@ -44,6 +44,8 @@ omit = [
     # Commandes a destination de la preprod pour peupler des données
     "mesads/app/management/commands/ads_donnees_test.py",
     "mesads/app/management/commands/load_ads_managers.py",
+    "mesads/app/management/commands/create_previous_update_logs.py",
+    "mesads/app/management/commands/notify_prefectures_gestionnaires.py",
     "mesads/app/management/commands/import_creation_update_ads.py",
     "mesads/fradm/management/commands/load_*.py",
 ]
@@ -59,7 +61,7 @@ exclude_lines = [
 python = "^3.10"
 Django = "~5.2"
 django-autocomplete-light = "^3.8.2"
-psycopg2 = "^2.9.3"
+psycopg2 = "^2.9.12"
 requests = "^2.27.1"
 django-querysetsequence = "^0.17"
 sentry-sdk = "^2.3.1"

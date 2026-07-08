@@ -6,12 +6,12 @@ FROM node:22 AS node-builder
 WORKDIR /app
 COPY package.json package-lock.json /app/
 
-RUN npm install
+RUN npm ci
 
 #
 # Python builder
 #
-FROM python:3.11 AS python-builder
+FROM python:3.13 AS python-builder
 
 RUN pip install \
   poetry
@@ -43,7 +43,7 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 #
 # Production runner
 #
-FROM python:3.11
+FROM python:3.13
 
 # nodejs is required by mjml
 RUN apt-get update && apt-get install -y \

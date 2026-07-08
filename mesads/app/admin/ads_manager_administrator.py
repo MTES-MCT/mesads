@@ -39,6 +39,7 @@ class ADSManagerAdministratorAdmin(admin.ModelAdmin):
 
     fields = (
         "prefecture",
+        "notify_verification_enabled",
         "expected_ads_count",
         "ads_managers_link",
         "display_ads_count",
@@ -116,5 +117,5 @@ class ADSManagerAdministratorAdmin(admin.ModelAdmin):
         )
         return mark_safe(
             f'<a href="{ads_managers_url}">'
-            f"Voir les {obj.ordered_adsmanager_set().count()} gestionnaires ADS</a>"
+            f"Voir les {obj.adsmanager_set.count()} gestionnaires ADS</a>"
         )

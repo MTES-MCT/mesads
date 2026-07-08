@@ -1,0 +1,28 @@
+{% extends "base_mail.txt" %}
+
+{% block body %}
+Bonjour,
+
+Vous êtes le gestionnaire ADS de <{{ads_manager.human_name}}>.
+
+Nous avons constaté que certaines ADS de votre administration ne sont pas complètes, ou n'ont pas été vérifiées depuis plus d'un an.
+
+Afin de renforcer la fiabilité des données que vous enregistrez sur MesADS, nous avons besoin que les informations suivantes soient renseignés:
+- Date de création de l'ADS
+- Nom et prénom du titulaire, ou le nom de la personne morale possédant l'ADS
+- Le SIRET de la personne physique ou morale possédant l'ADS
+- La plaque d'immatriculation du véhicule
+- Type de véhicule: électrique/hybride ou non.
+- Au moins un conducteur renseigné, avec son numéro de carte professionnelle, ainsi que son nom et prénom si il ne s'agit pas du titulaire de l'ADS.
+
+Il vous est demandé de vérifier l'actualité des données au moins une fois par an, en cochant la case située à la fin de chaque formulaire d'enregistrement des ADS.  
+
+Nous vous rappelons qu'en tant qu'autorité compétente, vous êtes tenus de nous transmettre les données relatives au ADS (article L3121-11-1 Code des transports)
+    
+Nous vous remercions par avance de bien vouloir les compléter et les vérifier en vous rendant sur la page suivante:
+
+{{BASE_URL}}{% url 'app.ads-manager.detail' manager_id=ads_manager.id %}
+
+
+
+{% endblock %}

@@ -18,8 +18,8 @@ class ClientTestCase(TestCase):
         self.auth_client, self.auth_user = self.create_client()
         self.admin_client, self.admin_user = self.create_client(superuser=True)
 
-    def create_user(self, superuser=False, double_auth=False):
-        return UserFactory(superuser=superuser, double_auth=double_auth)
+    def create_user(self, superuser=False):
+        return UserFactory(superuser=superuser)
 
     def create_client(self, superuser=False):
         user = self.create_user(superuser=superuser)

@@ -41,6 +41,7 @@ def parse_env_bool(key, default):
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+PROJECT_DIR = Path(__file__).resolve().parent
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = parse_env_bool("DEBUG", True)
@@ -157,6 +158,7 @@ CRON_CLASSES = [
     "mesads.app.crons.ImportDataForParis",
     "mesads.app.crons.DeleteOldUsers",
     "mesads.app.crons.NotificationListeAttente",
+    "mesads.app.crons.NotificationVerification",
 ]
 
 AUTH_USER_MODEL = "users.User"

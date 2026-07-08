@@ -1,8 +1,8 @@
 import re
 import unittest
 
-import pkg_resources
 import yaml
+from django.conf import settings
 from django.urls import URLPattern, URLResolver, get_resolver
 
 EXCLUDE_MODULES = [
@@ -60,7 +60,7 @@ def list_modules_urls():
 class TestHTMLMetadata(unittest.TestCase):
     def test_yaml_file(self):
         """Make sure the keys in the YAML file cover all URLs."""
-        data = pkg_resources.resource_string(__name__, "../html_metadata.yml")
+        data = (settings.PROJECT_DIR / "html_metadata.yml").read_bytes()
         metadata = yaml.safe_load(data)
         metadata_views = list(metadata.get("urls", {}).keys())
         mesads_reverses = list_modules_urls()

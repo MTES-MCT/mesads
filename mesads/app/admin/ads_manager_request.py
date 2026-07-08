@@ -6,9 +6,25 @@ from django.db.models.functions import Collate
 from django.http import HttpResponse
 from reversion.admin import VersionAdmin
 
-from ..models import (
-    ADSManagerRequest,
-)
+from ..models import ADSManagerAdministrator, ADSManagerRequest
+
+
+class AdministratorSelectFilter(admin.SimpleListFilter):
+    title = "Prefecture"
+    parameter_name = "prefecture"
+
+    def lookups(self, request, model_admin):
+        return [
+            (administrator.pk, administrator.prefecture)
+            for administrator in ADSManagerAdministrator.objects.order_by(
+                "prefecture__numero"
+            )
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(ads_manager__administrator=self.value())
+        return queryset
 
 
 @admin.register(ADSManagerRequest)
@@ -22,7 +38,11 @@ class ADSManagerRequestAdmin(VersionAdmin):
         "accepted",
     )
     ordering = ("-created_at",)
-    list_filter = ("accepted", "user__is_active")
+    list_filter = (
+        "accepted",
+        "user__is_active",
+        AdministratorSelectFilter,
+    )
     search_fields = ("user__email",)
 
     fields = (
