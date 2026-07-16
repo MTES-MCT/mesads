@@ -2,12 +2,7 @@ from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django.views.generic import (
-    CreateView,
-    ListView,
-    TemplateView,
-    UpdateView,
-)
+from django.views.generic import CreateView, ListView, TemplateView, UpdateView, View
 
 from ..forms import (
     TransactionADSForm,
@@ -60,9 +55,10 @@ class TransactionDocumentsFormView(UpdateView):
     )
 
     def get_success_url(self):
+        action = self.request.POST.get("action")
         return reverse(
             "app.transaction-enregistrement"
-            if self.object.documents_complet
+            if action == "validate"
             else "app.transaction-documents",
             kwargs={
                 "manager_id": get_object_or_404(
@@ -111,7 +107,7 @@ class TransactionEnregistrementFormView(UpdateView):
             reverse("app.transaction-enregistrement", kwargs=self.kwargs)
             if action == "draft"
             else reverse("app.transaction-confirmation", kwargs=self.kwargs)
-        )  # todo: replace by the next step url
+        )
 
         return HttpResponseRedirect(return_url)
 
@@ -226,4 +222,30 @@ class TransactionCreateView(CreateView):
         return reverse(
             "app.transaction-liste",
             kwargs={"manager_id": self.object.ads.ads_manager.id},
+        )
+
+
+class ChangementStatutRegistreTransactionView(View):
+    http_method_names = ["post"]
+
+    def post(self, request, *args, **kwargs):
+        ads_manager = get_object_or_404(ADSManager, id=kwargs["manager_id"])
+        registre_transaction_publique = self.request.POST.get(
+            "registre_transaction_publique"
+        )
+        ads_manager.registre_transaction_publique = registre_transaction_publique == "1"
+        ads_manager.save()
+        messages.success(
+            request,
+            (
+                "Le registre des transactions a été rendue publique"
+                if ads_manager.registre_transaction_publique is True
+                else "Le registre des transactions a été rendu privée"
+            ),
+        )
+
+        return HttpResponseRedirect(
+            redirect_to=reverse(
+                "app.transaction-liste", kwargs={"manager_id": ads_manager.id}
+            )
         )

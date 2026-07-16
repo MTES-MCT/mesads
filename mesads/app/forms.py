@@ -494,6 +494,12 @@ class ADSChoiceField(forms.ModelChoiceField):
 
 
 class TransactionADSForm(forms.ModelForm):
+    ads = ADSChoiceField(
+        queryset=ADS.objects.none(),
+        label="ADS",
+        required=True,
+    )
+
     class Meta:
         model = EntreeRegistreTransaction
         fields = ["ads"]

@@ -61,6 +61,7 @@ from .public import (  # noqa: F401
     StatsView,
 )
 from .registre_transactions import (  # noqa: F401
+    ChangementStatutRegistreTransactionView,
     TransactionConfirmationView,
     TransactionCreateView,
     TransactionDocumentsFormView,

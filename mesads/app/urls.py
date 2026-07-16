@@ -140,6 +140,11 @@ url_gestionnaire = [
         name="app.transaction-liste",
     ),
     path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/statut",
+        ads_manager_required(views.ChangementStatutRegistreTransactionView.as_view()),
+        name="app.transaction-statut",
+    ),
+    path(
         "registre_ads/gestion/<int:manager_id>/registre-transactions/creation",
         ads_manager_required(views.TransactionCreateView.as_view()),
         name="app.transaction-creation",
