@@ -95,7 +95,7 @@ def test_notify_verification_ads_outdated(mailoutbox):
     )
     ads_log = ADSUpdateLog.create_for_ads(ads, request_pref.user)
     ADSUpdateLog.objects.filter(pk=ads_log.pk).update(
-        update_at=timezone.now() - timedelta(days=365)
+        update_at=timezone.now() - timedelta(days=ADSUpdateLog.OUTDATED_LOG_DAYS)
     )
     administrator.notify_verification_enabled = True
     administrator.save()
