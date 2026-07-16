@@ -687,7 +687,7 @@ class ADS(SmartValidationMixin, CharFieldsStripperMixin, SoftDeleteMixin, models
         ]
 
     def __str__(self):
-        return f"ADS-{self.number} -- {self.owner_name}"
+        return f"ADS {self.id}"
 
     def save(self, check=True, *args, **kwargs):
         if check:
@@ -1460,6 +1460,7 @@ class InscriptionListeAttente(CharFieldsStripperMixin, SoftDeleteMixin):
         return self.get_duplicatas().exists()
 
 
+@reversion.register
 class EntreeRegistreTransaction(CharFieldsStripperMixin, SoftDeleteMixin):
     ads = models.ForeignKey(
         ADS,

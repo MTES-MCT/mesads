@@ -289,3 +289,37 @@ urls:
 
   app.consultation_ads_export:
     missing: true
+
+
+  # Registre des transactions
+
+  app.transaction-liste:
+    title: "Registre des transactions {{ads_manager.content_object.display_text}} - MesADS"
+    description: "Registre des transactions {{ads_manager.content_object.display_text}} - MesADS"
+
+  app.transaction-statut:
+    missing: true
+  
+  app.transaction-creation:
+    title: "Nouvelle entrée du registre - MesADS"
+    description: "Ajout d'une entrée au registre des transactions - MesADS"
+  
+  app.transaction-choix-ads:
+    title: "Choix de l'ADS de l'entrée du registre - MesADS"
+    description: "Choix de l'ADS pour la nouvelle entrée du registre des transactions - MesADS"
+  
+  app.transaction-documents:
+    title: "Documents de l'entrée du registre - MesADS"
+    description: "Documents de l'entrée du registre - MesADS"
+  
+  app.transaction-enregistrement:
+    title: "Données de l'entrée du registre - MesADS"
+    description: "Données de l'entrée du registre - MesADS"
+  
+  app.transaction-confirmation:
+    title: "Confirmation d'enregistrement de l'entrée du registre - MesADS"
+    description: "Confirmation d'enregistrement de l'entrée du registre - MesADS"
+  
+  app.transaction-edition:
+    title: "Modification de l'entrée du registre - MesADS"
+    description: "Modification de l'entrée du registre - MesADS"
