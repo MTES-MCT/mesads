@@ -328,6 +328,32 @@ class TestCreationInscriptionListeAttenteView(ClientTestCase):
             [WAITING_LIST_UNIQUE_ERROR_MESSAGE],
         )
 
+    def test_post_formulaire_creation_inscription_date_invalide(self):
+        today = datetime.date.today()
+        response = self.client.post(
+            reverse(
+                "app.liste_attente_inscription",
+                kwargs={"manager_id": self.ads_manager.id},
+            ),
+            data={
+                "numero": "12345",
+                "nom": "John",
+                "prenom": "Doe",
+                "numero_licence": "1234ABCD",
+                "numero_telephone": "0606060606",
+                "email": "john.doe@test.com",
+                "adresse": "10 Rue du test",
+                "date_depot_inscription": today + relativedelta(days=2),
+                "date_dernier_renouvellement": "",
+            },
+        )
+        self.assertEqual(response.status_code, http.HTTPStatus.OK)
+        self.assertFalse(response.context["form"].is_valid())
+        self.assertEqual(
+            response.context["form"].errors["date_depot_inscription"],
+            [InscriptionListeAttenteForm.ERROR_DATE_DEPOT_FUTURE],
+        )
+
     def test_post_formulaire_creation_inscription_numero_valide(self):
         inscription = InscriptionListeAttenteFactory(ads_manager=self.ads_manager)
         inscription.delete()
