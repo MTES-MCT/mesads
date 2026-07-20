@@ -20,6 +20,8 @@
 
     Ce message est envoyé automatiquement à titre informatif afin de faciliter la gestion et la fiabilisation des listes d’attente.
     
+    En cas de doublon avéré, et si vous avez besoin d'un accompagnement juridique, nous vous invitons à vous rapprocher de votre Préfecture.
+
     Pour toute question relative à l’utilisation de l’outil MesADS, vous pouvez contacter notre équipe. 
     
     Cordialement,
