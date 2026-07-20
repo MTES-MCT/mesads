@@ -36,28 +36,85 @@
   Modèles d'arrêtés
 </h1>
 
-<ul>
-  <li>
-    <a class="fr-link" href="{% url 'app.arrete-download' manager_id=ads_manager.id %}?modele_arrete=changement_vehicule_old">Arrêté de changement de véhicule (ancienne ADS)</a>
-  </li>
-  <li>
-    <a class="fr-link" href="{% url 'app.arrete-download' manager_id=ads_manager.id %}?modele_arrete=changement_vehicule_new">Arrêté de changement de véhicule (nouvelle ADS)</a>
-  </li>
-  <li>
-    <a class="fr-link" href="{% url 'app.arrete-download' manager_id=ads_manager.id %}?modele_arrete=nombre_ads">Arrêté délimitant le nombre d'ADS</a>
-  </li>
-  <li>
-    <a class="fr-link" href="{% url 'app.arrete-download' manager_id=ads_manager.id %}?modele_arrete=location_gerance">Arrêté de passage en location/gérance (ancienne ADS)</a>
-  </li>
-  <li>
-    <a class="fr-link" href="{% url 'app.arrete-download' manager_id=ads_manager.id %}?modele_arrete=creation_nouvelle_ads">Arrêté de création d'une nouvelle ADS</a>
-  </li>
-  <li>
-    <a class="fr-link" href="{% url 'app.arrete-download' manager_id=ads_manager.id %}?modele_arrete=renouvellement_ads">Arrêté de renouvellement d'ADS (nouvelle ADS)</a>
-  </li>
-  <li>
-    <a class="fr-link" href="{% url 'app.arrete-download' manager_id=ads_manager.id %}?modele_arrete=changement_titulaire_old">Arrêté de changement de titulaire (ancienne ADS)</a>
-  </li>
-</ul>
+<p>
+  <a
+    class="fr-link fr-link--download"
+    download="true"
+    href="{% url 'app.arrete-download' manager_id=ads_manager.id %}?modele_arrete=nombre_ads"
+  >
+    Arrêté délimitant le nombre d'ADS
+  </a>
+</p>
+
+<div class="mx-auto flex w-full gap-3">
+
+  <div class="w-1/2 border border-solid rounded-lg border-gray-200 p-3">
+    <h2>Anciennes ADS</h2>
+
+    <ul>
+      <li>
+        <a
+          class="fr-link fr-link--download"
+          download="true"
+          href="{% url 'app.arrete-download' manager_id=ads_manager.id %}?modele_arrete=changement_vehicule_old"
+        >
+          Arrêté de changement de véhicule (ancienne ADS)
+        </a>
+      </li>
+      <li>
+        <a
+          class="fr-link fr-link--download"
+          download="true"
+          href="{% url 'app.arrete-download' manager_id=ads_manager.id %}?modele_arrete=location_gerance"
+        >
+          Arrêté de passage en location/gérance (ancienne ADS)
+        </a>
+      </li>
+      <li>
+        <a
+          class="fr-link fr-link--download"
+          download="true"
+          href="{% url 'app.arrete-download' manager_id=ads_manager.id %}?modele_arrete=changement_titulaire_old"
+        >
+          Arrêté de changement de titulaire (ancienne ADS)
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="w-1/2 border border-solid rounded-lg border-gray-200 p-3">
+    <h2>Nouvelles ADS</h2>
+
+    <ul>
+      <li>
+        <a
+          class="fr-link fr-link--download"
+          download="true"
+          href="{% url 'app.arrete-download' manager_id=ads_manager.id %}?modele_arrete=changement_vehicule_new"
+        >
+          Arrêté de changement de véhicule (nouvelle ADS)
+        </a>
+      </li>
+      <li>
+        <a
+          class="fr-link fr-link--download"
+          download="true"
+          href="{% url 'app.arrete-download' manager_id=ads_manager.id %}?modele_arrete=creation_nouvelle_ads"
+        >
+          Arrêté de création d'une nouvelle ADS
+        </a>
+      </li>
+      <li>
+        <a
+          class="fr-link fr-link--download"
+          download="true"
+          href="{% url 'app.arrete-download' manager_id=ads_manager.id %}?modele_arrete=renouvellement_ads"
+        >
+          Arrêté de renouvellement d'ADS (nouvelle ADS)
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
 
 {% endblock body-content %}
