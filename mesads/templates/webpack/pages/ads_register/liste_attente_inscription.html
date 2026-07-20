@@ -167,8 +167,6 @@
       <div class="fr-input-group{% if form.errors.date_dernier_renouvellement %} fr-input-group--error{% endif %}">
         <label class="fr-label" for="{{ form.date_dernier_renouvellement.id_for_label }}">
           {{ form.date_dernier_renouvellement.label }}
-          <span aria-hidden="true">*</span>
-          <span class="fr-sr-only"> (obligatoire)</span>
           {% if form.date_dernier_renouvellement.help_text %}<span class="fr-hint-text">{{ form.date_dernier_renouvellement.help_text }}</span>{% endif %}
         </label>
 

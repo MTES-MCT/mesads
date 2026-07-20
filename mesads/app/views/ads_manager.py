@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 
 from dal import autocomplete
@@ -205,16 +206,17 @@ class ADSManagerView(ListView, ProcessFormView):
                     "immatriculation_plate", Value("-"), Value("")
                 )
             )
-
-            qs = qs.filter(
-                Q(owner_siret__icontains=search)
-                | Q(adsuser__name__icontains=search)
-                | Q(adsuser__siret__icontains=search)
-                | Q(owner_name__icontains=search)
-                | Q(clean_immatriculation_plate__icontains=search)
-                | Q(epci_commune__libelle__icontains=search)
-                | Q(number__icontains=search)
-            )
+            terms = re.findall(r"\w+", search.strip())
+            for term in terms:
+                qs = qs.filter(
+                    Q(owner_siret__icontains=term)
+                    | Q(adsuser__name__unaccent__icontains=term)
+                    | Q(adsuser__siret__icontains=term)
+                    | Q(owner_name__unaccent__icontains=term)
+                    | Q(clean_immatriculation_plate__icontains=term)
+                    | Q(epci_commune__libelle__unaccent__icontains=term)
+                    | Q(number__icontains=term)
+                )
         qs = self.annotate_with_update_logs(qs)
 
         # Add ordering on the number. CAST is necessary

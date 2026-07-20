@@ -248,6 +248,9 @@ class InscriptionListeAttenteForm(forms.ModelForm):
     ERROR_DATE_RENOUVELLEMENT = (
         "Le renouvellement ne peut être antérieur à la date de dépot de l'inscription."
     )
+    ERROR_DATE_DEPOT_FUTURE = (
+        "La date de dépôt de l'inscription ne peut pas être dans le futur."
+    )
     ERROR_DATE_RENOUVELLEMENT_FUTURE = (
         "La date de renouvellement ne peut pas être dans le futur."
     )
@@ -274,6 +277,14 @@ class InscriptionListeAttenteForm(forms.ModelForm):
     def __init__(self, ads_manager, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ads_manager = ads_manager
+
+    def clean_date_depot_inscription(self):
+        date_depot_inscription = self.cleaned_data["date_depot_inscription"]
+
+        if date_depot_inscription and date_depot_inscription > date.today():
+            raise forms.ValidationError(self.ERROR_DATE_DEPOT_FUTURE)
+
+        return date_depot_inscription
 
     def clean(self):
         cleaned_data = super().clean()
