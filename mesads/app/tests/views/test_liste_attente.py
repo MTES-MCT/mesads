@@ -716,6 +716,41 @@ class TestArchivageConfirmationView(ClientTestCase):
         )
 
 
+class TestRestaurationInscriptionView(ClientTestCase):
+    def test_post_restauration_inscription(self):
+        inscription = InscriptionListeAttenteFactory(
+            ads_manager=self.ads_manager,
+            deleted_at=date.today(),
+            motif_archivage=InscriptionListeAttente.ABSENCE_REPONSE,
+            commentaire="Demande archivée",
+        )
+        assert InscriptionListeAttente.objects.count() == 0
+        response = self.client.post(
+            reverse(
+                "app.liste_attente_inscription_restaurer",
+                kwargs={
+                    "manager_id": self.ads_manager.id,
+                    "inscription_id": inscription.id,
+                },
+            ),
+        )
+        assert InscriptionListeAttente.objects.count() == 1
+        self.assertRedirects(
+            response,
+            expected_url=reverse(
+                "app.liste_attente",
+                kwargs={"manager_id": self.ads_manager.id},
+            ),
+            status_code=http.HTTPStatus.FOUND,
+            target_status_code=http.HTTPStatus.OK,
+            fetch_redirect_response=True,
+        )
+        inscription.refresh_from_db()
+        assert inscription.deleted_at is None
+        assert inscription.motif_archivage == ""
+        assert inscription.commentaire == ""
+
+
 class TestExportListeAttenteView(ClientTestCase):
     def test_get_export_liste_attente(self):
         InscriptionListeAttenteFactory(ads_manager=self.ads_manager)

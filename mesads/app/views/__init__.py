@@ -50,6 +50,7 @@ from .liste_attente import (  # noqa: F401
     ModeleCourrierArchivageView,
     ModeleCourrierContactView,
     ModificationInscriptionListeAttenteView,
+    RestaurationInscriptionView,
 )
 from .notation_view import NotationView  # noqa: F401
 from .public import (  # noqa: F401

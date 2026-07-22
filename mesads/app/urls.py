@@ -188,6 +188,11 @@ url_liste_attente = [
         name="app.liste_attente_inscription_archivage",
     ),
     path(
+        "liste_attente/<int:manager_id>/archivage/<int:inscription_id>/restaurer/",
+        ads_manager_required(views.RestaurationInscriptionView.as_view()),
+        name="app.liste_attente_inscription_restaurer",
+    ),
+    path(
         "liste_attente/<int:manager_id>/archivage/confirmation/",
         ads_manager_required(views.ArchivageConfirmationView.as_view()),
         name="app.liste_attente_inscription_archivage_confirmation",
