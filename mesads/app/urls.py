@@ -174,6 +174,11 @@ url_gestionnaire = [
         ads_manager_required(views.TransactionEditView.as_view()),
         name="app.transaction-edition",
     ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/arrete",
+        ads_manager_required(views.ArreteChangementTitulaireExportView.as_view()),
+        name="app.transaction-arrete",
+    ),
 ]
 
 url_liste_attente = [
