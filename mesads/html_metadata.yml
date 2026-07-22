@@ -323,3 +323,6 @@ urls:
   app.transaction-edition:
     title: "Modification de l'entrée du registre - MesADS"
     description: "Modification de l'entrée du registre - MesADS"
+
+  app.transaction-arrete:
+    missing: true
