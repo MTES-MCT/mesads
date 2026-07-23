@@ -63,6 +63,8 @@ from .public import (  # noqa: F401
 from .registre_transactions import (  # noqa: F401
     ArreteChangementTitulaireExportView,
     ChangementStatutRegistreTransactionView,
+    RegistresTransactionsPubliquesView,
+    RegistreTransactionsPublique,
     TransactionConfirmationView,
     TransactionCreateView,
     TransactionDocumentsFormView,

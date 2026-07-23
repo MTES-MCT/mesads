@@ -457,3 +457,90 @@ class TestCreation(ClientTestCase):
         assert entree.ancien_exploitant == "Jane taxi"
         assert entree.nouvel_exploitant == "John taxi"
         assert entree.siret_nouvel_exploitant == "12345678912345"
+
+
+class TestRegistresTransactionsPubliquesView(ClientTestCase):
+    def test_get_registres_transactions_publiques(self):
+        self.ads_manager.registre_transaction_publique = True
+        self.ads_manager.save()
+        response = self.client.get(reverse("app.registres-transactions"))
+
+        assert response.status_code == http.HTTPStatus.OK
+        self.assertTemplateUsed(
+            "pages/ads_register/registre_transactions/registres_transactions_publiques.html"
+        )
+        assert response.context["ads_managers"].count() == 0
+
+    def test_get_registres_transactions_publiques_search_by_departement(self):
+        self.ads_manager.registre_transaction_publique = True
+        self.ads_manager.save()
+        response = self.client.get(
+            reverse(
+                "app.registres-transactions",
+                query={"departement": self.ads_manager.administrator.prefecture.id},
+            )
+        )
+        assert response.status_code == http.HTTPStatus.OK
+        self.assertTemplateUsed(
+            "pages/ads_register/registre_transactions/registres_transactions_publiques.html"
+        )
+        assert self.ads_manager in response.context["ads_managers"]
+
+    def test_get_registres_transactions_publiques_search_by_libelle(self):
+        self.ads_manager.registre_transaction_publique = True
+        self.ads_manager.save()
+        response = self.client.get(
+            reverse(
+                "app.registres-transactions",
+                query={"commune": self.ads_manager.content_object.libelle},
+            )
+        )
+        assert response.status_code == http.HTTPStatus.OK
+        self.assertTemplateUsed(
+            "pages/ads_register/registre_transactions/registres_transactions_publiques.html"
+        )
+        assert self.ads_manager in response.context["ads_managers"]
+
+    def test_get_registres_transactions_publiques_search_by_libelle_not_public(self):
+        self.ads_manager.registre_transaction_publique = False
+        self.ads_manager.save()
+        response = self.client.get(
+            reverse(
+                "app.registres-transactions",
+                query={"commune": self.ads_manager.content_object.libelle},
+            )
+        )
+        assert response.status_code == http.HTTPStatus.OK
+        self.assertTemplateUsed(
+            "pages/ads_register/registre_transactions/registres_transactions_publiques.html"
+        )
+        assert self.ads_manager not in response.context["ads_managers"]
+
+
+class TestRegistreTransactionsPubliqueView(ClientTestCase):
+    def test_get_registre_transactions_privee(self):
+        self.ads_manager.registre_transaction_publique = False
+        self.ads_manager.save()
+        response = self.client.get(
+            reverse(
+                "app.registre-transactions-publique",
+                kwargs={"manager_id": self.ads_manager.id},
+            )
+        )
+
+        assert response.status_code == http.HTTPStatus.NOT_FOUND
+
+    def test_get_registre_transactions_publique(self):
+        self.ads_manager.registre_transaction_publique = True
+        self.ads_manager.save()
+        response = self.client.get(
+            reverse(
+                "app.registre-transactions-publique",
+                kwargs={"manager_id": self.ads_manager.id},
+            )
+        )
+
+        assert response.status_code == http.HTTPStatus.OK
+        self.assertTemplateUsed(
+            "pages/ads_register/registre_transactions/registre_transactions_publique.html"
+        )
