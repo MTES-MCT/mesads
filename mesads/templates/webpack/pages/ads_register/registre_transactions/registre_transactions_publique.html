@@ -1,0 +1,93 @@
+{% extends "base_container.html" %}
+{% block body-content %}
+  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
+    <button
+      class="fr-breadcrumb__button"
+      aria-expanded="false"
+      aria-controls="breadcrumb-1"
+    >
+      Voir le fil d’Ariane
+    </button>
+    <div class="fr-collapse" id="breadcrumb-1">
+      <ol class="fr-breadcrumb__list">
+        <li>
+          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link" href="{% url 'app.registres-transactions' %}">Registre des transactions</a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link" aria-current="page">Registre des transactions de {{ads_manager.content_object.display_text}}</a>
+        </li>
+      </ol>
+    </div>
+  </nav>
+  <div>
+    <h1>Registre des transactions de la {{ads_manager.content_object.display_text}}</h1>
+  </div>
+
+  
+
+  <div class="mt-3 flex flex-col items-center w-full">
+    <div class="fr-table fr-table--no-scroll fr-table--multiline" id="table-0-component">
+      <div class="fr-table__wrapper">
+        <div class="fr-table__container">
+          <div class="fr-table__content">
+            <table id="table-0">
+              <thead>
+                <tr>
+                  <th>Date de la transaction </th>
+                  <th>Numéro de l'ADS</th>
+                  <th>Montant de la transaction</th>
+                  <th>Ancien titulaire</th>
+                  <th>Nouveau titulaire</th>
+                  <th>SIRET du nouveau titulaire</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for entree in entrees %}
+                  <tr id="entree-{{forloop.counter}}" data-row-key="{{forloop.counter}}">
+                    <td>{{entree.date_transaction}}</td>
+                    <td>{{entree.ads.number}}</td>
+                    <td>{{entree.montant_transaction}}</td>
+                    <td>{{entree.ancien_exploitant}}</td>
+                    <td>{{entree.nouvel_exploitant}}</td>
+                    <td>{{entree.siret_nouvel_exploitant}}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <nav role="navigation" class="fr-pagination self-center" aria-label="Pagination">
+      <ul class="fr-pagination__list">
+
+        {% if page_obj.has_previous %}
+        <li>
+          <a class="fr-pagination__link fr-pagination__link--first" href="?page=1"> Première page </a>
+        </li>
+        <li>
+          <a class="fr-pagination__link fr-pagination__link--prev fr-pagination__link--lg-label" href="?page={{page_obj.previous_page_number}}" title="Page précédente"> Page précédente </a>
+        </li>
+        {% endif %}
+        <li>
+          <a class="fr-pagination__link" aria-current="page" title="Page {{page_obj.number}}"> {{page_obj.number}} </a>
+        </li>
+
+        {% if page_obj.has_next %}
+        <li>
+          <a class="fr-pagination__link fr-pagination__link--next fr-pagination__link--lg-label" href="?page={{page_obj.next_page_number}}" title="Page suivante"> Page suivante </a>
+        </li>
+        <li>
+          <a class="fr-pagination__link fr-pagination__link--last" href="?page={{ page_obj.paginator.num_pages }}" title="Dernière page"> Dernière page </a>
+        </li>
+
+        {% endif %}
+
+      </ul>
+    </nav>
+  </div>
+{% endblock body-content %}

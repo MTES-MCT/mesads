@@ -331,6 +331,16 @@ url_public = [
         views.ListeAttentePublique.as_view(),
         name="app.liste_attente_publique",
     ),
+    path(
+        "registres-transactions/",
+        views.RegistresTransactionsPubliquesView.as_view(),
+        name="app.registres-transactions",
+    ),
+    path(
+        "registres-transactions/<int:manager_id>/",
+        views.RegistreTransactionsPublique.as_view(),
+        name="app.registre-transactions-publique",
+    ),
 ]
 
 

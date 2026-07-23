@@ -450,7 +450,7 @@ class AttributionADSForm(forms.Form):
         return numero
 
 
-class ListesAttentePubliquesSearchForm(forms.Form):
+class AdministrationSearchForm(forms.Form):
     departement = forms.ModelChoiceField(
         queryset=Prefecture.objects.exclude(numero="999"),
         label="Département",
@@ -577,6 +577,12 @@ class TransactionEnregistrementForm(forms.ModelForm):
 
 
 class TransactionUpdateForm(forms.ModelForm):
+    ads = ADSChoiceField(
+        queryset=ADS.objects.none(),
+        label="ADS",
+        required=True,
+    )
+
     class Meta:
         model = EntreeRegistreTransaction
         fields = [
