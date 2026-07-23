@@ -22,11 +22,11 @@ from django.views.generic import (
 from weasyprint import CSS, HTML
 
 from mesads.app.forms import (
+    AdministrationSearchForm,
     ArchivageInscriptionListeAttenteForm,
     AttributionADSForm,
     ContactInscriptionListeAttenteForm,
     InscriptionListeAttenteForm,
-    ListesAttentePubliquesSearchForm,
     UpdateDelaiInscriptionListeAttenteForm,
 )
 from mesads.app.models import (
@@ -629,7 +629,7 @@ class ListesAttentesPubliquesView(ListView):
     context_object_name = "ads_managers"
 
     def get_form(self):
-        return ListesAttentePubliquesSearchForm(self.request.GET)
+        return AdministrationSearchForm(self.request.GET)
 
     def get_queryset(self):
         qs = (

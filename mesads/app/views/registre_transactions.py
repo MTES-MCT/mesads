@@ -3,6 +3,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
+from django.db.models import Case, Count, F, Q, Value, When
 from django.http import FileResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -10,6 +11,7 @@ from django.views.generic import CreateView, ListView, TemplateView, UpdateView,
 from docxtpl import DocxTemplate
 
 from ..forms import (
+    AdministrationSearchForm,
     TransactionADSForm,
     TransactionDocumentsForm,
     TransactionEnregistrementForm,
@@ -289,3 +291,104 @@ class ArreteChangementTitulaireExportView(View):
                 "wordprocessingml.document"
             ),
         )
+
+
+class RegistresTransactionsPubliquesView(ListView):
+    template_name = (
+        "pages/ads_register/registre_transactions/registres_transactions_publiques.html"
+    )
+    model = ADSManager
+    paginate_by = 50
+    context_object_name = "ads_managers"
+
+    def get_form(self):
+        return AdministrationSearchForm(self.request.GET)
+
+    def get_queryset(self):
+        qs = (
+            super()
+            .get_queryset()
+            .filter(registre_transaction_publique=True)
+            .order_by("administrator")
+        )
+
+        form = self.get_form()
+        if form.is_valid():
+            departement = form.cleaned_data["departement"]
+            if departement:
+                qs = qs.filter(administrator__prefecture=departement)
+            commune = form.cleaned_data["commune"]
+            if commune:
+                qs = qs.annotate(
+                    name_search=Case(
+                        When(content_type__model="epci", then=F("epci__name")),
+                        When(
+                            content_type__model="prefecture",
+                            then=F("prefecture__libelle"),
+                        ),
+                        When(content_type__model="aeroport", then=F("aeroport__name")),
+                        When(content_type__model="commune", then=F("commune__libelle")),
+                        default=Value(""),
+                    )
+                )
+                qs = qs.filter(name_search__icontains=commune)
+
+            qs = qs.annotate(
+                nombre_entrees_registre=Count(
+                    "ads__transactions",
+                    filter=Q(
+                        ads__transactions__statut=EntreeRegistreTransaction.ENREGISTREE,
+                    ),
+                )
+            )
+
+            if form.is_filled():
+                return qs
+
+        return ADSManager.objects.none()
+
+    def get_extra_query_params(self, form):
+        extra_query_params = ""
+        if form.is_valid():
+            if form.cleaned_data.get("departement"):
+                extra_query_params = (
+                    f"{extra_query_params}&"
+                    f"departement={form.cleaned_data.get('departement').id}"
+                )
+            if form.cleaned_data.get("commune"):
+                extra_query_params = (
+                    f"{extra_query_params}&commune={form.cleaned_data.get('commune')}"
+                )
+        return extra_query_params
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = self.get_form()
+        context["form"] = form
+        context["extra_query_params"] = self.get_extra_query_params(form)
+        return context
+
+
+class RegistreTransactionsPublique(ListView):
+    template_name = (
+        "pages/ads_register/registre_transactions/registre_transactions_publique.html"
+    )
+    model = EntreeRegistreTransaction
+    paginate_by = 50
+    context_object_name = "entrees"
+    ordering = ["-date_transaction"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        qs = qs.filter(
+            ads__ads_manager__id=self.kwargs["manager_id"],
+            statut=EntreeRegistreTransaction.ENREGISTREE,
+        )
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["ads_manager"] = get_object_or_404(
+            ADSManager, id=self.kwargs["manager_id"], registre_transaction_publique=True
+        )
+        return context
