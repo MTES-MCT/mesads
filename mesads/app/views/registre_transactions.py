@@ -1,8 +1,13 @@
+from io import BytesIO
+from pathlib import Path
+
+from django.conf import settings
 from django.contrib import messages
-from django.http import HttpResponseRedirect
+from django.http import FileResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import CreateView, ListView, TemplateView, UpdateView, View
+from docxtpl import DocxTemplate
 
 from ..forms import (
     TransactionADSForm,
@@ -248,4 +253,39 @@ class ChangementStatutRegistreTransactionView(View):
             redirect_to=reverse(
                 "app.transaction-liste", kwargs={"manager_id": ads_manager.id}
             )
+        )
+
+
+class ArreteChangementTitulaireExportView(View):
+    def get(self, request, *args, **kwargs):
+        entree = get_object_or_404(
+            EntreeRegistreTransaction, pk=self.kwargs["entree_id"]
+        )
+        context = {
+            "numero_ads": entree.ads.number,
+            "titulaire": entree.nouvel_exploitant,
+            "commune": entree.ads.ads_manager.content_object.text(),
+        }
+        template = DocxTemplate(
+            Path(settings.BASE_DIR)
+            / "mesads"
+            / "app"
+            / "docs"
+            / "template_arrete_changement_titulaire.docx"
+        )
+
+        template.render(context)
+
+        buffer = BytesIO()
+        template.save(buffer)
+        buffer.seek(0)
+
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename="arrete.docx",
+            content_type=(
+                "application/vnd.openxmlformats-officedocument."
+                "wordprocessingml.document"
+            ),
         )
