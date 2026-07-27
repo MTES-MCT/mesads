@@ -59,4 +59,3 @@ class NotationView(View):
                     "status": "ok",
                 },
             )
-        return redirect(redirect_url)

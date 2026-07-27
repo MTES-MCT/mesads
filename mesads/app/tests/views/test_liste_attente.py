@@ -500,7 +500,7 @@ class TestModificationInscriptionListeAttenteView(ClientTestCase):
             response, "pages/ads_register/liste_attente_inscription.html"
         )
 
-    def test_get_formulaire_modification_inscription_redirection(self):
+    def test_get_formulaire_modification_inscription_wrong_ads_manager(self):
         ads_manager = ADSManagerFactory(for_commune=True)
         ADSManagerRequestFactory(user=self.user, ads_manager=ads_manager)
         inscription = InscriptionListeAttenteFactory(ads_manager=self.ads_manager)
@@ -514,19 +514,7 @@ class TestModificationInscriptionListeAttenteView(ClientTestCase):
                 },
             ),
         )
-        self.assertRedirects(
-            response,
-            expected_url=reverse(
-                "app.liste_attente_inscription_update",
-                kwargs={
-                    "manager_id": self.ads_manager.id,
-                    "inscription_id": inscription.id,
-                },
-            ),
-            status_code=http.HTTPStatus.FOUND,
-            target_status_code=http.HTTPStatus.OK,
-            fetch_redirect_response=True,
-        )
+        assert response.status_code == http.HTTPStatus.NOT_FOUND
 
     def test_post_formulaire_modification_inscription_ok(self):
         inscription = InscriptionListeAttenteFactory(ads_manager=self.ads_manager)
@@ -635,7 +623,7 @@ class TestFormulaireArchivageView(ClientTestCase):
             response, "pages/ads_register/liste_attente_archivage_inscription.html"
         )
 
-    def test_get_formulaire_archivage_inscription_redirection(self):
+    def test_get_formulaire_archivage_inscription_wrong_manager(self):
         ads_manager = ADSManagerFactory(for_commune=True)
         ADSManagerRequestFactory(user=self.user, ads_manager=ads_manager)
         inscription = InscriptionListeAttenteFactory(ads_manager=self.ads_manager)
@@ -649,19 +637,7 @@ class TestFormulaireArchivageView(ClientTestCase):
                 },
             ),
         )
-        self.assertRedirects(
-            response,
-            expected_url=reverse(
-                "app.liste_attente_inscription_archivage",
-                kwargs={
-                    "manager_id": self.ads_manager.id,
-                    "inscription_id": inscription.id,
-                },
-            ),
-            status_code=http.HTTPStatus.FOUND,
-            target_status_code=http.HTTPStatus.OK,
-            fetch_redirect_response=True,
-        )
+        assert response.status_code == http.HTTPStatus.NOT_FOUND
 
     def test_post_formulaire_archivage_inscription(self):
         inscription = InscriptionListeAttenteFactory(ads_manager=self.ads_manager)
