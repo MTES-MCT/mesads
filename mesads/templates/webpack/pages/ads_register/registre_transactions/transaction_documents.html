@@ -55,7 +55,7 @@
           <strong>5 ans</strong> à compter de sa dernière attribution.
         </p>
         <p>
-          Par dérogation, la cession peut être opérée avant ce délai dans 4 situations : <a href="{% url 'app.reglementation' %}#attribution-de-lads">Voir les dérogations</a>
+          Par dérogation, la cession peut être opérée avant ce délai dans 4 situations : <a href="{% url 'app.reglementation' %}#cession-ads">Voir les dérogations</a>
         </p>
 
         <hr/>
@@ -78,11 +78,8 @@
         <legend>Vérification des pièces du dossier</legend>
         {% include "form_fields/bool.html" with field=form.demande_cession field_errors=form.errors.demande_cession required=form.fields.demande_cession.required %}
         {% include "form_fields/bool.html" with field=form.justificatif_exploitation field_errors=form.errors.justificatif_exploitation required=form.fields.justificatif_exploitation.required %}
-        {% include "form_fields/bool.html" with field=form.piece_identite field_errors=form.errors.piece_identite required=form.fields.piece_identite.required  %}
         {% include "form_fields/bool.html" with field=form.justificatif_montant field_errors=form.errors.justificatif_montant required=form.fields.justificatif_montant.required  %}
         {% include "form_fields/bool.html" with field=form.kbis_ou_siren field_errors=form.errors.kbis_ou_siren required=form.fields.kbis_ou_siren.required  %}
-        {% include "form_fields/bool.html" with field=form.attestation_aptitude_professionnelle field_errors=form.errors.attestation_aptitude_professionnelle required=form.fields.attestation_aptitude_professionnelle.required  %}
-        {% include "form_fields/bool.html" with field=form.justificatif_liquidation_judiciaire field_errors=form.errors.justificatif_liquidation_judiciaire required=form.fields.justificatif_liquidation_judiciaire.required  %}
         {% include "form_fields/bool.html" with field=form.autres_documents field_errors=form.errors.autres_documents required=form.fields.autres_documents.required  %}
 
         {% include "form_fields/string.html" with field=form.autres_documents_description field_errors=form.errors.autres_documents_description required=form.fields.autres_documents_description.required %}
@@ -90,7 +87,7 @@
 
       </fieldset>
 
-      <fieldset class="fr-fieldset" id="{{ form.documents_complet.id_for_label }}_fieldset" aria-describedby="completion-hint">
+      <fieldset class="fr-fieldset" id="{{ form.documents_complet.id_for_label }}_fieldset">
         <legend class="fr-fieldset__legend fr-text--regular">
           {{ form.documents_complet.label }}
         </legend>
@@ -114,9 +111,6 @@
           </div>
         {% endif %}
       </fieldset>
-      <p class="fr-hint-text" id="completion-hint">
-        Cochez toutes les pièces requises pour pouvoir marquer le dossier comme complet.
-      </p>
 
       <div id="bloc-incomplet" class="fr-mt-2w" hidden>
         <div class="fr-notice fr-notice--warning">
@@ -131,7 +125,7 @@
         </div>
 
         <a 
-          href=""
+          href="{% url 'app.transaction-courrier' manager_id=ads_manager.id entree_id=object.id %}"
           class="fr-btn fr-btn--secondary fr-mt-4v"
         >
           Générer un modèle de courrier
