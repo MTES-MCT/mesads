@@ -16,7 +16,7 @@ from django.views.generic import (
 )
 from docxtpl import DocxTemplate
 
-from mesads.common.context_mixins import ADSManagerContextMixin
+from mesads.common.context_mixins import ADSManagerMixin
 
 from ..forms import (
     AdministrationSearchForm,
@@ -28,7 +28,7 @@ from ..forms import (
 from ..models import ADSManager, EntreeRegistreTransaction
 
 
-class TransactionSelectionADSFormView(ADSManagerContextMixin, CreateView):
+class TransactionSelectionADSFormView(ADSManagerMixin, CreateView):
     form_class = TransactionADSForm
     model = EntreeRegistreTransaction
     template_name = (
@@ -39,22 +39,18 @@ class TransactionSelectionADSFormView(ADSManagerContextMixin, CreateView):
         return reverse(
             "app.transaction-documents",
             kwargs={
-                "manager_id": get_object_or_404(
-                    ADSManager, pk=self.kwargs["manager_id"]
-                ).id,
+                "manager_id": get_object_or_404(ADSManager, pk=self.ads_manager.id).id,
                 "entree_id": self.object.id,
             },
         )
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs.update(
-            {"ads_manager": get_object_or_404(ADSManager, pk=self.kwargs["manager_id"])}
-        )
+        kwargs.update({"ads_manager": self.ads_manager})
         return kwargs
 
 
-class TransactionDocumentsFormView(ADSManagerContextMixin, UpdateView):
+class TransactionDocumentsFormView(ADSManagerMixin, UpdateView):
     model = EntreeRegistreTransaction
     form_class = TransactionDocumentsForm
     pk_url_kwarg = "entree_id"
@@ -69,15 +65,13 @@ class TransactionDocumentsFormView(ADSManagerContextMixin, UpdateView):
             if action == "validate"
             else "app.transaction-documents",
             kwargs={
-                "manager_id": get_object_or_404(
-                    ADSManager, pk=self.kwargs["manager_id"]
-                ).id,
+                "manager_id": get_object_or_404(ADSManager, pk=self.ads_manager.id).id,
                 "entree_id": self.object.id,
             },
         )
 
 
-class TransactionEnregistrementFormView(ADSManagerContextMixin, UpdateView):
+class TransactionEnregistrementFormView(ADSManagerMixin, UpdateView):
     model = EntreeRegistreTransaction
     form_class = TransactionEnregistrementForm
     pk_url_kwarg = "entree_id"
@@ -113,7 +107,7 @@ class TransactionEnregistrementFormView(ADSManagerContextMixin, UpdateView):
         return HttpResponseRedirect(return_url)
 
 
-class TransactionConfirmationView(ADSManagerContextMixin, DetailView):
+class TransactionConfirmationView(ADSManagerMixin, DetailView):
     model = EntreeRegistreTransaction
     pk_url_kwarg = "entree_id"
     template_name = (
@@ -121,17 +115,17 @@ class TransactionConfirmationView(ADSManagerContextMixin, DetailView):
     )
 
 
-class TransactionListView(ADSManagerContextMixin, ListView):
+class TransactionListView(ADSManagerMixin, ListView):
     template_name = "pages/ads_register/registre_transactions/transaction_liste.html"
     context_object_name = "entrees"
 
     def get_queryset(self):
         return EntreeRegistreTransaction.objects.filter(
-            ads__ads_manager__id=self.kwargs["manager_id"]
+            ads__ads_manager__id=self.ads_manager.id
         ).order_by("-date_transaction")
 
 
-class TransactionEditView(ADSManagerContextMixin, UpdateView):
+class TransactionEditView(ADSManagerMixin, UpdateView):
     model = EntreeRegistreTransaction
     form_class = TransactionUpdateForm
     pk_url_kwarg = "entree_id"
@@ -139,9 +133,7 @@ class TransactionEditView(ADSManagerContextMixin, UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs.update(
-            {"ads_manager": get_object_or_404(ADSManager, pk=self.kwargs["manager_id"])}
-        )
+        kwargs.update({"ads_manager": self.ads_manager})
         return kwargs
 
     def form_valid(self, form):
@@ -154,20 +146,18 @@ class TransactionEditView(ADSManagerContextMixin, UpdateView):
     def get_success_url(self):
         return reverse(
             "app.transaction-liste",
-            kwargs={"manager_id": self.object.ads.ads_manager.id},
+            kwargs={"manager_id": self.ads_manager.id},
         )
 
 
-class TransactionCreateView(ADSManagerContextMixin, CreateView):
+class TransactionCreateView(ADSManagerMixin, CreateView):
     model = EntreeRegistreTransaction
     form_class = TransactionUpdateForm
     template_name = "pages/ads_register/registre_transactions/transaction_creation.html"
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs.update(
-            {"ads_manager": get_object_or_404(ADSManager, pk=self.kwargs["manager_id"])}
-        )
+        kwargs.update({"ads_manager": self.ads_manager})
         return kwargs
 
     def form_valid(self, form):
@@ -180,18 +170,18 @@ class TransactionCreateView(ADSManagerContextMixin, CreateView):
     def get_success_url(self):
         return reverse(
             "app.transaction-liste",
-            kwargs={"manager_id": self.object.ads.ads_manager.id},
+            kwargs={"manager_id": self.ads_manager.id},
         )
 
 
-class ChangementStatutRegistreTransactionView(View):
+class ChangementStatutRegistreTransactionView(ADSManagerMixin, View):
     http_method_names = ["post"]
 
     def post(self, request, *args, **kwargs):
-        ads_manager = get_object_or_404(ADSManager, id=kwargs["manager_id"])
         registre_transaction_publique = self.request.POST.get(
             "registre_transaction_publique"
         )
+        ads_manager = self.ads_manager
         ads_manager.registre_transaction_publique = registre_transaction_publique == "1"
         ads_manager.save()
         messages.success(

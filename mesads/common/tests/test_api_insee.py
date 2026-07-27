@@ -18,9 +18,7 @@ def test_validate_siren_accepts_existing_siren(mock_get, settings):
     response.ok = True
     mock_get.return_value = response
 
-    result = validate_siren("123456789")
-
-    assert result is None
+    validate_siren("123456789")
 
     mock_get.assert_called_once_with(
         "https://api.insee.fr/api-sirene/3.11/siren/123456789",

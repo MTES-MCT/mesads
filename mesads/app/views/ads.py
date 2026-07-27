@@ -12,6 +12,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView
 from reversion.views import RevisionMixin
 
+from mesads.common.context_mixins import ADSManagerMixin
 from mesads.fradm.models import EPCI
 
 from ..forms import (
@@ -30,7 +31,7 @@ from ..models import (
 from ..reversion_diff import ModelHistory
 
 
-class ADSView(RevisionMixin, UpdateView):
+class ADSView(ADSManagerMixin, RevisionMixin, UpdateView):
     template_name = "pages/ads_register/ads.html"
     form_class = ADSForm
 
@@ -41,9 +42,8 @@ class ADSView(RevisionMixin, UpdateView):
         # the parameter "epci" which is required to setup autocompletion for the
         # field ADS.epci_commune. This field is not displayed if the manager is
         # a Prefecture or a Commune.
-        ads_manager = get_object_or_404(ADSManager, id=self.kwargs["manager_id"])
-        if ads_manager.content_type.model_class() is EPCI:
-            kwargs["epci"] = ads_manager.content_object
+        if self.ads_manager.content_type.model_class() is EPCI:
+            kwargs["epci"] = self.ads_manager.content_object
 
         return kwargs
 
@@ -72,14 +72,13 @@ class ADSView(RevisionMixin, UpdateView):
         return reverse(
             "app.ads.detail",
             kwargs={
-                "manager_id": self.kwargs["manager_id"],
+                "manager_id": self.ads_manager.id,
                 "ads_id": self.kwargs["ads_id"],
             },
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["ads_manager"] = ADSManager.objects.get(id=self.kwargs["manager_id"])
         context["ads_users_formset"] = self.ads_users_formset
         context["ads_legal_files_formset"] = self.ads_legal_files_formset
 
@@ -215,21 +214,16 @@ class ADSView(RevisionMixin, UpdateView):
         )
 
 
-class ADSDeleteView(DeleteView):
+class ADSDeleteView(ADSManagerMixin, DeleteView):
     template_name = "pages/ads_register/ads_confirm_delete.html"
     model = ADS
     pk_url_kwarg = "ads_id"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["ads_manager"] = ADSManager.objects.get(id=self.kwargs["manager_id"])
-        return context
 
     def get_success_url(self):
         return reverse(
             "app.ads-manager.detail",
             kwargs={
-                "manager_id": self.kwargs["manager_id"],
+                "manager_id": self.ads_manager.id,
             },
         )
 
@@ -271,7 +265,7 @@ class ADSCreateView(ADSView, CreateView):
         )
 
     def form_valid(self, form):
-        ads_manager = ADSManager.objects.get(id=self.kwargs["manager_id"])
+        ads_manager = self.ads_manager
         form.instance.ads_manager = ads_manager
 
         # CreateView doesn't call validate_constraints(). The try/catch below
@@ -311,15 +305,10 @@ class ADSHistoryView(DetailView):
         return context
 
 
-class ADSVerificationView(DetailView):
+class ADSVerificationView(ADSManagerMixin, DetailView):
     template_name = "pages/ads_register/ads_verification.html"
     model = ADS
     pk_url_kwarg = "ads_id"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["ads_manager"] = ADSManager.objects.get(id=self.kwargs["manager_id"])
-        return context
 
 
 class ADSVerificationConfirmationView(View):
