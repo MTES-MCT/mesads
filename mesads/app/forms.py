@@ -3,6 +3,7 @@ from datetime import date
 from dal import autocomplete
 from dateutil.relativedelta import relativedelta
 from django import forms
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
@@ -22,7 +23,7 @@ from .models import (
     ADSUser,
     EntreeRegistreTransaction,
     InscriptionListeAttente,
-    validate_siret,
+    validate_siren,
 )
 from .widgets import BooleanSelect
 
@@ -505,24 +506,36 @@ class ADSChoiceField(forms.ModelChoiceField):
         return label
 
 
-class TransactionADSForm(forms.ModelForm):
+class ADSFormMixin:
     ads = ADSChoiceField(
         queryset=ADS.objects.none(),
         label="ADS",
         required=True,
     )
 
-    class Meta:
-        model = EntreeRegistreTransaction
-        fields = ["ads"]
-
     def __init__(self, *args, ads_manager=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         if ads_manager:
             self.fields["ads"].queryset = ADS.objects.filter(
-                ads_manager=ads_manager, ads_creation_date__lt=date(2014, 10, 1)
+                ads_manager=ads_manager, ads_creation_date__lt=settings.OLD_ADS_DATE
             )
+
+
+class SirenValidationFormMixin:
+    def clean_siren_nouvel_exploitant(self):
+        siren = self.cleaned_data.get("siren_nouvel_exploitant")
+
+        if siren:
+            validate_siren(siren)
+
+        return siren
+
+
+class TransactionADSForm(ADSFormMixin, forms.ModelForm):
+    class Meta:
+        model = EntreeRegistreTransaction
+        fields = ["ads"]
 
 
 COMPLETION_STATUTS = {
@@ -548,23 +561,15 @@ class TransactionDocumentsForm(forms.ModelForm):
         fields = [
             "demande_cession",
             "justificatif_exploitation",
-            "piece_identite",
             "justificatif_montant",
             "kbis_ou_siren",
-            "attestation_aptitude_professionnelle",
-            "justificatif_liquidation_judiciaire",
             "autres_documents",
             "autres_documents_description",
             "documents_complet",
         ]
 
 
-class TransactionEnregistrementForm(forms.ModelForm):
-    def clean_siret_nouvel_exploitant(self):
-        siret = self.cleaned_data["siret_nouvel_exploitant"]
-        validate_siret(siret)
-        return siret
-
+class TransactionEnregistrementForm(SirenValidationFormMixin, forms.ModelForm):
     class Meta:
         model = EntreeRegistreTransaction
         fields = [
@@ -572,17 +577,11 @@ class TransactionEnregistrementForm(forms.ModelForm):
             "montant_transaction",
             "ancien_exploitant",
             "nouvel_exploitant",
-            "siret_nouvel_exploitant",
+            "siren_nouvel_exploitant",
         ]
 
 
-class TransactionUpdateForm(forms.ModelForm):
-    ads = ADSChoiceField(
-        queryset=ADS.objects.none(),
-        label="ADS",
-        required=True,
-    )
-
+class TransactionUpdateForm(ADSFormMixin, SirenValidationFormMixin, forms.ModelForm):
     class Meta:
         model = EntreeRegistreTransaction
         fields = [
@@ -591,21 +590,8 @@ class TransactionUpdateForm(forms.ModelForm):
             "montant_transaction",
             "ancien_exploitant",
             "nouvel_exploitant",
-            "siret_nouvel_exploitant",
+            "siren_nouvel_exploitant",
         ]
-
-    def __init__(self, *args, ads_manager=None, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        if ads_manager:
-            self.fields["ads"].queryset = ADS.objects.filter(
-                ads_manager=ads_manager, ads_creation_date__lt=date(2014, 10, 1)
-            )
-
-    def clean_siret_nouvel_exploitant(self):
-        siret = self.cleaned_data["siret_nouvel_exploitant"]
-        validate_siret(siret)
-        return siret
 
     def save(self, commit=True):
         instance = super().save(commit=False)

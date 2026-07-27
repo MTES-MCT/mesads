@@ -47,6 +47,7 @@ omit = [
     "mesads/app/management/commands/create_previous_update_logs.py",
     "mesads/app/management/commands/notify_prefectures_gestionnaires.py",
     "mesads/app/management/commands/import_creation_update_ads.py",
+    "mesads/app/management/commands/liste_attente_donnees_test.py",
     "mesads/fradm/management/commands/load_*.py",
 ]
 

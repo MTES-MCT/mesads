@@ -14,6 +14,7 @@ import logging
 import os
 import socket
 import sys
+from datetime import date
 from pathlib import Path
 
 import sentry_sdk
@@ -402,3 +403,6 @@ if "test" in sys.argv:
     PASSWORD_HASHERS = [
         "django.contrib.auth.hashers.MD5PasswordHasher",
     ]
+
+
+OLD_ADS_DATE = date(2014, 10, 1)
