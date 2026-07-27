@@ -331,3 +331,6 @@ urls:
   app.registre-transactions-publique:
     title: "Registre des transactions de {{ads_manager.content_object.display_text}} - MesADS"
     description: "Registre des transactions de {{ads_manager.content_object.display_text}} - MesADS"
+
+  app.transaction-courrier:
+    missing: true

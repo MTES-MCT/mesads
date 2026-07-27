@@ -152,8 +152,8 @@
                 <th> ADS </th>
                 <th> Date </th>
                 <th> Ancien exploitant (titulaire) </th>
-                <th> Nouvel exploitant présente </th>
-                <th> SIRET successeur </th>
+                <th> Nouvel exploitant présenté </th>
+                <th> SIREN successeur </th>
                 <th> Montant </th>
                 <th> Statut </th>
                 <th> Action </th>
@@ -170,8 +170,8 @@
                   <td> {{entree.date_transaction|default_if_none:""}} </td>
                   <td> {{entree.ancien_exploitant}} </td>
                   <td> {{entree.nouvel_exploitant}} </td>
-                  <td> {{entree.siret_nouvel_exploitant}} </td>
-                  <td> {{entree.montant_transaction|default_if_none:""}} </td>
+                  <td> {{entree.siren_nouvel_exploitant}} </td>
+                  <td> {{entree.montant_transaction|default_if_none:"0"}}€ </td>
                   <td>
                     {% if entree.is_brouillon %}
                       <p class="fr-badge fr-badge--warning fr-badge--no-icon">Brouillon</p>

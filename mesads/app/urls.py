@@ -179,6 +179,11 @@ url_gestionnaire = [
         ads_manager_required(views.ArreteChangementTitulaireExportView.as_view()),
         name="app.transaction-arrete",
     ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/courrier-contact/",
+        ads_manager_required(views.DemandePiecesJustificativeWordExportView.as_view()),
+        name="app.transaction-courrier",
+    ),
 ]
 
 url_liste_attente = [

@@ -56,7 +56,7 @@
         <li>saisir de manière fiable les informations récurrentes</li>
       </ul>
       <p><strong> Le modèle généré reste modifiable avant signature et notification.</strong></p>
-      <a target="_blank" href="{% url 'app.transaction-arrete' manager_id=ads_manager.id entree_id=entree.id %}">Générer un modèle d'arrêté</a>
+      <a target="_blank" href="{% url 'app.transaction-arrete' manager_id=ads_manager.id entree_id=object.id %}">Générer un modèle d'arrêté</a>
     </div>
 
     <div class="fr-alert fr-alert--success">
@@ -68,14 +68,14 @@
       <h3 class="fr-alert__title">Action requise : mettre à jour la fiche ADS</h3>
       <p>
         Cette étape est <strong>manuelle et distincte</strong>. 
-        Il vous appartient de mettre à jour <strong>l'ADS {{entree.ads.number}}</strong> 
+        Il vous appartient de mettre à jour <strong>l'ADS {{object.ads.number}}</strong> 
         dans la section <i>Gestion des ADS</i> pour refléter le changement de titulaire.
       </p>
       <p>
         <a
-          href="{% url 'app.ads.detail' manager_id=ads_manager.id ads_id=entree.ads.id %}"
+          href="{% url 'app.ads.detail' manager_id=ads_manager.id ads_id=object.ads.id %}"
         >
-          Accéder à la gestion de l'ADS {{entree.ads.number}}
+          Accéder à la gestion de l'ADS {{object.ads.number}}
         </a>
       </p>
     </div>
@@ -84,9 +84,9 @@
       <div class="fr-my-6v">
         <a
           class="fr-btn fr-mr-4v"
-          href="{% url 'app.ads.detail' manager_id=ads_manager.id ads_id=entree.ads.id %}"
+          href="{% url 'app.ads.detail' manager_id=ads_manager.id ads_id=object.ads.id %}"
         >
-          Mettre à jour l'ADS {{entree.ads.number}}
+          Mettre à jour l'ADS {{object.ads.number}}
         </a>
         <a 
           href="{% url 'app.transaction-liste' manager_id=ads_manager.id %}"

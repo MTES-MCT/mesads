@@ -7,8 +7,16 @@ from django.db.models import Case, Count, F, Q, Value, When
 from django.http import FileResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django.views.generic import CreateView, ListView, TemplateView, UpdateView, View
+from django.views.generic import (
+    CreateView,
+    DetailView,
+    ListView,
+    UpdateView,
+    View,
+)
 from docxtpl import DocxTemplate
+
+from mesads.common.context_mixins import ADSManagerContextMixin
 
 from ..forms import (
     AdministrationSearchForm,
@@ -20,7 +28,7 @@ from ..forms import (
 from ..models import ADSManager, EntreeRegistreTransaction
 
 
-class TransactionSelectionADSFormView(CreateView):
+class TransactionSelectionADSFormView(ADSManagerContextMixin, CreateView):
     form_class = TransactionADSForm
     model = EntreeRegistreTransaction
     template_name = (
@@ -45,15 +53,8 @@ class TransactionSelectionADSFormView(CreateView):
         )
         return kwargs
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["ads_manager"] = get_object_or_404(
-            ADSManager, pk=self.kwargs["manager_id"]
-        )
-        return context
 
-
-class TransactionDocumentsFormView(UpdateView):
+class TransactionDocumentsFormView(ADSManagerContextMixin, UpdateView):
     model = EntreeRegistreTransaction
     form_class = TransactionDocumentsForm
     pk_url_kwarg = "entree_id"
@@ -75,15 +76,8 @@ class TransactionDocumentsFormView(UpdateView):
             },
         )
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["ads_manager"] = get_object_or_404(
-            ADSManager, pk=self.kwargs["manager_id"]
-        )
-        return context
 
-
-class TransactionEnregistrementFormView(UpdateView):
+class TransactionEnregistrementFormView(ADSManagerContextMixin, UpdateView):
     model = EntreeRegistreTransaction
     form_class = TransactionEnregistrementForm
     pk_url_kwarg = "entree_id"
@@ -118,34 +112,16 @@ class TransactionEnregistrementFormView(UpdateView):
 
         return HttpResponseRedirect(return_url)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["ads_manager"] = get_object_or_404(
-            ADSManager, pk=self.kwargs["manager_id"]
-        )
-        context["entree"] = get_object_or_404(
-            EntreeRegistreTransaction, pk=self.kwargs["entree_id"]
-        )
-        return context
 
-
-class TransactionConfirmationView(TemplateView):
+class TransactionConfirmationView(ADSManagerContextMixin, DetailView):
+    model = EntreeRegistreTransaction
+    pk_url_kwarg = "entree_id"
     template_name = (
         "pages/ads_register/registre_transactions/transaction_confirmation.html"
     )
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["ads_manager"] = get_object_or_404(
-            ADSManager, pk=self.kwargs["manager_id"]
-        )
-        context["entree"] = get_object_or_404(
-            EntreeRegistreTransaction, pk=self.kwargs["entree_id"]
-        )
-        return context
 
-
-class TransactionListView(ListView):
+class TransactionListView(ADSManagerContextMixin, ListView):
     template_name = "pages/ads_register/registre_transactions/transaction_liste.html"
     context_object_name = "entrees"
 
@@ -154,15 +130,8 @@ class TransactionListView(ListView):
             ads__ads_manager__id=self.kwargs["manager_id"]
         ).order_by("-date_transaction")
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["ads_manager"] = get_object_or_404(
-            ADSManager, pk=self.kwargs["manager_id"]
-        )
-        return context
 
-
-class TransactionEditView(UpdateView):
+class TransactionEditView(ADSManagerContextMixin, UpdateView):
     model = EntreeRegistreTransaction
     form_class = TransactionUpdateForm
     pk_url_kwarg = "entree_id"
@@ -174,16 +143,6 @@ class TransactionEditView(UpdateView):
             {"ads_manager": get_object_or_404(ADSManager, pk=self.kwargs["manager_id"])}
         )
         return kwargs
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["ads_manager"] = get_object_or_404(
-            ADSManager, pk=self.kwargs["manager_id"]
-        )
-        context["entree"] = get_object_or_404(
-            EntreeRegistreTransaction, pk=self.kwargs["entree_id"]
-        )
-        return context
 
     def form_valid(self, form):
         messages.success(
@@ -199,7 +158,7 @@ class TransactionEditView(UpdateView):
         )
 
 
-class TransactionCreateView(CreateView):
+class TransactionCreateView(ADSManagerContextMixin, CreateView):
     model = EntreeRegistreTransaction
     form_class = TransactionUpdateForm
     template_name = "pages/ads_register/registre_transactions/transaction_creation.html"
@@ -210,13 +169,6 @@ class TransactionCreateView(CreateView):
             {"ads_manager": get_object_or_404(ADSManager, pk=self.kwargs["manager_id"])}
         )
         return kwargs
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["ads_manager"] = get_object_or_404(
-            ADSManager, pk=self.kwargs["manager_id"]
-        )
-        return context
 
     def form_valid(self, form):
         messages.success(
@@ -245,9 +197,9 @@ class ChangementStatutRegistreTransactionView(View):
         messages.success(
             request,
             (
-                "Le registre des transactions a été rendue publique"
+                "Le registre des transactions a été rendu publique"
                 if ads_manager.registre_transaction_publique is True
-                else "Le registre des transactions a été rendu privée"
+                else "Le registre des transactions a été rendu privé"
             ),
         )
 
@@ -286,6 +238,38 @@ class ArreteChangementTitulaireExportView(View):
             buffer,
             as_attachment=True,
             filename="arrete.docx",
+            content_type=(
+                "application/vnd.openxmlformats-officedocument."
+                "wordprocessingml.document"
+            ),
+        )
+
+
+class DemandePiecesJustificativeWordExportView(View):
+    def get(self, request, *args, **kwargs):
+        entree = get_object_or_404(
+            EntreeRegistreTransaction, pk=self.kwargs["entree_id"]
+        )
+        context = {
+            "numero_ads": entree.ads.number,
+        }
+        template = DocxTemplate(
+            Path(settings.BASE_DIR)
+            / "mesads"
+            / "docs"
+            / "courrier_contact_cession.docx"
+        )
+
+        template.render(context)
+
+        buffer = BytesIO()
+        template.save(buffer)
+        buffer.seek(0)
+
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename="courrier_type_demande_cession.docx",
             content_type=(
                 "application/vnd.openxmlformats-officedocument."
                 "wordprocessingml.document"

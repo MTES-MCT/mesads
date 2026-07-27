@@ -44,7 +44,7 @@
   </div>
 
   <div>
-    <h2>Enregistrement de la transaction — ADS #{{entree.ads.number}}</h2>
+    <h2>Enregistrement de la transaction — ADS #{{object.ads.number}}</h2>
     
 
     <form method="post">
@@ -86,7 +86,7 @@
             <fieldset class="border-1 border-solid rounded-sm border-stone-300 p-2 mb-2">
               <legend>Nouvel exploitant présenté</legend>
               {% include "form_fields/string.html" with field=form.nouvel_exploitant field_errors=form.errors.nouvel_exploitant required=form.fields.nouvel_exploitant.required %}
-              {% include "form_fields/string.html" with field=form.siret_nouvel_exploitant field_errors=form.errors.siret_nouvel_exploitant required=form.fields.siret_nouvel_exploitant.required %}
+              {% include "form_fields/string.html" with field=form.siren_nouvel_exploitant field_errors=form.errors.siren_nouvel_exploitant required=form.fields.siren_nouvel_exploitant.required %}
 
             </fieldset>
           </div>

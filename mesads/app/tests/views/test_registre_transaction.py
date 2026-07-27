@@ -1,6 +1,7 @@
 import http
 import logging
 from datetime import date
+from unittest.mock import patch
 
 from django.urls import reverse
 
@@ -70,6 +71,50 @@ class TestListeRegistreTransactions(ClientTestCase):
             response, "pages/ads_register/registre_transactions/transaction_liste.html"
         )
         self.assertNotIn(entree_autre, list(response.context["entrees"]))
+
+
+class TestChangementStatutRegistre(ClientTestCase):
+    def test_post_publique(self):
+        ads_manager = self.ads_manager
+        assert not ads_manager.registre_transaction_publique
+        response = self.client.post(
+            reverse("app.transaction-statut", kwargs={"manager_id": ads_manager.id}),
+            data={"registre_transaction_publique": 1},
+        )
+        self.assertRedirects(
+            response,
+            expected_url=reverse(
+                "app.transaction-liste",
+                kwargs={"manager_id": self.ads_manager.id},
+            ),
+            status_code=http.HTTPStatus.FOUND,
+            target_status_code=http.HTTPStatus.OK,
+            fetch_redirect_response=True,
+        )
+        ads_manager.refresh_from_db()
+        assert ads_manager.registre_transaction_publique
+
+    def test_post_prive(self):
+        ads_manager = self.ads_manager
+        ads_manager.registre_transaction_publique = True
+        ads_manager.save()
+        assert ads_manager.registre_transaction_publique
+        response = self.client.post(
+            reverse("app.transaction-statut", kwargs={"manager_id": ads_manager.id}),
+            data={"registre_transaction_publique": 0},
+        )
+        self.assertRedirects(
+            response,
+            expected_url=reverse(
+                "app.transaction-liste",
+                kwargs={"manager_id": self.ads_manager.id},
+            ),
+            status_code=http.HTTPStatus.FOUND,
+            target_status_code=http.HTTPStatus.OK,
+            fetch_redirect_response=True,
+        )
+        ads_manager.refresh_from_db()
+        assert not ads_manager.registre_transaction_publique
 
 
 class TestSelectionADS(ClientTestCase):
@@ -161,11 +206,8 @@ class TestSelectionDocument(ClientTestCase):
             data={
                 "demande_cession": "on",
                 "justificatif_exploitation": "on",
-                "piece_identite": "on",
                 "justificatif_montant": "on",
                 "kbis_ou_siren": "on",
-                "attestation_aptitude_professionnelle": "on",
-                "justificatif_liquidation_judiciaire": "on",
                 "autres_documents": "on",
                 "autres_documents_description": "Autre document",
                 "documents_complet": "false",
@@ -185,11 +227,8 @@ class TestSelectionDocument(ClientTestCase):
         entree.refresh_from_db()
         assert entree.demande_cession
         assert entree.justificatif_exploitation
-        assert entree.piece_identite
         assert entree.justificatif_montant
         assert entree.kbis_ou_siren
-        assert entree.attestation_aptitude_professionnelle
-        assert entree.justificatif_liquidation_judiciaire
         assert entree.autres_documents
         assert entree.autres_documents_description == "Autre document"
         assert not entree.documents_complet
@@ -204,11 +243,8 @@ class TestSelectionDocument(ClientTestCase):
             data={
                 "demande_cession": "on",
                 "justificatif_exploitation": "on",
-                "piece_identite": "on",
                 "justificatif_montant": "on",
                 "kbis_ou_siren": "on",
-                "attestation_aptitude_professionnelle": "on",
-                "justificatif_liquidation_judiciaire": "on",
                 "autres_documents": "on",
                 "autres_documents_description": "Autre document",
                 "documents_complet": "true",
@@ -228,11 +264,8 @@ class TestSelectionDocument(ClientTestCase):
         entree.refresh_from_db()
         assert entree.demande_cession
         assert entree.justificatif_exploitation
-        assert entree.piece_identite
         assert entree.justificatif_montant
         assert entree.kbis_ou_siren
-        assert entree.attestation_aptitude_professionnelle
-        assert entree.justificatif_liquidation_judiciaire
         assert entree.autres_documents
         assert entree.autres_documents_description == "Autre document"
         assert entree.documents_complet
@@ -241,6 +274,14 @@ class TestSelectionDocument(ClientTestCase):
 class TestEnregistrement(ClientTestCase):
     def setUp(self):
         super().setUp()
+
+        validate_siren_patcher = patch(
+            "mesads.app.forms.validate_siren",
+            return_value=None,
+        )
+        self.mock_validate_siren = validate_siren_patcher.start()
+        self.addCleanup(validate_siren_patcher.stop)
+
         self.entree = EntreeRegistreTransaction.objects.create(
             ads=self.old_ads,
             statut=EntreeRegistreTransaction.BROUILLON,
@@ -272,7 +313,7 @@ class TestEnregistrement(ClientTestCase):
                 "montant_transaction": 8000,
                 "ancien_exploitant": "Jane taxi",
                 "nouvel_exploitant": "John taxi",
-                "siret_nouvel_exploitant": "12345678912345",
+                "siren_nouvel_exploitant": "123456789",
                 "action": "draft",
             },
         )
@@ -292,7 +333,28 @@ class TestEnregistrement(ClientTestCase):
         assert entree.montant_transaction == 8000
         assert entree.ancien_exploitant == "Jane taxi"
         assert entree.nouvel_exploitant == "John taxi"
-        assert entree.siret_nouvel_exploitant == "12345678912345"
+        assert entree.siren_nouvel_exploitant == "123456789"
+
+        self.mock_validate_siren.assert_called_once_with("123456789")
+
+    def test_post_enregistrement_unknown_action(self):
+        entree = self.entree
+        response = self.client.post(
+            reverse(
+                "app.transaction-enregistrement",
+                kwargs={"manager_id": self.ads_manager.id, "entree_id": entree.id},
+            ),
+            data={
+                "date_transaction": date.today(),
+                "montant_transaction": 8000,
+                "ancien_exploitant": "Jane taxi",
+                "nouvel_exploitant": "John taxi",
+                "siren_nouvel_exploitant": "123456789",
+                "action": "unknown",
+            },
+        )
+
+        assert response.status_code == http.HTTPStatus.OK
 
     def test_post_enregistrement_validate_ok(self):
         entree = self.entree
@@ -306,7 +368,7 @@ class TestEnregistrement(ClientTestCase):
                 "montant_transaction": 8000,
                 "ancien_exploitant": "Jane taxi",
                 "nouvel_exploitant": "John taxi",
-                "siret_nouvel_exploitant": "12345678912345",
+                "siren_nouvel_exploitant": "123456789",
                 "action": "validate",
             },
         )
@@ -326,7 +388,9 @@ class TestEnregistrement(ClientTestCase):
         assert entree.montant_transaction == 8000
         assert entree.ancien_exploitant == "Jane taxi"
         assert entree.nouvel_exploitant == "John taxi"
-        assert entree.siret_nouvel_exploitant == "12345678912345"
+        assert entree.siren_nouvel_exploitant == "123456789"
+
+        self.mock_validate_siren.assert_called_once_with("123456789")
         assert entree.statut == EntreeRegistreTransaction.ENREGISTREE
 
 
@@ -353,6 +417,14 @@ class TestConfirmation(ClientTestCase):
 class TestEdition(ClientTestCase):
     def setUp(self):
         super().setUp()
+
+        validate_siren_patcher = patch(
+            "mesads.app.forms.validate_siren",
+            return_value=None,
+        )
+        self.mock_validate_siren = validate_siren_patcher.start()
+        self.addCleanup(validate_siren_patcher.stop)
+
         self.entree = EntreeRegistreTransaction.objects.create(
             ads=self.old_ads,
             statut=EntreeRegistreTransaction.ENREGISTREE,
@@ -385,7 +457,7 @@ class TestEdition(ClientTestCase):
                 "montant_transaction": 8000,
                 "ancien_exploitant": "Jane taxi",
                 "nouvel_exploitant": "John taxi",
-                "siret_nouvel_exploitant": "12345678912345",
+                "siren_nouvel_exploitant": "123456789",
                 "action": "validate",
             },
         )
@@ -405,10 +477,22 @@ class TestEdition(ClientTestCase):
         assert entree.montant_transaction == 8000
         assert entree.ancien_exploitant == "Jane taxi"
         assert entree.nouvel_exploitant == "John taxi"
-        assert entree.siret_nouvel_exploitant == "12345678912345"
+        assert entree.siren_nouvel_exploitant == "123456789"
+
+        self.mock_validate_siren.assert_called_once_with("123456789")
 
 
 class TestCreation(ClientTestCase):
+    def setUp(self):
+        super().setUp()
+
+        validate_siren_patcher = patch(
+            "mesads.app.forms.validate_siren",
+            return_value=None,
+        )
+        self.mock_validate_siren = validate_siren_patcher.start()
+        self.addCleanup(validate_siren_patcher.stop)
+
     def test_get_creation(self):
         response = self.client.get(
             reverse(
@@ -434,7 +518,7 @@ class TestCreation(ClientTestCase):
                 "montant_transaction": 8000,
                 "ancien_exploitant": "Jane taxi",
                 "nouvel_exploitant": "John taxi",
-                "siret_nouvel_exploitant": "12345678912345",
+                "siren_nouvel_exploitant": "123456789",
                 "action": "validate",
             },
         )
@@ -456,7 +540,9 @@ class TestCreation(ClientTestCase):
         assert entree.montant_transaction == 8000
         assert entree.ancien_exploitant == "Jane taxi"
         assert entree.nouvel_exploitant == "John taxi"
-        assert entree.siret_nouvel_exploitant == "12345678912345"
+        assert entree.siren_nouvel_exploitant == "123456789"
+
+        self.mock_validate_siren.assert_called_once_with("123456789")
 
 
 class TestRegistresTransactionsPubliquesView(ClientTestCase):
@@ -543,4 +629,69 @@ class TestRegistreTransactionsPubliqueView(ClientTestCase):
         assert response.status_code == http.HTTPStatus.OK
         self.assertTemplateUsed(
             "pages/ads_register/registre_transactions/registre_transactions_publique.html"
+        )
+
+
+class TestArreteCession(ClientTestCase):
+    def test_get_arrete(self):
+        entree = EntreeRegistreTransaction.objects.create(
+            ads=self.old_ads,
+            statut=EntreeRegistreTransaction.ENREGISTREE,
+            documents_complet=True,
+        )
+        response = self.client.get(
+            reverse(
+                "app.transaction-arrete",
+                kwargs={"manager_id": self.ads_manager.id, "entree_id": entree.id},
+            )
+        )
+        assert response.status_code == http.HTTPStatus.OK
+        assert response["Content-Type"] == (
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+
+    def test_get_registre_transactions_privee(self):
+        self.ads_manager.registre_transaction_publique = False
+        self.ads_manager.save()
+        response = self.client.get(
+            reverse(
+                "app.registre-transactions-publique",
+                kwargs={"manager_id": self.ads_manager.id},
+            )
+        )
+
+        assert response.status_code == http.HTTPStatus.NOT_FOUND
+
+    def test_get_registre_transactions_publique(self):
+        self.ads_manager.registre_transaction_publique = True
+        self.ads_manager.save()
+        response = self.client.get(
+            reverse(
+                "app.registre-transactions-publique",
+                kwargs={"manager_id": self.ads_manager.id},
+            )
+        )
+
+        assert response.status_code == http.HTTPStatus.OK
+        self.assertTemplateUsed(
+            "pages/ads_register/registre_transactions/registre_transactions_publique.html"
+        )
+
+
+class TestCourrierTypeCession(ClientTestCase):
+    def test_get_arrete(self):
+        entree = EntreeRegistreTransaction.objects.create(
+            ads=self.old_ads,
+            statut=EntreeRegistreTransaction.ENREGISTREE,
+            documents_complet=True,
+        )
+        response = self.client.get(
+            reverse(
+                "app.transaction-courrier",
+                kwargs={"manager_id": self.ads_manager.id, "entree_id": entree.id},
+            )
+        )
+        assert response.status_code == http.HTTPStatus.OK
+        assert response["Content-Type"] == (
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
