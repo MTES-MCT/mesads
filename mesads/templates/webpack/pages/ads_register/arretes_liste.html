@@ -19,12 +19,6 @@
         <a class="fr-breadcrumb__link"
           href="{% url 'app.ads-manager.detail' manager_id=ads_manager.id %}">{{ ads_manager.content_object.display_text|capfirst }}</a>
       </li>
-      {% if ads %}
-        <li>
-          <a class="fr-breadcrumb__link"
-            href="{% url 'app.ads.detail' manager_id=ads.ads_manager.id ads_id=ads.id %}">ADS #{{ ads.number }}</a>
-        </li>
-      {% endif %}
       <li>
         <a class="fr-breadcrumb__link" aria-current="page">Modèles d'arrêtés</a>
       </li>

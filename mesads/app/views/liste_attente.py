@@ -40,12 +40,13 @@ from mesads.app.models import (
     InscriptionListeAttente,
 )
 from mesads.app.services.liste_attente import check_and_notify_duplicated
+from mesads.common.context_mixins import ADSManagerMixin
 
 from ..services.export import get_inscriptions_data_for_excel_export
 from .export import ExcelExporter
 
 
-class ListeAttenteView(ListView):
+class ListeAttenteView(ADSManagerMixin, ListView):
     template_name = "pages/ads_register/liste_attente.html"
     model = InscriptionListeAttente
     paginate_by = 50
@@ -73,7 +74,7 @@ class ListeAttenteView(ListView):
             default=0,
             output_field=IntegerField(),
         )
-        qs = qs.filter(ads_manager__id=self.kwargs["manager_id"]).annotate(
+        qs = qs.filter(ads_manager__id=self.ads_manager.id).annotate(
             all_filled=all_filled,
             is_valid=Case(
                 When(date_fin_validite__gte=datetime.date.today(), then=1),
@@ -98,11 +99,10 @@ class ListeAttenteView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["ads_manager"] = ADSManager.objects.get(id=self.kwargs["manager_id"])
         context["search"] = self.request.GET.get("search", "")
         context["attribution_allowed"] = (
             InscriptionListeAttente.objects.filter(
-                ads_manager__id=self.kwargs["manager_id"],
+                ads_manager__id=self.ads_manager.id,
                 date_fin_validite__lt=datetime.date.today(),
             ).count()
             == 0
@@ -113,7 +113,7 @@ class ListeAttenteView(ListView):
         return context
 
 
-class DemandeArchiveesView(ListView):
+class DemandeArchiveesView(ADSManagerMixin, ListView):
     template_name = "pages/ads_register/liste_attente_archivees.html"
     model = InscriptionListeAttente
     paginate_by = 50
@@ -121,7 +121,7 @@ class DemandeArchiveesView(ListView):
 
     def get_queryset(self):
         qs = InscriptionListeAttente.with_deleted.filter(
-            ads_manager__id=self.kwargs["manager_id"], deleted_at__isnull=False
+            ads_manager__id=self.ads_manager.id, deleted_at__isnull=False
         ).order_by("-deleted_at")
 
         search = self.request.GET.get("search", "").strip()
@@ -141,7 +141,6 @@ class DemandeArchiveesView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["ads_manager"] = ADSManager.objects.get(id=self.kwargs["manager_id"])
         context["search"] = self.request.GET.get("search", "")
         return context
 
@@ -163,7 +162,7 @@ class AttributionRedirectMixin:
         return super().dispatch(request, *args, **kwargs)
 
 
-class AttributionListeAttenteView(AttributionRedirectMixin, ListView):
+class AttributionListeAttenteView(ADSManagerMixin, AttributionRedirectMixin, ListView):
     template_name = "pages/ads_register/liste_attente_attribution.html"
     model = InscriptionListeAttente
     paginate_by = 50
@@ -190,7 +189,7 @@ class AttributionListeAttenteView(AttributionRedirectMixin, ListView):
             default=0,
             output_field=IntegerField(),
         )
-        qs = qs.filter(ads_manager__id=self.kwargs["manager_id"])
+        qs = qs.filter(ads_manager__id=self.ads_manager.id)
         qs = (
             qs.annotate(
                 all_filled=all_filled,
@@ -207,7 +206,6 @@ class AttributionListeAttenteView(AttributionRedirectMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["ads_manager"] = ADSManager.objects.get(id=self.kwargs["manager_id"])
 
         if self.request.GET.get("no_modale"):
             context["no_modale"] = True
@@ -215,13 +213,11 @@ class AttributionListeAttenteView(AttributionRedirectMixin, ListView):
         return context
 
 
-class InscriptionTraitementListeAttenteView(TemplateView):
+class InscriptionTraitementListeAttenteView(ADSManagerMixin, TemplateView):
     template_name = "pages/ads_register/liste_attente_traitement_demande.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        ads_manager = ADSManager.objects.get(id=self.kwargs["manager_id"])
-        context["ads_manager"] = ads_manager
         inscription = get_object_or_404(
             InscriptionListeAttente, id=self.kwargs["inscription_id"]
         )
@@ -238,7 +234,7 @@ class InscriptionTraitementListeAttenteView(TemplateView):
             )
 
         if inscription.status == InscriptionListeAttente.REPONSE_OK:
-            context["form"] = AttributionADSForm(ads_manager=ads_manager)
+            context["form"] = AttributionADSForm(ads_manager=context["ads_manager"])
 
         return context
 
@@ -246,7 +242,7 @@ class InscriptionTraitementListeAttenteView(TemplateView):
         return reverse(
             "app.liste_attente_traitement_demande",
             kwargs={
-                "manager_id": self.kwargs.get("manager_id"),
+                "manager_id": self.ads_manager.id,
                 "inscription_id": inscription.id,
             },
         )
@@ -382,7 +378,7 @@ class InscriptionTraitementListeAttenteView(TemplateView):
         return self.render_to_response(self.get_context_data(**kwargs))
 
 
-class InscriptionListeAttenteMixin:
+class InscriptionListeAttenteMixin(ADSManagerMixin):
     """
     Mixin pour les fonctions communes entre la création/modification
     d'inscription a la liste d'attente
@@ -394,16 +390,14 @@ class InscriptionListeAttenteMixin:
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs.update(
-            {"ads_manager": ADSManager.objects.get(id=self.kwargs["manager_id"])}
-        )
+        kwargs.update({"ads_manager": self.ads_manager})
         return kwargs
 
     def get_success_url(self):
         return reverse(
             "app.liste_attente",
             kwargs={
-                "manager_id": self.kwargs["manager_id"],
+                "manager_id": self.ads_manager.id,
             },
         )
 
@@ -416,11 +410,6 @@ class InscriptionListeAttenteMixin:
             ),
         )
         return super().form_invalid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["ads_manager"] = ADSManager.objects.get(id=self.kwargs["manager_id"])
-        return context
 
     def form_valid(self, form):
         # Create/UpdateView doesn't call validate_constraints(). The try/catch below
@@ -449,24 +438,8 @@ class CreationInscriptionListeAttenteView(InscriptionListeAttenteMixin, CreateVi
 class ModificationInscriptionListeAttenteView(InscriptionListeAttenteMixin, UpdateView):
     pk_url_kwarg = "inscription_id"
 
-    def dispatch(self, request, *args, **kwargs):
-        """
-        Si le manager associé a l'inscription ne correspond pas à l'id
-        du manager dans l'url, on redirige vers la bonne url
-        """
-        object = self.get_object()
-        if object.ads_manager.id != self.kwargs["manager_id"]:
-            return HttpResponseRedirect(
-                redirect_to=reverse(
-                    "app.liste_attente_inscription_update",
-                    kwargs={
-                        "manager_id": object.ads_manager.id,
-                        "inscription_id": object.id,
-                    },
-                )
-            )
-
-        return super().dispatch(request, *args, **kwargs)
+    def get_queryset(self):
+        return InscriptionListeAttente.objects.filter(ads_manager=self.ads_manager)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -476,38 +449,22 @@ class ModificationInscriptionListeAttenteView(InscriptionListeAttenteMixin, Upda
         return context
 
 
-class ArchivageInscriptionListeAttenteView(UpdateView):
+class ArchivageInscriptionListeAttenteView(ADSManagerMixin, UpdateView):
     template_name = "pages/ads_register/liste_attente_archivage_inscription.html"
     form_class = ArchivageInscriptionListeAttenteForm
     pk_url_kwarg = "inscription_id"
     model = InscriptionListeAttente
 
-    def dispatch(self, request, *args, **kwargs):
-        if self.get_object().ads_manager.id != self.kwargs["manager_id"]:
-            return HttpResponseRedirect(
-                redirect_to=reverse(
-                    "app.liste_attente_inscription_archivage",
-                    kwargs={
-                        "manager_id": self.get_object().ads_manager.id,
-                        "inscription_id": self.get_object().id,
-                    },
-                )
-            )
-
-        return super().dispatch(request, *args, **kwargs)
+    def get_queryset(self):
+        return InscriptionListeAttente.objects.filter(ads_manager=self.ads_manager)
 
     def get_success_url(self):
         return reverse(
             "app.liste_attente_inscription_archivage_confirmation",
             kwargs={
-                "manager_id": self.kwargs["manager_id"],
+                "manager_id": self.ads_manager.id,
             },
         )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["ads_manager"] = ADSManager.objects.get(id=self.kwargs["manager_id"])
-        return context
 
     def form_invalid(self, form):
         messages.error(
@@ -560,24 +517,13 @@ class ModeleCourrierContactView(View):
         )
 
 
-class ArchivageConfirmationView(TemplateView):
+class ArchivageConfirmationView(ADSManagerMixin, TemplateView):
     template_name = (
         "pages/ads_register/liste_attente_archivage_confirmation_inscription.html"
     )
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["ads_manager"] = ADSManager.objects.get(id=self.kwargs["manager_id"])
-        return context
 
-
-class ExportCSVInscriptionListeAttenteView(ExcelExporter, View):
-    ads_manager = None
-
-    def setup(self, request, *args, **kwargs):
-        self.ads_manager = get_object_or_404(ADSManager, id=kwargs.get("manager_id"))
-        return super().setup(request, *args, **kwargs)
-
+class ExportCSVInscriptionListeAttenteView(ADSManagerMixin, ExcelExporter, View):
     def get_filename(self):
         return (
             "liste_attente_"
@@ -700,11 +646,11 @@ class ListeAttentePublique(ListView):
         return context
 
 
-class ChangementStatutListeView(View):
+class ChangementStatutListeView(ADSManagerMixin, View):
     http_method_names = ["post"]
 
     def post(self, request, *args, **kwargs):
-        ads_manager = get_object_or_404(ADSManager, id=kwargs["manager_id"])
+        ads_manager = self.ads_manager
         liste_attente_publique = self.request.POST.get("liste_attente_publique")
         ads_manager.liste_attente_publique = liste_attente_publique == "1"
         ads_manager.save()
@@ -724,18 +670,16 @@ class ChangementStatutListeView(View):
         )
 
 
-class ExportPDFListePubliqueView(View):
+class ExportPDFListePubliqueView(ADSManagerMixin, View):
     http_method_names = ["get"]
 
     def get(self, request, *args, **kwargs):
-        ads_manager = get_object_or_404(ADSManager, id=kwargs["manager_id"])
-
         inscriptions = InscriptionListeAttente.objects.filter(
-            ads_manager=ads_manager,
+            ads_manager=self.ads_manager,
             date_fin_validite__gte=datetime.date.today(),
         ).order_by("date_depot_inscription")
 
-        context = {"ads_manager": ads_manager, "inscriptions": inscriptions}
+        context = {"ads_manager": self.ads_manager, "inscriptions": inscriptions}
 
         html_string = render_to_string(
             "pages/ads_register/liste_attente_publique_pdf.html", context
@@ -760,7 +704,9 @@ class ExportPDFListePubliqueView(View):
             stylesheets=stylesheets,
             pdf_variant="pdf/ua-1",
             metadata={
-                "title": f"Liste d'attente - {ads_manager.content_object.display_text}",
+                "title": (
+                    f"Liste d'attente - {self.ads_manager.content_object.display_text}"
+                ),
                 "author": "MesADS",
                 "language": "fr",
             },
