@@ -333,13 +333,13 @@ url_public = [
     ),
     path(
         "registres-transactions/",
-        views.RegistresTransactionsPubliquesView.as_view(),
+        views.RegistresTransactionsPublicsView.as_view(),
         name="app.registres-transactions",
     ),
     path(
         "registres-transactions/<int:manager_id>/",
-        views.RegistreTransactionsPublique.as_view(),
-        name="app.registre-transactions-publique",
+        views.RegistreTransactionsPublicView.as_view(),
+        name="app.registre-transactions-public",
     ),
 ]
 

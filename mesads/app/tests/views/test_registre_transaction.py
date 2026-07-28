@@ -74,12 +74,12 @@ class TestListeRegistreTransactions(ClientTestCase):
 
 
 class TestChangementStatutRegistre(ClientTestCase):
-    def test_post_publique(self):
+    def test_post_public(self):
         ads_manager = self.ads_manager
-        assert not ads_manager.registre_transaction_publique
+        assert not ads_manager.registre_transaction_public
         response = self.client.post(
             reverse("app.transaction-statut", kwargs={"manager_id": ads_manager.id}),
-            data={"registre_transaction_publique": 1},
+            data={"registre_transaction_public": 1},
         )
         self.assertRedirects(
             response,
@@ -92,16 +92,16 @@ class TestChangementStatutRegistre(ClientTestCase):
             fetch_redirect_response=True,
         )
         ads_manager.refresh_from_db()
-        assert ads_manager.registre_transaction_publique
+        assert ads_manager.registre_transaction_public
 
     def test_post_prive(self):
         ads_manager = self.ads_manager
-        ads_manager.registre_transaction_publique = True
+        ads_manager.registre_transaction_public = True
         ads_manager.save()
-        assert ads_manager.registre_transaction_publique
+        assert ads_manager.registre_transaction_public
         response = self.client.post(
             reverse("app.transaction-statut", kwargs={"manager_id": ads_manager.id}),
-            data={"registre_transaction_publique": 0},
+            data={"registre_transaction_public": 0},
         )
         self.assertRedirects(
             response,
@@ -114,7 +114,7 @@ class TestChangementStatutRegistre(ClientTestCase):
             fetch_redirect_response=True,
         )
         ads_manager.refresh_from_db()
-        assert not ads_manager.registre_transaction_publique
+        assert not ads_manager.registre_transaction_public
 
 
 class TestSelectionADS(ClientTestCase):
@@ -545,20 +545,20 @@ class TestCreation(ClientTestCase):
         self.mock_validate_siren.assert_called_once_with("123456789")
 
 
-class TestRegistresTransactionsPubliquesView(ClientTestCase):
-    def test_get_registres_transactions_publiques(self):
-        self.ads_manager.registre_transaction_publique = True
+class TestRegistresTransactionsPublicsView(ClientTestCase):
+    def test_get_registres_transactions_publics(self):
+        self.ads_manager.registre_transaction_public = True
         self.ads_manager.save()
         response = self.client.get(reverse("app.registres-transactions"))
 
         assert response.status_code == http.HTTPStatus.OK
         self.assertTemplateUsed(
-            "pages/ads_register/registre_transactions/registres_transactions_publiques.html"
+            "pages/ads_register/registre_transactions/registres_transactions_publics.html"
         )
         assert response.context["ads_managers"].count() == 0
 
-    def test_get_registres_transactions_publiques_search_by_departement(self):
-        self.ads_manager.registre_transaction_publique = True
+    def test_get_registres_transactions_publics_search_by_departement(self):
+        self.ads_manager.registre_transaction_public = True
         self.ads_manager.save()
         response = self.client.get(
             reverse(
@@ -568,12 +568,12 @@ class TestRegistresTransactionsPubliquesView(ClientTestCase):
         )
         assert response.status_code == http.HTTPStatus.OK
         self.assertTemplateUsed(
-            "pages/ads_register/registre_transactions/registres_transactions_publiques.html"
+            "pages/ads_register/registre_transactions/registres_transactions_publics.html"
         )
         assert self.ads_manager in response.context["ads_managers"]
 
-    def test_get_registres_transactions_publiques_search_by_libelle(self):
-        self.ads_manager.registre_transaction_publique = True
+    def test_get_registres_transactions_publics_search_by_libelle(self):
+        self.ads_manager.registre_transaction_public = True
         self.ads_manager.save()
         response = self.client.get(
             reverse(
@@ -583,12 +583,12 @@ class TestRegistresTransactionsPubliquesView(ClientTestCase):
         )
         assert response.status_code == http.HTTPStatus.OK
         self.assertTemplateUsed(
-            "pages/ads_register/registre_transactions/registres_transactions_publiques.html"
+            "pages/ads_register/registre_transactions/registres_transactions_publics.html"
         )
         assert self.ads_manager in response.context["ads_managers"]
 
-    def test_get_registres_transactions_publiques_search_by_libelle_not_public(self):
-        self.ads_manager.registre_transaction_publique = False
+    def test_get_registres_transactions_publics_search_by_libelle_not_public(self):
+        self.ads_manager.registre_transaction_public = False
         self.ads_manager.save()
         response = self.client.get(
             reverse(
@@ -598,37 +598,37 @@ class TestRegistresTransactionsPubliquesView(ClientTestCase):
         )
         assert response.status_code == http.HTTPStatus.OK
         self.assertTemplateUsed(
-            "pages/ads_register/registre_transactions/registres_transactions_publiques.html"
+            "pages/ads_register/registre_transactions/registres_transactions_publics.html"
         )
         assert self.ads_manager not in response.context["ads_managers"]
 
 
-class TestRegistreTransactionsPubliqueView(ClientTestCase):
+class TestRegistreTransactionsPublicView(ClientTestCase):
     def test_get_registre_transactions_privee(self):
-        self.ads_manager.registre_transaction_publique = False
+        self.ads_manager.registre_transaction_public = False
         self.ads_manager.save()
         response = self.client.get(
             reverse(
-                "app.registre-transactions-publique",
+                "app.registre-transactions-public",
                 kwargs={"manager_id": self.ads_manager.id},
             )
         )
 
         assert response.status_code == http.HTTPStatus.NOT_FOUND
 
-    def test_get_registre_transactions_publique(self):
-        self.ads_manager.registre_transaction_publique = True
+    def test_get_registre_transactions_public(self):
+        self.ads_manager.registre_transaction_public = True
         self.ads_manager.save()
         response = self.client.get(
             reverse(
-                "app.registre-transactions-publique",
+                "app.registre-transactions-public",
                 kwargs={"manager_id": self.ads_manager.id},
             )
         )
 
         assert response.status_code == http.HTTPStatus.OK
         self.assertTemplateUsed(
-            "pages/ads_register/registre_transactions/registre_transactions_publique.html"
+            "pages/ads_register/registre_transactions/registre_transactions_public.html"
         )
 
 
@@ -650,36 +650,9 @@ class TestArreteCession(ClientTestCase):
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
 
-    def test_get_registre_transactions_privee(self):
-        self.ads_manager.registre_transaction_publique = False
-        self.ads_manager.save()
-        response = self.client.get(
-            reverse(
-                "app.registre-transactions-publique",
-                kwargs={"manager_id": self.ads_manager.id},
-            )
-        )
-
-        assert response.status_code == http.HTTPStatus.NOT_FOUND
-
-    def test_get_registre_transactions_publique(self):
-        self.ads_manager.registre_transaction_publique = True
-        self.ads_manager.save()
-        response = self.client.get(
-            reverse(
-                "app.registre-transactions-publique",
-                kwargs={"manager_id": self.ads_manager.id},
-            )
-        )
-
-        assert response.status_code == http.HTTPStatus.OK
-        self.assertTemplateUsed(
-            "pages/ads_register/registre_transactions/registre_transactions_publique.html"
-        )
-
 
 class TestCourrierTypeCession(ClientTestCase):
-    def test_get_arrete(self):
+    def test_get_courrier_type(self):
         entree = EntreeRegistreTransaction.objects.create(
             ads=self.old_ads,
             statut=EntreeRegistreTransaction.ENREGISTREE,
