@@ -178,17 +178,17 @@ class ChangementStatutRegistreTransactionView(ADSManagerMixin, View):
     http_method_names = ["post"]
 
     def post(self, request, *args, **kwargs):
-        registre_transaction_publique = self.request.POST.get(
-            "registre_transaction_publique"
+        registre_transaction_public = self.request.POST.get(
+            "registre_transaction_public"
         )
         ads_manager = self.ads_manager
-        ads_manager.registre_transaction_publique = registre_transaction_publique == "1"
+        ads_manager.registre_transaction_public = registre_transaction_public == "1"
         ads_manager.save()
         messages.success(
             request,
             (
-                "Le registre des transactions a été rendu publique"
-                if ads_manager.registre_transaction_publique is True
+                "Le registre des transactions a été rendu public"
+                if ads_manager.registre_transaction_public is True
                 else "Le registre des transactions a été rendu privé"
             ),
         )
@@ -267,9 +267,9 @@ class DemandePiecesJustificativeWordExportView(View):
         )
 
 
-class RegistresTransactionsPubliquesView(ListView):
+class RegistresTransactionsPublicsView(ListView):
     template_name = (
-        "pages/ads_register/registre_transactions/registres_transactions_publiques.html"
+        "pages/ads_register/registre_transactions/registres_transactions_publics.html"
     )
     model = ADSManager
     paginate_by = 50
@@ -282,7 +282,7 @@ class RegistresTransactionsPubliquesView(ListView):
         qs = (
             super()
             .get_queryset()
-            .filter(registre_transaction_publique=True)
+            .filter(registre_transaction_public=True)
             .order_by("administrator")
         )
 
@@ -305,7 +305,8 @@ class RegistresTransactionsPubliquesView(ListView):
                         default=Value(""),
                     )
                 )
-                qs = qs.filter(name_search__icontains=commune)
+                for word in commune.split(" "):
+                    qs = qs.filter(name_search__unaccent__icontains=word)
 
             qs = qs.annotate(
                 nombre_entrees_registre=Count(
@@ -343,9 +344,9 @@ class RegistresTransactionsPubliquesView(ListView):
         return context
 
 
-class RegistreTransactionsPublique(ListView):
+class RegistreTransactionsPublicView(ListView):
     template_name = (
-        "pages/ads_register/registre_transactions/registre_transactions_publique.html"
+        "pages/ads_register/registre_transactions/registre_transactions_public.html"
     )
     model = EntreeRegistreTransaction
     paginate_by = 50
@@ -363,6 +364,6 @@ class RegistreTransactionsPublique(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["ads_manager"] = get_object_or_404(
-            ADSManager, id=self.kwargs["manager_id"], registre_transaction_publique=True
+            ADSManager, id=self.kwargs["manager_id"], registre_transaction_public=True
         )
         return context

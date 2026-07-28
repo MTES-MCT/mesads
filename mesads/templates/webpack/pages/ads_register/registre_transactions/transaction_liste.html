@@ -43,16 +43,16 @@
       <form method="post" action="{% url 'app.transaction-statut' manager_id=ads_manager.id %}">
           {% csrf_token %}
 
-          <input type="hidden" name="registre_transaction_publique" value="0">
+          <input type="hidden" name="registre_transaction_public" value="0">
           <div class="mt-3 fr-toggle">
             <input
               type="checkbox"
               class="fr-toggle__input"
               id="toggle-2"
-              name="registre_transaction_publique"
+              name="registre_transaction_public"
               aria-describedby="toggle-2-hint toggle-2-messages"
               value="1"
-              {% if ads_manager.registre_transaction_publique %}checked{% endif %}
+              {% if ads_manager.registre_transaction_public %}checked{% endif %}
               onchange="this.form.requestSubmit()"
             >
             <label class="fr-toggle__label" for="toggle-2">Rendre le registre public</label>

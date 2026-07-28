@@ -21,7 +21,7 @@
   </nav>
   
   
-  <h1>Consulter le registre des transactions d'une commune</h1>    
+  <h1>Consulter le registre des transactions d'une administration</h1>    
 
   <div class="mt-3 flex flex-col">
     <div class="flex gap-3 items-center">
@@ -45,7 +45,7 @@
           </div>
         {% endif %}
         <div class="fr-input-group">
-          <button type="submit" class="fr-btn">Voir les registres publiques</button>
+          <button type="submit" class="fr-btn">Consulter les registres</button>
         </div>
       </form>
 
@@ -56,10 +56,10 @@
         <div class="fr-table__container">
           <div class="fr-table__content">
             <table id="table-0">
-              <caption> Registres publiques </caption>
+              <caption> Registres publics </caption>
               <thead>
                 <tr>
-                  <th> Commune </th>
+                  <th> Administration </th>
                   <th> Département </th>
                   <th> Nombre d'entrées </th>
                   <th>Consulter</th>
@@ -74,7 +74,7 @@
                     <td>
                       <a
                         class="fr-btn fr-btn--secondary fr-icon-eye-line"
-                        href="{% url 'app.registre-transactions-publique' manager_id=ads_manager.id %}"
+                        href="{% url 'app.registre-transactions-public' manager_id=ads_manager.id %}"
                       >
                         <span class="fr-sr-only">
                           Consulter
@@ -87,7 +87,7 @@
                 {% if not ads_managers %}
                   <tr>
                     <td colspan="4">
-                      L'administration recherchée n'existe pas, ou n'a pas rendu son registre publique sur MesADS 
+                      L'administration recherchée n'existe pas, ou n'a pas rendu son registre public sur MesADS 
                     </td>
                   </tr>
                 {% endif %}

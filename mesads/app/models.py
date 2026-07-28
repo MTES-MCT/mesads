@@ -108,7 +108,7 @@ class ADSManager(SmartValidationMixin, models.Model):
             "d'attente de l'administration soit publique."
         ),
     )
-    registre_transaction_publique = models.BooleanField(
+    registre_transaction_public = models.BooleanField(
         default=False,
         help_text=(
             "Cochez cette case pour que le registre des "
