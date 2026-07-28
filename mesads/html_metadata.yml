@@ -328,10 +328,10 @@ urls:
     missing: true
     
   app.registres-transactions:
-    title: "Registres des transactions publiques - MesADS"
-    description: "Registres des transactions publiques - MesADS"
+    title: "Registres des transactions publics - MesADS"
+    description: "Registres des transactions publics - MesADS"
   
-  app.registre-transactions-publique:
+  app.registre-transactions-public:
     title: "Registre des transactions de {{ads_manager.content_object.display_text}} - MesADS"
     description: "Registre des transactions de {{ads_manager.content_object.display_text}} - MesADS"
 
