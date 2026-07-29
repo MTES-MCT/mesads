@@ -4,6 +4,7 @@ from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 from mesads.app.models import ADSManagerRequest, InscriptionListeAttente
 
@@ -75,3 +76,20 @@ def check_and_notify_duplicated(inscription: InscriptionListeAttente):
 
     for inscription_a_notifier in inscriptions_a_notifier:
         _notification_doublon(inscription_a_notifier)
+
+
+def supression_inscriptions_archivees():
+    """
+    Fonction qui va supprimer les inscriptions à la liste d'attente
+    archivées depuis plus de 6 mois.
+    """
+
+    date_limite = timezone.now() - relativedelta(months=6)
+
+    inscriptions = InscriptionListeAttente.with_deleted.filter(
+        deleted_at__isnull=False, deleted_at__lt=date_limite
+    )
+    inscriptions_count = inscriptions.count()
+    inscriptions.delete()
+
+    return inscriptions_count

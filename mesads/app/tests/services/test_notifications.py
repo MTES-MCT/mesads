@@ -6,8 +6,8 @@ from django.utils import timezone
 from mesads.app.services.notifications import notify_prefectures_gestionnaires
 from mesads.users.tests.factories import UserFactory
 
-from ..models import ADS, ADSUpdateLog, ADSUser
-from .factories import (
+from ...models import ADS, ADSUpdateLog, ADSUser
+from ..factories import (
     ADSManagerAdministratorFactory,
     ADSManagerFactory,
     ADSManagerRequestFactory,

@@ -2,7 +2,7 @@ import pytest
 
 from mesads.app.services.export import get_prefectures_data_listes_attente
 
-from .factories import (
+from ..factories import (
     ADSManagerAdministratorFactory,
     ADSManagerFactory,
     InscriptionListeAttenteFactory,

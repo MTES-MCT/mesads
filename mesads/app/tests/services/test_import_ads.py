@@ -7,7 +7,7 @@ from mesads.app.models import ADS, ADSUser
 from mesads.app.services.import_ads import import_ads_from_excel
 from mesads.users.tests.factories import UserFactory
 
-from .factories import (
+from ..factories import (
     ADSManagerAdministratorFactory,
     ADSManagerFactory,
 )

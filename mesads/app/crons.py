@@ -89,3 +89,19 @@ class NotificationVerification(CronJobBase):
         with redirect_stdout(buf), redirect_stderr(buf):
             call_command("notify_prefectures_gestionnaires")
         return buf.getvalue()
+
+
+class SupressionInscriptionsArchivees(CronJobBase):
+    # Run every week
+    schedule = Schedule(run_every_mins=60 * 24 * 7)
+
+    code = "supression_inscriptions_archivees"  # unique code to represent this cron job
+
+    @sentry_exceptions
+    def do(self):
+        # Redirect stdout and stderr to a buffer to capture the output of the
+        # command. By returning it, django-cron will log it in the database.
+        buf = io.StringIO()
+        with redirect_stdout(buf), redirect_stderr(buf):
+            call_command("supression_inscriptions_archivees")
+        return buf.getvalue()
