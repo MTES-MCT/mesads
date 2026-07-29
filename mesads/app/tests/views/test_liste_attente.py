@@ -7,6 +7,7 @@ import pytest
 from dateutil.relativedelta import relativedelta
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from django.utils import timezone
 
 from mesads.app.forms import (
     ArchivageInscriptionListeAttenteForm,
@@ -720,7 +721,7 @@ class TestRestaurationInscriptionView(ClientTestCase):
     def test_post_restauration_inscription(self):
         inscription = InscriptionListeAttenteFactory(
             ads_manager=self.ads_manager,
-            deleted_at=date.today(),
+            deleted_at=timezone.now(),
             motif_archivage=InscriptionListeAttente.ABSENCE_REPONSE,
             commentaire="Demande archivée",
         )
