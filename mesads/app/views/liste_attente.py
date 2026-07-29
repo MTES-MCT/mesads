@@ -522,6 +522,7 @@ class ArchivageConfirmationView(ADSManagerMixin, TemplateView):
         "pages/ads_register/liste_attente_archivage_confirmation_inscription.html"
     )
 
+
 class RestaurationInscriptionView(View):
     def post(self, request, *args, **kwargs):
         inscription = get_object_or_404(
@@ -540,6 +541,7 @@ class RestaurationInscriptionView(View):
                 "app.liste_attente", kwargs={"manager_id": self.kwargs["manager_id"]}
             )
         )
+
 
 class ExportCSVInscriptionListeAttenteView(ADSManagerMixin, ExcelExporter, View):
     def get_filename(self):
