@@ -571,6 +571,26 @@ class ArchivageConfirmationView(TemplateView):
         return context
 
 
+class RestaurationInscriptionView(View):
+    def post(self, request, *args, **kwargs):
+        inscription = get_object_or_404(
+            InscriptionListeAttente.with_deleted, pk=kwargs["inscription_id"]
+        )
+        inscription.deleted_at = None
+        inscription.motif_archivage = ""
+        inscription.commentaire = ""
+        inscription.save()
+        messages.success(
+            request,
+            ("L'inscription a bien été restaurée."),
+        )
+        return HttpResponseRedirect(
+            redirect_to=reverse(
+                "app.liste_attente", kwargs={"manager_id": self.kwargs["manager_id"]}
+            )
+        )
+
+
 class ExportCSVInscriptionListeAttenteView(ExcelExporter, View):
     ads_manager = None
 

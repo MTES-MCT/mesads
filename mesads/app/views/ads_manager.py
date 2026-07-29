@@ -261,6 +261,11 @@ class ADSManagerView(ListView, ProcessFormView):
         )
 
         context["ads_count"] = all_ads_counts["total"]
+        context["inscriptions_count"] = (
+            context["ads_manager"]
+            .inscriptions_liste_attente.filter(deleted_at__isnull=True)
+            .count()
+        )
         context["pourcentage_verification"] = int(
             (all_ads_counts["verified"] / all_ads_counts["total"] * 100)
             if all_ads_counts["total"]

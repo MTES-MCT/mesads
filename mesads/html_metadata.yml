@@ -274,6 +274,9 @@ urls:
   app.liste_attente_publique_export_pdf:
     missing: true
 
+  app.liste_attente_inscription_restaurer:
+    missing: true
+
     # Parcours inspecteur
   
   app.consultation_search:
