@@ -1,6 +1,6 @@
 from django.conf import settings
 
-from mesads.app.models import ADSManagerRequest
+from mesads.app.models import ADSManagerRequest, DemandeAccesLectureSeule
 
 
 def mesads_settings(request):
@@ -13,15 +13,20 @@ def mesads_settings(request):
 
 
 def user_roles(request):
-    context = {}
+    context = {"user": request.user}
 
     if request.user.is_authenticated:
         ads_manager_administrators = request.user.adsmanageradministrator_set.all()
         ads_manager_requests = request.user.adsmanagerrequest_set.all()
         proprietaire_vehicule_relais = request.user.proprietaire_set.all()
+        inspecteurs = request.user.demandes_acces_lecture_seule.filter(
+            statut=DemandeAccesLectureSeule.ACCEPTE
+        )
         if len(ads_manager_administrators):
             context["administrateur_ads"] = True
             context["ads_manager_administrator"] = ads_manager_administrators.first()
+        elif len(inspecteurs):
+            context["inspecteur"] = True
         elif len(ads_manager_requests):
             context["manager_ads"] = True
             context["requetes_gestionnaires"] = ADSManagerRequest.objects.filter(

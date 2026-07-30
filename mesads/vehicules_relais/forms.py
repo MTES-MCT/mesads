@@ -91,3 +91,31 @@ class SearchVehiculeForm(forms.Form):
     )
 
     immatriculation = forms.CharField(required=False)
+
+
+class SearchImmatriculationVehiculeForm(forms.Form):
+    immatriculation = forms.CharField(required=False)
+
+
+class SearchVehiculeDepartementForm(forms.Form):
+    departement = forms.ModelChoiceField(
+        queryset=Prefecture.objects,
+        label=Vehicule.departement.field.verbose_name,
+        help_text=Vehicule.departement.field.help_text,
+        required=False,
+    )
+
+    search = forms.CharField(required=False, label="Recherche")
+
+    def __init__(self, administrator, *args, **kwargs):
+        if administrator:
+            initial = kwargs.setdefault("initial", {})
+            initial.setdefault(
+                "departement",
+                administrator.prefecture_id,
+            )
+
+        super().__init__(*args, **kwargs)
+
+        if administrator:
+            self.fields["departement"].disabled = True

@@ -149,14 +149,6 @@ urls:
     description: "Consultez le journal des modifications apportées à l'ADS {{ ads.number }} de {{ ads_manager.content_object.display_fulltext }}."
 
 
-  app.ads-manager-admin.vehicules_relais:
-    title: "MesADS - Taxis relais de {{ads_manager_administrator.prefecture.display_fulltext }}"
-    description: "Taxis relais de {{ads_manager_administrator.prefecture.display_fulltext }}"
-
-  app.ads-manager-admin.vehicule_relais_detail:
-    title: "MesADS - Détail du taxis relais n°{{vehicule.numero}}"
-    description: "MesADS - Détail du taxis relais n°{{vehicule.numero}}"
-
   ###
   ### Vehicules relais
   ###
@@ -209,12 +201,24 @@ urls:
     title: "Confirmer la suppression du taxi relais n°{{ vehicule.numero }}"
     description: "Supprimez définitivement le taxi relais n°{{ vehicule.numero }} de votre espace propriétaire {{ proprietaire.nom }}."
 
-  vehicules-relais.proprietaire.vehicule.history:
-    title: "Historique du taxi relais n°{{ vehicule.numero }}"
-    description: "Consultez l'historique des modifications apportées au taxi relais n°{{ vehicule.numero }} de {{ proprietaire.nom }}."
-
   vehicules-relais.proprietaire.vehicule.recepisse:
     missing: true # Not HTML view
+
+  vehicules-relais.vehicules_relais_departement:
+    title: "Répertoire des véhicules relais de {{prefecture.display_fulltext}} - MesADS"
+    description: "Répertoire des véhicules relais de {{prefecture.display_fulltext}} - MesADS"
+  
+  vehicules-relais.vehicules_relais_history:
+    title: "Historique des modifications des véhicules relais - MesADS"
+    description: "Historique des modifications des véhicules relais - MesADS"
+
+  vehicules-relais.vehicule_relais_departement_detail:
+    title: "Détail du taxis relais n°{{vehicule.numero}} - MesADS"
+    description: "MDétail du taxis relais n°{{vehicule.numero}} - MesADS"
+
+  vehicules-relais.vehicule_relais_departement_detail_history:
+    title: "Historique du taxi relais n°{{ vehicule.numero }} - MesADS"
+    description: "Consultez l'historique des modifications apportées au taxi relais n°{{ vehicule.numero }} de {{ vehicule.proprietaire.nom }}."
 
   # Liste attente
 

@@ -4,9 +4,9 @@ from io import BytesIO
 import qrcode
 from django.contrib import messages
 from django.contrib.staticfiles.finders import find
-from django.db.models import CharField, F, IntegerField, Value
+from django.db.models import CharField, F, IntegerField, Q, Value
 from django.db.models.functions import Cast, Replace
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
@@ -23,12 +23,16 @@ from django.views.generic import (
 from reversion.views import RevisionMixin
 from weasyprint import HTML
 
+from mesads.app.models import DemandeAccesLectureSeule
 from mesads.app.reversion_diff import ModelHistory
+from mesads.fradm.models import Prefecture
 from mesads.utils_psql import SplitPart
 
 from .forms import (
     ProprietaireDeleteForm,
     ProprietaireForm,
+    SearchImmatriculationVehiculeForm,
+    SearchVehiculeDepartementForm,
     SearchVehiculeForm,
     VehiculeCreateForm,
     VehiculeForm,
@@ -283,7 +287,7 @@ class ProprietaireVehiculeDeleteView(RevisionMixin, DeleteView):
         administrator = self.request.user.adsmanageradministrator_set.first()
         if administrator:
             return reverse(
-                "app.ads-manager-admin.vehicules_relais",
+                "vehicules-relais.vehicules_relais_departement",
                 kwargs={"prefecture_id": administrator.prefecture.id},
             )
 
@@ -315,11 +319,36 @@ class ProprietaireVehiculeCreateView(ProprietaireVehiculeUpdateView, CreateView)
 class ProprietaireVehiculeHistoryView(DetailView):
     template_name = "pages/vehicules_relais/proprietaire_vehicule_history.html"
 
+    def get(self, request, *args, **kwargs):
+        response = super().get(self, request, *args, **kwargs)
+        if self.request.user.is_staff or self.get_is_inspecteur():
+            return response
+        administrator = self.get_ads_manager_administrator()
+        if administrator and administrator.prefecture == self.get_object().departement:
+            return response
+        raise Http404()
+
+    def get_ads_manager_administrator(self):
+        if self.request.user.is_authenticated:
+            ads_manager_administrators = (
+                self.request.user.adsmanageradministrator_set.all()
+            )
+            if len(ads_manager_administrators):
+                return ads_manager_administrators.first()
+        return None
+
+    def get_is_inspecteur(self):
+        return (
+            self.request.user.is_authenticated
+            and self.request.user.demandes_acces_lecture_seule.filter(
+                statut=DemandeAccesLectureSeule.ACCEPTE
+            ).exists()
+        )
+
     def get_object(self, queryset=None):
         return get_object_or_404(
-            Vehicule,
+            Vehicule.with_deleted,
             numero=self.kwargs["vehicule_numero"],
-            proprietaire=self.kwargs["proprietaire_id"],
         )
 
     def get_context_data(self, **kwargs):
@@ -333,7 +362,7 @@ class ProprietaireVehiculeHistoryView(DetailView):
                 Vehicule._meta.get_field("departement"),
             ],
         )
-        ctx["proprietaire"] = self.kwargs["proprietaire"]
+        ctx["proprietaire"] = self.object.proprietaire
         return ctx
 
 
@@ -396,3 +425,140 @@ class ProprietaireVehiculeRecepisseView(View):
         HTML(string=html).write_pdf(response)
 
         return response
+
+
+class RepertoireVehiculeRelaisDepartementView(ListView):
+    template_name = "pages/vehicules_relais/prefecture_vehicules_relais.html"
+    paginate_by = 100
+
+    def get_form(self):
+        return SearchImmatriculationVehiculeForm(self.request.GET)
+
+    def get_queryset(self):
+        # .order_by("numero") doesn't work because with a string ordering,
+        # 75-2 is higher than 75-100.
+        # Instead we split the numero field and order by the first and second part.
+        # Note the first part has to be cast to a string and not to an integer
+        # because Corsica's departement number is 2A or 2B.
+        qs = (
+            Vehicule.objects.filter(departement__id=self.kwargs.get("prefecture_id"))
+            .annotate(
+                part1=Cast(SplitPart("numero", Value("-"), Value(1)), CharField()),
+                part2=Cast(SplitPart("numero", Value("-"), Value(2)), IntegerField()),
+                immatriculation_clean=Replace(
+                    F("immatriculation"), Value("-"), Value("")
+                ),
+            )
+            .order_by("part1", "part2")
+            .select_related("proprietaire")
+        )
+
+        form = self.get_form()
+        if form.is_valid():
+            immatriculation = form.cleaned_data["immatriculation"]
+            if immatriculation:
+                qs = qs.filter(
+                    immatriculation_clean__icontains=immatriculation.replace("-", "")
+                )
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = self.get_form()
+
+        context["form"] = form
+        context["prefecture"] = get_object_or_404(
+            Prefecture, pk=self.kwargs["prefecture_id"]
+        )
+
+        return context
+
+
+class VehiculeDepartementView(TemplateView):
+    template_name = "pages/vehicules_relais/prefecture_vehicule_relais_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["vehicule"] = get_object_or_404(Vehicule, numero=kwargs["numero"])
+        context["prefecture"] = get_object_or_404(
+            Prefecture, pk=self.kwargs["prefecture_id"]
+        )
+        return context
+
+
+class HistoriqueVehiculeRelaisDepartementView(ListView):
+    template_name = (
+        "pages/vehicules_relais/prefecture_vehicule_relais_history_list.html"
+    )
+    paginate_by = 100
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(self, request, *args, **kwargs)
+        if (
+            self.request.user.is_staff
+            or self.get_ads_manager_administrator()
+            or self.get_is_inspecteur()
+        ):
+            return response
+        raise Http404()
+
+    def get_is_inspecteur(self):
+        return (
+            self.request.user.is_authenticated
+            and self.request.user.demandes_acces_lecture_seule.filter(
+                statut=DemandeAccesLectureSeule.ACCEPTE
+            ).exists()
+        )
+
+    def get_ads_manager_administrator(self):
+        if self.request.user.is_authenticated and not self.request.user.is_staff:
+            ads_manager_administrators = (
+                self.request.user.adsmanageradministrator_set.all()
+            )
+            if len(ads_manager_administrators):
+                return ads_manager_administrators.first()
+        return None
+
+    def get_queryset(self):
+        qs = (
+            Vehicule.with_deleted.annotate(
+                immatriculation_clean=Replace(
+                    F("immatriculation"), Value("-"), Value("")
+                ),
+            )
+            .order_by("-last_update_at")
+            .select_related("proprietaire")
+        )
+
+        form = self.get_form()
+        administrator = self.get_ads_manager_administrator()
+        if form.is_valid():
+            departement = form.cleaned_data["departement"]
+            if departement or administrator:
+                if administrator:
+                    qs = qs.filter(departement=administrator.prefecture)
+                else:
+                    qs = qs.filter(departement=departement)
+
+            search = form.cleaned_data["search"]
+            if search:
+                for term in search.split(" "):
+                    qs = qs.filter(
+                        Q(immatriculation_clean__icontains=term.replace("-", ""))
+                        | Q(numero__icontains=term)
+                    )
+        elif administrator:
+            qs = qs.filter(departement=administrator.prefecture)
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = self.get_form()
+        return context
+
+    def get_form(self):
+        return SearchVehiculeDepartementForm(
+            data=self.request.GET or None,
+            administrator=self.get_ads_manager_administrator(),
+        )

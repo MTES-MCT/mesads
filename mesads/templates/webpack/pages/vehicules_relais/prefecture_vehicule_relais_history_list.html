@@ -1,0 +1,113 @@
+{% extends "base_container.html" %}
+{% load show_pagination_links %}
+{% block body-content %}
+  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
+    <button class="fr-breadcrumb__button"
+            aria-expanded="false"
+            aria-controls="breadcrumb-1">Voir le fil d'Ariane</button>
+    <div class="fr-collapse" id="breadcrumb-1">
+      <ol class="fr-breadcrumb__list">
+        <li>
+          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link" href="{% url 'vehicules-relais.index' %}">Répertoire des taxis relais</a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link" aria-current="page">Historique des modifications des véhicules</a>
+        </li>
+      </ol>
+    </div>
+  </nav>
+  <h1>Historique des Modifications des véhicules relais</h1>
+  <hr class="fr-mt-3w">
+  <form method="get">
+    <div class="fr-form-group">
+      <fieldset class="fr-fieldset">
+        <div class="fr-fieldset__content">
+          {% include "form_fields/select.html" with field=form.departement field_errors=form.errors.departement required=form.fields.departement.required bold=True readonly=form.fields.departement.disabled %}
+
+          {% include "form_fields/string.html" with field=form.search field_errors=form.errors.search required=form.fields.search.required %}
+        </div>
+      </fieldset>
+    </div>
+    <!-- Non-fields errors -->
+    {% if form.non_field_errors %}
+      <div class="fr-input-group fr-input-group--error">
+        {% for error in form.non_field_errors %}
+          <!-- Non-field error -->
+          <p class="fr-error-text">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <div class="fr-input-group">
+      <button type="submit" class="fr-btn">Rechercher</button>
+    </div>
+  </form>
+  <hr class="fr-mt-3w">
+    <div class="fr-table fr-table--no-scroll fr-table--lg fr-table--no-caption">
+      <div class="fr-table__wrapper">
+        <div class="fr-table__container">
+          <div class="fr-table__content">
+            <table>
+              <caption>Véhicules relais du département {{ prefecture.numero }} - {{ prefecture.libelle }}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Date de dernière modification</th>
+                  <th scope="col">Statut</th>
+                  <th scope="col">N°</th>
+                  <th scope="col">Immatriculation</th>
+                  <th scope="col">Ville</th>
+                  <th scope="col">Propriétaire</th>
+                  <th scope="col">Consulter l'historique</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for vehicule in vehicule_list %}
+                  <tr>
+                    <td>{{ vehicule.last_update_at|date:"d/m/Y" }}</td>
+                    <td>
+                      {% if vehicule.deleted_at %}
+                      <p class="fr-badge fr-badge--error fr-badge--no-icon">Supprimé</p>
+                      {% else %}
+                      <p class="fr-badge fr-badge--success fr-badge--no-icon">En activité</p>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <strong>{{ vehicule.numero }}</strong>
+                    </td>
+                    <td>{{ vehicule.immatriculation }}</td>
+                    <td>
+                      {% if vehicule.commune_localisation %}
+                        {{ vehicule.commune_localisation.libelle }}
+                      {% endif %}
+                    </td>
+                    <td>{{ vehicule.proprietaire.nom }}</td>
+                    <td class="!text-right">
+                      <a
+                        class="fr-btn fr-btn--secondary fr-icon-eye-line"
+                        aria-label="Afficher les détails du véhicule {{vehicule.numero}}"
+                        href="{% url 'vehicules-relais.vehicule_relais_departement_detail_history' vehicule_numero=vehicule.numero %}"
+                      >
+                        Afficher les détails
+                      </a>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="6" class="text-center">Aucun véhicule relais n'est enregistré pour ce département.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% show_pagination_links page_obj %}
+    </div>
+{% endblock body-content %}
+{% block endbody %}
+  {{ block.super }}
+  {% comment %}Extra javascript to display form for new requests.{% endcomment %}
+  {{ form.media }}
+{% endblock endbody %}
