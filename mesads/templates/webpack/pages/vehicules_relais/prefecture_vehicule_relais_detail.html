@@ -8,11 +8,11 @@
     <div class="fr-collapse" id="breadcrumb-1">
       <ol class="fr-breadcrumb__list">
         <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil {{ ads_manager_administrator.prefecture.display_text|capfirst }}</a>
+          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
         </li>
         <li>
           <a class="fr-breadcrumb__link"
-             href="{% url 'app.ads-manager-admin.vehicules_relais' prefecture_id=ads_manager_administrator.prefecture.id %}">Répertoire des taxis relais</a>
+             href="{% url 'vehicules-relais.vehicules_relais_departement' prefecture_id=prefecture.id %}">Répertoire des taxis relais</a>
         </li>
         <li>
           <a class="fr-breadcrumb__link" aria-current="page">Véhicule {{ vehicule.numero }}</a>

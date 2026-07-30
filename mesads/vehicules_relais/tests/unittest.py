@@ -78,3 +78,4 @@ class ClientTestCase(BaseClientTestCase):
             pmr=False,
             commune_localisation=None,
         )
+        self.prefecture = ille_et_vilaine

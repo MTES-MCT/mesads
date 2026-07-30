@@ -8,7 +8,6 @@ from django.core.mail import send_mail
 from django.db.models import (
     BooleanField,
     Case,
-    CharField,
     Count,
     DateTimeField,
     ExpressionWrapper,
@@ -21,7 +20,7 @@ from django.db.models import (
     Value,
     When,
 )
-from django.db.models.functions import Cast, Coalesce, Now, Replace, Round
+from django.db.models.functions import Cast, Coalesce, Now, Round
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -30,10 +29,8 @@ from django.utils.text import slugify
 from django.views.generic import FormView, ListView, TemplateView, View
 from reversion.views import RevisionMixin
 
-from mesads.app.forms import DemandeGestionPrefectureForm, SearchVehiculeForm
+from mesads.app.forms import DemandeGestionPrefectureForm
 from mesads.fradm.models import EPCI, Aeroport, Commune, Prefecture
-from mesads.utils_psql import SplitPart
-from mesads.vehicules_relais.models import Vehicule
 
 from ..models import (
     ADS,
@@ -498,69 +495,6 @@ class ADSManagerAdminUpdatesView(TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx["updates"] = self.get_updates()
         return ctx
-
-
-class RepertoireVehiculeRelaisView(ListView):
-    template_name = "pages/ads_register/prefecture_vehicules_relais.html"
-    paginate_by = 100
-
-    def get_form(self):
-        return SearchVehiculeForm(self.request.GET)
-
-    def get_queryset(self):
-        # .order_by("numero") doesn't work because with a string ordering,
-        # 75-2 is higher than 75-100.
-        # Instead we split the numero field and order by the first and second part.
-        # Note the first part has to be cast to a string and not to an integer
-        # because Corsica's departement number is 2A or 2B.
-        qs = (
-            Vehicule.objects.filter(
-                departement__id=self.kwargs.get(
-                    "ads_manager_administrator"
-                ).prefecture.id
-            )
-            .annotate(
-                part1=Cast(SplitPart("numero", Value("-"), Value(1)), CharField()),
-                part2=Cast(SplitPart("numero", Value("-"), Value(2)), IntegerField()),
-                immatriculation_clean=Replace(
-                    F("immatriculation"), Value("-"), Value("")
-                ),
-            )
-            .order_by("part1", "part2")
-            .select_related("proprietaire")
-        )
-
-        form = self.get_form()
-        if form.is_valid():
-            immatriculation = form.cleaned_data["immatriculation"]
-            if immatriculation:
-                qs = qs.filter(
-                    immatriculation_clean__icontains=immatriculation.replace("-", "")
-                )
-        return qs
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        form = self.get_form()
-
-        context["form"] = form
-        context["ads_manager_administrator"] = self.kwargs.get(
-            "ads_manager_administrator"
-        )
-
-        return context
-
-
-class VehiculeView(TemplateView):
-    template_name = "pages/ads_register/prefecture_vehicule_relais_detail.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["vehicule"] = get_object_or_404(Vehicule, numero=kwargs["numero"])
-        context["ads_manager_administrator"] = self.kwargs.get(
-            "ads_manager_administrator"
-        )
-        return context
 
 
 class DemandeGestionPrefectureView(FormView):
