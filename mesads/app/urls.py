@@ -32,20 +32,6 @@ url_prefectures = [
         # A GARDER
     ),
     path(
-        "espace-prefecture/<int:prefecture_id>/vehicules-relais/",
-        ads_manager_administrator_required(
-            views.RepertoireVehiculeRelaisView.as_view()
-        ),
-        name="app.ads-manager-admin.vehicules_relais",
-        # A GARDER
-    ),
-    path(
-        "espace-prefecture/<int:prefecture_id>/vehicules-relais/<str:numero>/",
-        ads_manager_administrator_required(views.VehiculeView.as_view()),
-        name="app.ads-manager-admin.vehicule_relais_detail",
-        # A GARDER
-    ),
-    path(
         "registre_ads/prefectures/<int:prefecture_id>/export",
         ads_manager_administrator_required(views.PrefectureExportView.as_view()),
         name="app.exports.prefecture",

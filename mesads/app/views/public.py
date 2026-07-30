@@ -391,7 +391,7 @@ class PlanSiteView(TemplateView):
                                     "des taxis relais de votre préfecture"
                                 ),
                                 "url": reverse(
-                                    "app.ads-manager-admin.vehicules_relais",
+                                    "vehicules-relais.vehicules_relais_departement",
                                     kwargs={
                                         "prefecture_id": administrator.prefecture.id
                                     },

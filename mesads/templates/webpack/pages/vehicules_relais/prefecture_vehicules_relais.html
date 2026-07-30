@@ -8,7 +8,7 @@
     <div class="fr-collapse" id="breadcrumb-1">
       <ol class="fr-breadcrumb__list">
         <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil {{ ads_manager_administrator.prefecture.display_text|capfirst }}</a>
+          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
         </li>
         <li>
           <a class="fr-breadcrumb__link" aria-current="page">Répertoire des taxis relais</a>
@@ -18,7 +18,13 @@
   </nav>
   <h1>Consulter le répertoire des véhicules relais</h1>
   <hr class="fr-mt-3w">
-  <form method="get" action="{% url 'app.ads-manager-admin.vehicules_relais' prefecture_id=ads_manager_administrator.prefecture.id %}">
+
+  {% if ads_manager_administrator %}
+    <p>
+      <a href="{% url 'vehicules-relais.vehicules_relais_history' %}" target="_self" class="fr-link fr-icon-arrow-right-line fr-link--icon-right">Consulter l'historique des véhicules de votre département</a>
+    </p>
+  {% endif %}
+  <form method="get">
     <div class="fr-form-group">
       <fieldset class="fr-fieldset">
         <div class="fr-fieldset__content">
@@ -89,7 +95,7 @@
                       <a
                         class="fr-btn fr-btn--secondary fr-icon-eye-line"
                         aria-label="Afficher les détails du véhicule {{vehicule.numero}}"
-                        href="{% url 'app.ads-manager-admin.vehicule_relais_detail' prefecture_id=ads_manager_administrator.prefecture.id numero=vehicule.numero %}"
+                        href="{% url 'vehicules-relais.vehicule_relais_departement_detail' prefecture_id=prefecture.id numero=vehicule.numero %}"
                       >
                         Afficher les détails
                       </a>
