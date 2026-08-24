@@ -217,8 +217,8 @@ class TestSelectionDocument(ClientTestCase):
         self.assertRedirects(
             response,
             expected_url=reverse(
-                "app.transaction-documents",
-                kwargs={"manager_id": self.ads_manager.id, "entree_id": entree.id},
+                "app.transaction-liste",
+                kwargs={"manager_id": self.ads_manager.id},
             ),
             status_code=http.HTTPStatus.FOUND,
             target_status_code=http.HTTPStatus.OK,
@@ -321,8 +321,8 @@ class TestEnregistrement(ClientTestCase):
         self.assertRedirects(
             response,
             expected_url=reverse(
-                "app.transaction-enregistrement",
-                kwargs={"manager_id": self.ads_manager.id, "entree_id": entree.id},
+                "app.transaction-liste",
+                kwargs={"manager_id": self.ads_manager.id},
             ),
             status_code=http.HTTPStatus.FOUND,
             target_status_code=http.HTTPStatus.OK,
