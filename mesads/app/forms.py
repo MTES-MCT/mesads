@@ -537,6 +537,12 @@ class TransactionADSForm(ADSFormMixin, forms.ModelForm):
         model = EntreeRegistreTransaction
         fields = ["ads"]
 
+    ads = ADSChoiceField(
+        queryset=ADS.objects.none(),
+        label="ADS",
+        required=True,
+    )
+
 
 COMPLETION_STATUTS = {
     "1": "Complet",
@@ -592,6 +598,12 @@ class TransactionUpdateForm(ADSFormMixin, SirenValidationFormMixin, forms.ModelF
             "nouvel_exploitant",
             "siren_nouvel_exploitant",
         ]
+
+    ads = ADSChoiceField(
+        queryset=ADS.objects.none(),
+        label="ADS",
+        required=True,
+    )
 
     def save(self, commit=True):
         instance = super().save(commit=False)

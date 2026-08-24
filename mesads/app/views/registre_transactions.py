@@ -44,6 +44,14 @@ class TransactionSelectionADSFormView(ADSManagerMixin, CreateView):
             },
         )
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(
+            self.request,
+            (f"Dossier de cession pour l'ADS {self.object.ads.number} créé."),
+        )
+        return response
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs.update({"ads_manager": self.ads_manager})
@@ -58,16 +66,38 @@ class TransactionDocumentsFormView(ADSManagerMixin, UpdateView):
         "pages/ads_register/registre_transactions/transaction_documents.html"
     )
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        action = self.request.POST.get("action")
+        messages.success(
+            self.request,
+            ("Les informations sur les pièces du dossier ont bien été enregistrées.")
+            if action == "validate"
+            else "Le brouillon a bien été enregistré",
+        )
+        return response
+
     def get_success_url(self):
         action = self.request.POST.get("action")
-        return reverse(
-            "app.transaction-enregistrement"
+        return (
+            reverse(
+                "app.transaction-enregistrement",
+                kwargs={
+                    "manager_id": get_object_or_404(
+                        ADSManager, pk=self.ads_manager.id
+                    ).id,
+                    "entree_id": self.object.id,
+                },
+            )
             if action == "validate"
-            else "app.transaction-documents",
-            kwargs={
-                "manager_id": get_object_or_404(ADSManager, pk=self.ads_manager.id).id,
-                "entree_id": self.object.id,
-            },
+            else reverse(
+                "app.transaction-liste",
+                kwargs={
+                    "manager_id": get_object_or_404(
+                        ADSManager, pk=self.ads_manager.id
+                    ).id,
+                },
+            )
         )
 
 
@@ -98,8 +128,18 @@ class TransactionEnregistrementFormView(ADSManagerMixin, UpdateView):
             self.object.statut = EntreeRegistreTransaction.ENREGISTREE
             self.object.save()
 
+        messages.success(
+            self.request,
+            ("Les informations de l'entrée du registre ont bien été enregistrées.")
+            if action == "validate"
+            else "Le brouillon a bien été enregistré",
+        )
+
         return_url = (
-            reverse("app.transaction-enregistrement", kwargs=self.kwargs)
+            reverse(
+                "app.transaction-liste",
+                kwargs={"manager_id": self.kwargs.get("manager_id")},
+            )
             if action == "draft"
             else reverse("app.transaction-confirmation", kwargs=self.kwargs)
         )
@@ -120,9 +160,13 @@ class TransactionListView(ADSManagerMixin, ListView):
     context_object_name = "entrees"
 
     def get_queryset(self):
-        return EntreeRegistreTransaction.objects.filter(
-            ads__ads_manager__id=self.ads_manager.id
-        ).order_by("-date_transaction")
+        return (
+            EntreeRegistreTransaction.objects.filter(
+                ads__ads_manager__id=self.ads_manager.id
+            )
+            .select_related("ads")
+            .order_by("-date_transaction")
+        )
 
 
 class TransactionEditView(ADSManagerMixin, UpdateView):
