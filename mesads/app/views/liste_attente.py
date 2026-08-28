@@ -658,7 +658,7 @@ class ListesAttentesPubliquesView(ListView):
                         default=Value(""),
                     )
                 )
-                qs = qs.filter(name_search__icontains=commune)
+                qs = qs.filter(name_search__unaccent__icontains=commune)
 
             qs = qs.annotate(
                 nombre_inscriptions_liste=Count(
