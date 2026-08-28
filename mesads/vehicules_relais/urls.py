@@ -85,6 +85,11 @@ urlpatterns = [
         name="vehicules-relais.vehicules_relais_departement",
     ),
     path(
+        "departement/<int:prefecture_id>/vehicules-relais/export/",
+        views.PrefectureTaxisRelaisExportView.as_view(),
+        name="vehicules-relais.vehicules_relais_departement_export",
+    ),
+    path(
         "departement/vehicules-relais/history",
         views.HistoriqueVehiculeRelaisDepartementView.as_view(),
         name="vehicules-relais.vehicules_relais_history",

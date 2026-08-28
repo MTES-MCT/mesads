@@ -220,6 +220,9 @@ urls:
     title: "Historique du taxi relais n°{{ vehicule.numero }} - MesADS"
     description: "Consultez l'historique des modifications apportées au taxi relais n°{{ vehicule.numero }} de {{ vehicule.proprietaire.nom }}."
 
+  vehicules-relais.vehicules_relais_departement_export:
+    missing: true
+
   # Liste attente
 
   app.liste_attente:

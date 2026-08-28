@@ -25,6 +25,7 @@ from weasyprint import HTML
 
 from mesads.app.models import DemandeAccesLectureSeule
 from mesads.app.reversion_diff import ModelHistory
+from mesads.app.views.export import ExcelExporter
 from mesads.fradm.models import Prefecture
 from mesads.utils_psql import SplitPart
 
@@ -38,6 +39,7 @@ from .forms import (
     VehiculeForm,
 )
 from .models import DispositionSpecifique, Proprietaire, Vehicule
+from .services import get_taxis_relais_data_for_excel_export
 
 
 class IndexView(RedirectView):
@@ -441,7 +443,10 @@ class RepertoireVehiculeRelaisDepartementView(ListView):
         # Note the first part has to be cast to a string and not to an integer
         # because Corsica's departement number is 2A or 2B.
         qs = (
-            Vehicule.objects.filter(departement__id=self.kwargs.get("prefecture_id"))
+            Vehicule.objects.select_related(
+                "proprietaire", "departement", "commune_localisation"
+            )
+            .filter(departement__id=self.kwargs.get("prefecture_id"))
             .annotate(
                 part1=Cast(SplitPart("numero", Value("-"), Value(1)), CharField()),
                 part2=Cast(SplitPart("numero", Value("-"), Value(2)), IntegerField()),
@@ -450,7 +455,6 @@ class RepertoireVehiculeRelaisDepartementView(ListView):
                 ),
             )
             .order_by("part1", "part2")
-            .select_related("proprietaire")
         )
 
         form = self.get_form()
@@ -561,4 +565,31 @@ class HistoriqueVehiculeRelaisDepartementView(ListView):
         return SearchVehiculeDepartementForm(
             data=self.request.GET or None,
             administrator=self.get_ads_manager_administrator(),
+        )
+
+
+class PrefectureTaxisRelaisExportView(ExcelExporter, View):
+    prefecture = None
+
+    def setup(self, request, *args, **kwargs):
+        self.prefecture = get_object_or_404(Prefecture, pk=kwargs.get("prefecture_id"))
+        return super().setup(request, *args, **kwargs)
+
+    def get_filename(self):
+        return f"taxis_relais_prefecture_{self.prefecture.numero}.xlsx"
+
+    def get_file_title(self):
+        return f"Taxis relais - {self.prefecture.display_text().capitalize()}"
+
+    def generate(self, workbook):
+        headers_taxis, taxis = get_taxis_relais_data_for_excel_export(
+            prefecture=self.prefecture
+        )
+
+        self.add_sheet(
+            workbook,
+            "Taxis relais enregistrées",
+            "TableauTaxisRelais",
+            headers_taxis,
+            taxis,
         )
