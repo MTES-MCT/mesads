@@ -23,6 +23,9 @@
     <p>
       <a href="{% url 'vehicules-relais.vehicules_relais_history' %}" target="_self" class="fr-link fr-icon-arrow-right-line fr-link--icon-right">Consulter l'historique des véhicules de votre département</a>
     </p>
+    <p>
+      <a href="{% url 'vehicules-relais.vehicules_relais_departement_export' prefecture_id=prefecture.id %}" target="_self" class="fr-link fr-icon-arrow-right-line fr-link--icon-right">Exporter les véhicules de votre département (.xlsx)</a>
+    </p>
   {% endif %}
   <form method="get">
     <div class="fr-form-group">

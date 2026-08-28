@@ -156,3 +156,14 @@ class TestVehiculeHistoryView(ClientTestCase):
                     )
                 )
                 assert response.status_code == expected_response
+
+
+class TestVehiculeExportView(ClientTestCase):
+    def test_get_200(self):
+        response = self.client_prefecture.get(
+            reverse(
+                "vehicules-relais.vehicules_relais_departement_export",
+                kwargs={"prefecture_id": self.prefecture.id},
+            )
+        )
+        assert response.status_code == 200
