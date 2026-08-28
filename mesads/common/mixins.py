@@ -44,6 +44,13 @@ class SoftDeleteMixin(models.Model):
         self.deleted_at = timezone.now()
         self.save()
 
+    def hard_delete(self, using=None, keep_parents=False):
+        """Supprime réellement l'objet."""
+        return super().delete(
+            using=using,
+            keep_parents=keep_parents,
+        )
+
 
 class SmartValidationMixin:
     """Override clean() to only validate fields that have changed."""
