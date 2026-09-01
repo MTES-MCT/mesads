@@ -1,0 +1,12 @@
+{% if bandeau_information and bandeau_information.visible %}
+<div class="fr-notice fr-notice--info">
+  <div class="fr-container">
+    <div class="fr-notice__body">
+      <p>
+        <span class="fr-notice__title">{{bandeau_information.titre}}</span>
+        <span class="fr-notice__desc">{{bandeau_information.message}}</span>
+      </p>
+    </div>
+  </div>
+</div>
+{% endif %}
