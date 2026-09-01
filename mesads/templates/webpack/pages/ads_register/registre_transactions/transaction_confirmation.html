@@ -1,0 +1,109 @@
+{% extends "base_container.html" %}
+{% load show_pagination_links %}
+{% block body-content %}
+
+  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
+    <button
+      class="fr-breadcrumb__button"
+      aria-expanded="false"
+      aria-controls="breadcrumb-1"
+    >
+      Voir le fil d'Ariane
+    </button>
+    <div class="fr-collapse" id="breadcrumb-1">
+      <ol class="fr-breadcrumb__list">
+        <li>
+          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link"
+            href="{% url 'app.ads-manager.administrations' %}">
+            Vos administrations en gestion
+          </a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link"
+            href="{% url 'app.ads-manager.detail' manager_id=ads_manager.id %}">
+            {{ ads_manager.content_object.display_text|capfirst }}
+          </a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link" aria-current="page">Enregistrer une transaction</a>
+        </li>
+      </ol>
+    </div>
+  </nav>
+
+  <h1>Enregistrer une transaction</h1>
+
+  <div class="fr-stepper">
+    <h2 class="fr-stepper__title"> Confirmation <span class="fr-stepper__state">Étape 4 sur 4</span>
+    </h2>
+    <div class="fr-stepper__steps" data-fr-current-step="4" data-fr-steps="4"></div>
+  </div>
+
+  <div>
+    <h2>Transaction enregistrée</h2>
+    <p>La transaction est bien enregistrée dans votre registre des transactions.</p>
+
+    <div class="fr-alert fr-alert--info">
+      <h3 class="fr-alert__title">Modèle d'arrêté</h3>
+      <p>Un nouvel arrêté est nécessaire pour le acter le changement de titulaire de l'ADS. VOus pouvez en générer un prérempli à partir des informations saisies</p>
+      <p>Le modèle d'arrêté vous permet de: </p>
+      <ul>
+        <li>gagner du temps lors de la rédaction</li>
+        <li>garantir l'uniformité des arrêtés</li>
+        <li>saisir de manière fiable les informations récurrentes</li>
+      </ul>
+      <p><strong> Le modèle généré reste modifiable avant signature et notification.</strong></p>
+      <a target="_blank" href="{% url 'app.transaction-arrete' manager_id=ads_manager.id entree_id=object.id %}">Générer un modèle d'arrêté</a>
+    </div>
+
+    <div class="fr-alert fr-alert--success">
+      <h3 class="fr-alert__title">Registre des transactions mis à jour</h3>
+      <p>La transaction a été ajoutée automatiquement au registre public de la commune.</p>
+    </div>
+
+    <div class="fr-alert fr-alert--warning">
+      <h3 class="fr-alert__title">Action requise : mettre à jour la fiche ADS</h3>
+      <p>
+        Cette étape est <strong>manuelle et distincte</strong>. 
+        Il vous appartient de mettre à jour <strong>l'ADS {{object.ads.number}}</strong> 
+        dans la section <i>Gestion des ADS</i> pour refléter le changement de titulaire.
+      </p>
+      <p>
+        <a
+          href="{% url 'app.ads.detail' manager_id=ads_manager.id ads_id=object.ads.id %}"
+        >
+          Accéder à la gestion de l'ADS {{object.ads.number}}
+        </a>
+      </p>
+    </div>
+    
+    <div class="w-full text-center">
+      <div class="fr-my-6v">
+        <a
+          class="fr-btn fr-mr-4v"
+          href="{% url 'app.ads.detail' manager_id=ads_manager.id ads_id=object.ads.id %}"
+        >
+          Mettre à jour l'ADS {{object.ads.number}}
+        </a>
+        <a 
+          href="{% url 'app.transaction-liste' manager_id=ads_manager.id %}"
+          class="fr-btn fr-btn--secondary fr-mr-4v"
+        >
+          Retour au registre
+        </a>
+        <a
+          class="fr-btn fr-btn--secondary"
+          href="{% url 'app.transaction-choix-ads' manager_id=ads_manager.id %}"
+        >
+          Nouvelle transaction
+        </a>
+      </div>
+    </div>
+  </div>
+
+
+
+{% endblock body-content %}

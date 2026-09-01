@@ -59,7 +59,9 @@ def test_post_confirm_verification(user, client_logged, commune, ads_manager_req
     )
     ADSUpdateLog.create_for_ads(ads, user)
     update_log = ads.ads_update_logs.last()
-    update_log.update_at = update_log.update_at - relativedelta(years=1)
+    update_log.update_at = update_log.update_at - relativedelta(
+        days=ADSUpdateLog.OUTDATED_LOG_DAYS
+    )
 
     assert update_log.is_outdated()
 

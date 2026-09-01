@@ -32,20 +32,6 @@ url_prefectures = [
         # A GARDER
     ),
     path(
-        "espace-prefecture/<int:prefecture_id>/vehicules-relais/",
-        ads_manager_administrator_required(
-            views.RepertoireVehiculeRelaisView.as_view()
-        ),
-        name="app.ads-manager-admin.vehicules_relais",
-        # A GARDER
-    ),
-    path(
-        "espace-prefecture/<int:prefecture_id>/vehicules-relais/<str:numero>/",
-        ads_manager_administrator_required(views.VehiculeView.as_view()),
-        name="app.ads-manager-admin.vehicule_relais_detail",
-        # A GARDER
-    ),
-    path(
         "registre_ads/prefectures/<int:prefecture_id>/export",
         ads_manager_administrator_required(views.PrefectureExportView.as_view()),
         name="app.exports.prefecture",
@@ -133,6 +119,56 @@ url_gestionnaire = [
         "registre_ads/gestion/<int:manager_id>/telechargement-arrete",
         ads_manager_required(views.TelechargementArreteView.as_view()),
         name="app.arrete-download",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/",
+        ads_manager_required(views.TransactionListView.as_view()),
+        name="app.transaction-liste",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/statut",
+        ads_manager_required(views.ChangementStatutRegistreTransactionView.as_view()),
+        name="app.transaction-statut",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/creation",
+        ads_manager_required(views.TransactionCreateView.as_view()),
+        name="app.transaction-creation",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/selection-ads",
+        ads_manager_required(views.TransactionSelectionADSFormView.as_view()),
+        name="app.transaction-choix-ads",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/documents",
+        ads_manager_required(views.TransactionDocumentsFormView.as_view()),
+        name="app.transaction-documents",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/enregistrement",
+        ads_manager_required(views.TransactionEnregistrementFormView.as_view()),
+        name="app.transaction-enregistrement",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/confirmation",
+        ads_manager_required(views.TransactionConfirmationView.as_view()),
+        name="app.transaction-confirmation",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>",
+        ads_manager_required(views.TransactionEditView.as_view()),
+        name="app.transaction-edition",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/arrete",
+        ads_manager_required(views.ArreteChangementTitulaireExportView.as_view()),
+        name="app.transaction-arrete",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/courrier-contact/",
+        ads_manager_required(views.DemandePiecesJustificativeWordExportView.as_view()),
+        name="app.transaction-courrier",
     ),
 ]
 
@@ -285,6 +321,16 @@ url_public = [
         "listes-attente/publique/<int:manager_id>/",
         views.ListeAttentePublique.as_view(),
         name="app.liste_attente_publique",
+    ),
+    path(
+        "registres-transactions/",
+        views.RegistresTransactionsPublicsView.as_view(),
+        name="app.registres-transactions",
+    ),
+    path(
+        "registres-transactions/<int:manager_id>/",
+        views.RegistreTransactionsPublicView.as_view(),
+        name="app.registre-transactions-public",
     ),
 ]
 

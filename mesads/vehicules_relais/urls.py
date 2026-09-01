@@ -73,17 +73,35 @@ urlpatterns = [
         name="vehicules-relais.proprietaire.vehicule.delete",
     ),
     path(
-        "proprietaire/<int:proprietaire_id>/vehicules/<str:vehicule_numero>/historique",
-        staff_member_required(
-            proprietaire_required(views.ProprietaireVehiculeHistoryView.as_view())
-        ),
-        name="vehicules-relais.proprietaire.vehicule.history",
-    ),
-    path(
         "proprietaire/<int:proprietaire_id>/vehicules/<str:vehicule_numero>/recepisse",
         proprietaire_or_prefecture_required(
             views.ProprietaireVehiculeRecepisseView.as_view()
         ),
         name="vehicules-relais.proprietaire.vehicule.recepisse",
+    ),
+    path(
+        "departement/<int:prefecture_id>/vehicules-relais/",
+        views.RepertoireVehiculeRelaisDepartementView.as_view(),
+        name="vehicules-relais.vehicules_relais_departement",
+    ),
+    path(
+        "departement/<int:prefecture_id>/vehicules-relais/export/",
+        views.PrefectureTaxisRelaisExportView.as_view(),
+        name="vehicules-relais.vehicules_relais_departement_export",
+    ),
+    path(
+        "departement/vehicules-relais/history",
+        views.HistoriqueVehiculeRelaisDepartementView.as_view(),
+        name="vehicules-relais.vehicules_relais_history",
+    ),
+    path(
+        "departement/<int:prefecture_id>/vehicules-relais/<str:numero>/",
+        views.VehiculeDepartementView.as_view(),
+        name="vehicules-relais.vehicule_relais_departement_detail",
+    ),
+    path(
+        "departement/vehicules-relais/history/<str:vehicule_numero>/historique",
+        views.ProprietaireVehiculeHistoryView.as_view(),
+        name="vehicules-relais.vehicule_relais_departement_detail_history",
     ),
 ]

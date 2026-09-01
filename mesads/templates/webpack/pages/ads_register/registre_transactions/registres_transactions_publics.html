@@ -1,0 +1,129 @@
+{% extends "base_container.html" %}
+{% block body-content %}
+  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
+    <button
+      class="fr-breadcrumb__button"
+      aria-expanded="false"
+      aria-controls="breadcrumb-1"
+    >
+      Voir le fil d’Ariane
+    </button>
+    <div class="fr-collapse" id="breadcrumb-1">
+      <ol class="fr-breadcrumb__list">
+        <li>
+          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+        </li>
+        <li>
+          <a class="fr-breadcrumb__link" aria-current="page">Registre des transactions</a>
+        </li>
+      </ol>
+    </div>
+  </nav>
+  
+  
+  <h1>Consulter le registre des transactions d'une administration</h1>    
+
+  <div class="mt-3 flex flex-col">
+    <div class="flex gap-3 items-center">
+      <form method="get">
+        <div class="fr-form-group">
+          <fieldset class="fr-fieldset">
+            <div class="fr-fieldset__content">
+              {% include "form_fields/select.html" with empty_option=True field=form.departement field_errors=form.errors.departement required=form.fields.departement.required bold=True %}
+
+              {% include "form_fields/string.html" with field=form.commune field_errors=form.errors.commune required=form.fields.commune.required %}
+            </div>
+          </fieldset>
+        </div>
+        <!-- Non-fields errors -->
+        {% if form.non_field_errors %}
+          <div class="fr-input-group fr-input-group--error">
+            {% for error in form.non_field_errors %}
+              <!-- Non-field error -->
+              <p class="fr-error-text">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <div class="fr-input-group">
+          <button type="submit" class="fr-btn">Consulter les registres</button>
+        </div>
+      </form>
+
+    </div>
+    {% if extra_query_params %}
+    <div class="fr-table fr-table--no-scroll fr-table--multiline" id="table-0-component">
+      <div class="fr-table__wrapper">
+        <div class="fr-table__container">
+          <div class="fr-table__content">
+            <table id="table-0">
+              <caption> Registres publics </caption>
+              <thead>
+                <tr>
+                  <th> Administration </th>
+                  <th> Département </th>
+                  <th> Nombre d'entrées </th>
+                  <th>Consulter</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ads_manager in ads_managers %}
+                  <tr id="inscription-{{forloop.counter}}" data-row-key="{{forloop.counter}}">
+                    <td>{{ads_manager.content_object.display_text|capfirst}}</td>
+                    <td>{{ads_manager.administrator.prefecture.libelle}}</td>
+                    <td>{{ads_manager.nombre_entrees_registre}}</td>
+                    <td>
+                      <a
+                        class="fr-btn fr-btn--secondary fr-icon-eye-line"
+                        href="{% url 'app.registre-transactions-public' manager_id=ads_manager.id %}"
+                      >
+                        <span class="fr-sr-only">
+                          Consulter
+                        </span>
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+
+                {% if not ads_managers %}
+                  <tr>
+                    <td colspan="4">
+                      L'administration recherchée n'existe pas, ou n'a pas rendu son registre public sur MesADS 
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <nav role="navigation" class="fr-pagination self-center" aria-label="Pagination">
+      <ul class="fr-pagination__list">
+
+        {% if page_obj.has_previous %}
+        <li>
+          <a class="fr-pagination__link fr-pagination__link--first" href="?page=1{{extra_query_params}}"> Première page </a>
+        </li>
+        <li>
+          <a class="fr-pagination__link fr-pagination__link--prev fr-pagination__link--lg-label" href="?page={{page_obj.previous_page_number}}{{extra_query_params}}" title="Page précédente"> Page précédente </a>
+        </li>
+        {% endif %}
+        <li>
+          <a class="fr-pagination__link" aria-current="page" title="Page {{page_obj.number}}"> {{page_obj.number}} </a>
+        </li>
+
+        {% if page_obj.has_next %}
+        <li>
+          <a class="fr-pagination__link fr-pagination__link--next fr-pagination__link--lg-label" href="?page={{page_obj.next_page_number}}{{extra_query_params}}" title="Page suivante"> Page suivante </a>
+        </li>
+        <li>
+          <a class="fr-pagination__link fr-pagination__link--last" href="?page={{ page_obj.paginator.num_pages }}{{extra_query_params}}" title="Dernière page"> Dernière page </a>
+        </li>
+
+        {% endif %}
+
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
+{% endblock body-content %}

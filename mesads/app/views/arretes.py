@@ -2,26 +2,14 @@ from pathlib import Path
 
 from django.conf import settings
 from django.http import FileResponse, Http404
-from django.shortcuts import get_object_or_404
 from django.views import View
 from django.views.generic import TemplateView
 
-from mesads.app.models import ADS, ADSManager
+from mesads.common.context_mixins import ADSManagerMixin
 
 
-class ListeArretesFilesView(TemplateView):
+class ListeArretesFilesView(ADSManagerMixin, TemplateView):
     template_name = "pages/ads_register/arretes_liste.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if self.kwargs.get("manager_id"):
-            context["ads_manager"] = get_object_or_404(
-                ADSManager, id=self.kwargs.get("manager_id")
-            )
-        if self.request.GET.get("ads_id"):
-            context["ads"] = get_object_or_404(ADS, id=self.request.GET.get("ads_id"))
-
-        return context
 
 
 class TelechargementArreteView(View):

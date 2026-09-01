@@ -44,6 +44,12 @@
     <a class="fr-link fr-icon-arrow-right-line fr-link--icon-right" href="{% url 'vehicules-relais.proprietaire' %}">Accès à mon espace propriétaire</a>
   </p>
   {% endif %}
+
+  {% if user.is_staff or inspecteur or administrateur_ads %}
+    <p class="fr-mt-5w">
+      <a href="{% url 'vehicules-relais.vehicules_relais_history' %}" target="_self" class="fr-link fr-icon-arrow-right-line fr-link--icon-right">Consulter l'historique des véhicules</a>
+    </p>
+  {% endif %}
   <hr class="fr-mt-3w">
   <form method="get" action="{% url 'vehicules-relais.search' %}">
     <div class="fr-form-group">

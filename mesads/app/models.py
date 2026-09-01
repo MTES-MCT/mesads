@@ -108,6 +108,13 @@ class ADSManager(SmartValidationMixin, models.Model):
             "d'attente de l'administration soit publique."
         ),
     )
+    registre_transaction_public = models.BooleanField(
+        default=False,
+        help_text=(
+            "Cochez cette case pour que le registre des "
+            "transactions de l'administration soit publique."
+        ),
+    )
 
     class Meta:
         verbose_name = "Gestionnaire ADS"
@@ -425,6 +432,73 @@ def validate_siret(value):
             "resp": resp.text,
         },
     )
+
+
+def validate_siren(siren: str) -> None:
+    siren = siren.strip().replace(" ", "")
+
+    if len(siren) != 9:
+        raise ValidationError(
+            "Le numéro SIREN doit contenir exactement 9 chiffres.",
+        )
+
+    if not siren.isdigit():
+        raise ValidationError(
+            "Le numéro SIREN ne doit contenir que des chiffres.",
+        )
+
+    try:
+        response = requests.get(
+            f"https://api.insee.fr/api-sirene/3.11/siren/{siren}",
+            headers={"X-INSEE-Api-Key-Integration": settings.INSEE_TOKEN},
+            timeout=5,
+        )
+
+    except requests.Timeout as exc:
+        raise ValidationError(
+            (
+                "La vérification du numéro SIREN a expiré. "
+                "Veuillez réessayer ultérieurement."
+            ),
+        ) from exc
+
+    except requests.ConnectionError as exc:
+        raise ValidationError(
+            ("Impossible de contacter le service de vérification des numéros SIREN."),
+        ) from exc
+
+    except requests.RequestException as exc:
+        raise ValidationError(
+            "Une erreur est survenue lors de la vérification du numéro SIREN.",
+        ) from exc
+
+    if response.status_code == 404:
+        raise ValidationError(
+            "Ce numéro SIREN n'existe pas.",
+        )
+
+    if response.status_code in (401, 403):
+        raise ValidationError(
+            "Le service de vérification des numéros SIREN est mal configuré.",
+        )
+
+    if response.status_code == 429:
+        raise ValidationError(
+            (
+                "Le service de vérification des numéros SIREN reçoit trop "
+                "de demandes. Veuillez réessayer ultérieurement."
+            ),
+        )
+
+    if response.status_code >= 500:
+        raise ValidationError(
+            "Le service de vérification des numéros SIREN est indisponible.",
+        )
+
+    if not response.ok:
+        raise ValidationError(
+            "Le numéro SIREN n'a pas pu être vérifié.",
+        )
 
 
 ADS_UNIQUE_ERROR_MESSAGE = (
@@ -773,7 +847,7 @@ class ADSUpdateLog(SoftDeleteMixin, models.Model):
 
     # Number of days after which the log is considered outdated and should be reviewed
     # by the user
-    OUTDATED_LOG_DAYS = 365
+    OUTDATED_LOG_DAYS = 365 * 2
 
     class Meta:
         verbose_name = "Mise à jour ADS"
@@ -1451,3 +1525,107 @@ class InscriptionListeAttente(CharFieldsStripperMixin, SoftDeleteMixin):
 
     def is_duplicated(self):
         return self.get_duplicatas().exists()
+
+
+@reversion.register
+class EntreeRegistreTransaction(CharFieldsStripperMixin, SoftDeleteMixin):
+    ads = models.ForeignKey(
+        ADS,
+        on_delete=models.RESTRICT,
+        related_name="transactions",
+        verbose_name="ADS",
+    )
+
+    date_transaction = models.DateField(
+        verbose_name="Date de la transaction",
+        help_text="Date effective de la cession",
+        default=None,
+        blank=True,
+        null=True,
+    )
+
+    montant_transaction = models.DecimalField(
+        blank=True,
+        null=True,
+        default=None,
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Montant de la transaction",
+        help_text="Montant en euros, hors taxes",
+    )
+
+    ancien_exploitant = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="Nom - Prénom ou Dénomination sociale",
+    )
+
+    nouvel_exploitant = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="Nom - Prénom ou Dénomination sociale",
+    )
+    siren_nouvel_exploitant = models.CharField(
+        max_length=128,
+        blank=True,
+        default="",
+        verbose_name="Numéro SIREN",
+        help_text=("9 chiffres - Obligatoire pour les personnes morales. "),
+    )
+
+    demande_cession = models.BooleanField(
+        default=False, verbose_name="Demande de cession signée par le cédant"
+    )
+
+    justificatif_exploitation = models.BooleanField(
+        default=False,
+        verbose_name="Justificatif de l'exploitation effective et continue",
+    )
+
+    justificatif_montant = models.BooleanField(
+        default=False, verbose_name="Justificatif du montant de la transaction"
+    )
+
+    kbis_ou_siren = models.BooleanField(
+        default=False, verbose_name="Extrait Kbis ou justificatif SIREN (si société)"
+    )
+
+    autres_documents = models.BooleanField(default=False, verbose_name="Autres")
+
+    autres_documents_description = models.CharField(
+        max_length=255,
+        default="",
+        blank=True,
+        verbose_name="Autres Documents",
+        help_text="Précisez le(s) document(s)",
+    )
+
+    documents_complet = models.BooleanField(
+        default=False,
+        verbose_name="Indiquez l'état du dossier en fonction des pièces sélectionnées.",
+    )
+
+    BROUILLON = "brouillon"
+    ENREGISTREE = "enregistree"
+
+    STATUTS = [
+        (
+            BROUILLON,
+            "Brouillon",
+        ),
+        (ENREGISTREE, "Enregistrée"),
+    ]
+
+    statut = models.CharField(
+        max_length=255,
+        choices=STATUTS,
+        blank=True,
+        default=BROUILLON,
+        verbose_name="Statut de la transaction",
+    )
+
+    @property
+    def is_brouillon(self):
+        return self.statut == self.BROUILLON

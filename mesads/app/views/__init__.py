@@ -21,8 +21,6 @@ from .ads_manager_admin import (  # noqa: F401
     ADSManagerExportView,
     DemandeGestionPrefectureView,
     PrefectureExportView,
-    RepertoireVehiculeRelaisView,
-    VehiculeView,
 )
 from .ads_manager_request import (  # noqa: F401
     DemandeGestionADSView,
@@ -60,4 +58,18 @@ from .public import (  # noqa: F401
     PlanSiteView,
     ReglementationView,
     StatsView,
+)
+from .registre_transactions import (  # noqa: F401
+    ArreteChangementTitulaireExportView,
+    ChangementStatutRegistreTransactionView,
+    DemandePiecesJustificativeWordExportView,
+    RegistresTransactionsPublicsView,
+    RegistreTransactionsPublicView,
+    TransactionConfirmationView,
+    TransactionCreateView,
+    TransactionDocumentsFormView,
+    TransactionEditView,
+    TransactionEnregistrementFormView,
+    TransactionListView,
+    TransactionSelectionADSFormView,
 )

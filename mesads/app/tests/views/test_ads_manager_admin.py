@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 from http import HTTPStatus
 
 from django.conf import settings
@@ -11,9 +11,7 @@ from mesads.app.models import (
     ADSManagerRequest,
     DemandeGestionPrefecture,
 )
-from mesads.fradm.models import Prefecture
 from mesads.unittest import ClientTestCase
-from mesads.vehicules_relais.models import Proprietaire, Vehicule
 
 
 class TestADSManagerAdminRequestsView(ClientTestCase):
@@ -280,135 +278,6 @@ class TestAdsManagerAdministratorView(ClientTestCase):
             ).count(),
             1,
         )
-
-
-class TestRepertoireVehiculeRelaisView(ClientTestCase):
-    def setUp(self):
-        """Create a proprietaire object, and register vehicules to it."""
-        super().setUp()
-
-        self.proprietaire_client, self.proprietaire_user = self.create_client()
-
-        self.proprietaire = Proprietaire.objects.create(nom="Propriétaire")
-        self.proprietaire.users.set([self.proprietaire_user])
-
-        prefecture_1 = self.ads_manager_administrator_35.prefecture
-        prefecture_2 = Prefecture.objects.filter(numero="33").get()
-
-        # Assign three vehicules to the proprietaire in Ille-et-Vilaine.
-        self.vehicule_1 = Vehicule.objects.create(
-            proprietaire=self.proprietaire,
-            departement=prefecture_1,
-            immatriculation="123-456-789",
-            modele="Peugeot 308",
-            motorisation="essence",
-            date_mise_circulation=date(2019, 1, 1),
-            nombre_places=4,
-            pmr=False,
-            commune_localisation=None,
-        )
-        self.vehicule_2 = Vehicule.objects.create(
-            proprietaire=self.proprietaire,
-            departement=prefecture_1,
-            immatriculation="IMMAT12",
-            modele="Peugeot 207",
-            motorisation="essence",
-            date_mise_circulation=date(2019, 2, 2),
-            nombre_places=3,
-            pmr=False,
-            commune_localisation=None,
-        )
-        self.vehicule_3 = Vehicule.objects.create(
-            proprietaire=self.proprietaire,
-            departement=prefecture_2,
-            immatriculation="BBBB-BBBB",
-            modele="Renault Clio",
-            motorisation="hybride",
-            date_mise_circulation=date(2023, 5, 1),
-            nombre_places=4,
-            pmr=False,
-            commune_localisation=None,
-        )
-
-    def test_get_context(self):
-        response = self.ads_manager_administrator_35_client.get(
-            reverse(
-                "app.ads-manager-admin.vehicules_relais",
-                kwargs={
-                    "prefecture_id": self.ads_manager_administrator_35.prefecture.id
-                },
-            )
-        )
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertEqual(
-            response.context["ads_manager_administrator"],
-            self.ads_manager_administrator_35,
-        )
-        self.assertEqual(response.context["vehicule_list"].count(), 2)
-        self.assertQuerySetEqual(
-            response.context["vehicule_list"], [self.vehicule_1, self.vehicule_2]
-        )
-
-    def test_get_filtered_context(self):
-        response = self.ads_manager_administrator_35_client.get(
-            reverse(
-                "app.ads-manager-admin.vehicules_relais",
-                kwargs={
-                    "prefecture_id": self.ads_manager_administrator_35.prefecture.id
-                },
-            )
-            + f"?immatriculation={self.vehicule_1.immatriculation}"
-        )
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertEqual(
-            response.context["ads_manager_administrator"],
-            self.ads_manager_administrator_35,
-        )
-        self.assertEqual(response.context["vehicule_list"].count(), 1)
-        self.assertQuerySetEqual(response.context["vehicule_list"], [self.vehicule_1])
-
-
-class TestVehiculeView(ClientTestCase):
-    def setUp(self):
-        """Create a proprietaire object, and register vehicules to it."""
-        super().setUp()
-
-        self.proprietaire_client, self.proprietaire_user = self.create_client()
-
-        self.proprietaire = Proprietaire.objects.create(nom="Propriétaire")
-        self.proprietaire.users.set([self.proprietaire_user])
-
-        prefecture_1 = self.ads_manager_administrator_35.prefecture
-
-        # Assign three vehicules to the proprietaire in Ille-et-Vilaine.
-        self.vehicule = Vehicule.objects.create(
-            proprietaire=self.proprietaire,
-            departement=prefecture_1,
-            immatriculation="123-456-789",
-            modele="Peugeot 308",
-            motorisation="essence",
-            date_mise_circulation=date(2019, 1, 1),
-            nombre_places=4,
-            pmr=False,
-            commune_localisation=None,
-        )
-
-    def test_get_context(self):
-        response = self.ads_manager_administrator_35_client.get(
-            reverse(
-                "app.ads-manager-admin.vehicule_relais_detail",
-                kwargs={
-                    "prefecture_id": self.ads_manager_administrator_35.prefecture.id,
-                    "numero": self.vehicule.numero,
-                },
-            )
-        )
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertEqual(
-            response.context["ads_manager_administrator"],
-            self.ads_manager_administrator_35,
-        )
-        self.assertEqual(response.context["vehicule"], self.vehicule)
 
 
 class TestDemandeGestionPrefecture(ClientTestCase):

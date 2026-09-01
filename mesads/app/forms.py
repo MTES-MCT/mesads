@@ -3,6 +3,7 @@ from datetime import date
 from dal import autocomplete
 from dateutil.relativedelta import relativedelta
 from django import forms
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
@@ -20,7 +21,9 @@ from .models import (
     ADSLegalFile,
     ADSManager,
     ADSUser,
+    EntreeRegistreTransaction,
     InscriptionListeAttente,
+    validate_siren,
 )
 from .widgets import BooleanSelect
 
@@ -448,7 +451,7 @@ class AttributionADSForm(forms.Form):
         return numero
 
 
-class ListesAttentePubliquesSearchForm(forms.Form):
+class AdministrationSearchForm(forms.Form):
     departement = forms.ModelChoiceField(
         queryset=Prefecture.objects.exclude(numero="999"),
         label="Département",
@@ -491,3 +494,120 @@ class ConsultationADSForm(forms.Form):
 
 class ADSImportForm(forms.Form):
     file = forms.FileField(label="Fichier à importer")
+
+
+class ADSChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        label = f"ADS-{obj.number}"
+        if obj.owner_name:
+            label = f"{label} -- {obj.owner_name}"
+        if obj.owner_siret:
+            label = f"{label} -- {obj.owner_siret}"
+        return label
+
+
+class ADSFormMixin:
+    ads = ADSChoiceField(
+        queryset=ADS.objects.none(),
+        label="ADS",
+        required=True,
+    )
+
+    def __init__(self, *args, ads_manager=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if ads_manager:
+            self.fields["ads"].queryset = ADS.objects.filter(
+                ads_manager=ads_manager, ads_creation_date__lt=settings.OLD_ADS_DATE
+            )
+
+
+class SirenValidationFormMixin:
+    def clean_siren_nouvel_exploitant(self):
+        siren = self.cleaned_data.get("siren_nouvel_exploitant")
+
+        if siren:
+            validate_siren(siren)
+
+        return siren
+
+
+class TransactionADSForm(ADSFormMixin, forms.ModelForm):
+    class Meta:
+        model = EntreeRegistreTransaction
+        fields = ["ads"]
+
+    ads = ADSChoiceField(
+        queryset=ADS.objects.none(),
+        label="ADS",
+        required=True,
+    )
+
+
+COMPLETION_STATUTS = {
+    "1": "Complet",
+    "0": "Incomplet",
+}
+
+
+class TransactionDocumentsForm(forms.ModelForm):
+    documents_complet = forms.TypedChoiceField(
+        label="Indiquez l'état du dossier en fonction des pièces sélectionnées.",
+        choices=[
+            ("true", "Complet"),
+            ("false", "Incomplet"),
+        ],
+        coerce=lambda value: value == "true",
+        widget=forms.RadioSelect,
+        required=True,
+    )
+
+    class Meta:
+        model = EntreeRegistreTransaction
+        fields = [
+            "demande_cession",
+            "justificatif_exploitation",
+            "justificatif_montant",
+            "kbis_ou_siren",
+            "autres_documents",
+            "autres_documents_description",
+            "documents_complet",
+        ]
+
+
+class TransactionEnregistrementForm(SirenValidationFormMixin, forms.ModelForm):
+    class Meta:
+        model = EntreeRegistreTransaction
+        fields = [
+            "date_transaction",
+            "montant_transaction",
+            "ancien_exploitant",
+            "nouvel_exploitant",
+            "siren_nouvel_exploitant",
+        ]
+
+
+class TransactionUpdateForm(ADSFormMixin, SirenValidationFormMixin, forms.ModelForm):
+    class Meta:
+        model = EntreeRegistreTransaction
+        fields = [
+            "ads",
+            "date_transaction",
+            "montant_transaction",
+            "ancien_exploitant",
+            "nouvel_exploitant",
+            "siren_nouvel_exploitant",
+        ]
+
+    ads = ADSChoiceField(
+        queryset=ADS.objects.none(),
+        label="ADS",
+        required=True,
+    )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.statut = EntreeRegistreTransaction.ENREGISTREE
+        if commit:
+            instance.save()
+        return instance

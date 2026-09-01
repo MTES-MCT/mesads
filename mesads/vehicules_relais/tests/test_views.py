@@ -457,30 +457,6 @@ class TestProprietaireVehiculeDeleteView(ClientTestCase):
         self.assertIsNotNone(vehicule.deleted_at)
 
 
-class TestProprietaireVehiculeHistoryView(ClientTestCase):
-    def test_view(self):
-        departement = Prefecture.objects.first()
-        vehicule = Vehicule.objects.create(
-            proprietaire=self.proprietaire,
-            departement=departement,
-        )
-        # only available for admins
-        resp = self.proprietaire_client.get(
-            f"/relais/proprietaire/{self.proprietaire.id}/vehicules/{vehicule.numero}/historique"
-        )
-        self.assertEqual(resp.status_code, 302)
-        self.assertEqual(
-            resp.headers["Location"],
-            f"/admin/login/?next=/relais/proprietaire/{self.proprietaire.id}/vehicules/{vehicule.numero}/historique",
-        )
-
-        # ok
-        resp = self.admin_client.get(
-            f"/relais/proprietaire/{self.proprietaire.id}/vehicules/{vehicule.numero}/historique"
-        )
-        self.assertEqual(resp.status_code, 200)
-
-
 class TestProprietaireVehiculeRecepisseView(ClientTestCase):
     def test_view(self):
         departement = Prefecture.objects.first()

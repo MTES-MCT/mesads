@@ -8,7 +8,7 @@ packages = [{include = "mesads"}]
 [tool.poetry.group.dev.dependencies]
 pytest-django = "~4.11"
 pytest-cov = "~7.0"
-pypdf = "^6.13.2"
+pypdf = "^6.16.2"
 pytest-xdist = "^3.8.0"
 django-debug-toolbar = "~6.2"
 coverage = {version = "~7.13", extras = ["toml"]}
@@ -47,6 +47,7 @@ omit = [
     "mesads/app/management/commands/create_previous_update_logs.py",
     "mesads/app/management/commands/notify_prefectures_gestionnaires.py",
     "mesads/app/management/commands/import_creation_update_ads.py",
+    "mesads/app/management/commands/liste_attente_donnees_test.py",
     "mesads/fradm/management/commands/load_*.py",
 ]
 
@@ -72,7 +73,7 @@ djangorestframework = "^3.14.0"
 django-cleanup = "^8.1.0"
 dateparser = "^1.1.4"
 pyshp = "^2.3.1"
-django-cron = { git = "https://github.com/jorenham/django-cron.git"}
+django-cron-django5 = "^0.6.2"
 django-mjml = "^1.0"
 docxtpl = "^0.17.0"
 django-formtools = "^2.4"
