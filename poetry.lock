@@ -938,6 +938,22 @@ django42 = ["django (>=4.2,<4.3)"]
 django50 = ["django (>=5.0,<5.1)"]
 
 [[package]]
+name = "django-solo"
+version = "2.5.1"
+description = "Django Solo helps working with singletons"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "django_solo-2.5.1-py3-none-any.whl", hash = "sha256:23bfe48950587b409ec4b4ef95e5e62c1c6c590dd958d8d8b99d37d5ccb53ca8"},
+    {file = "django_solo-2.5.1.tar.gz", hash = "sha256:ca3b2e44dbb4726446941ca8d765c247123f709f051d07e62eacf97330ffde01"},
+]
+
+[package.dependencies]
+django = ">=4.2"
+typing-extensions = {version = ">=4.0.1", markers = "python_version < \"3.11\""}
+
+[[package]]
 name = "django-storages"
 version = "1.14.3"
 description = "Support for many storage backends in Django"
@@ -2736,4 +2752,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "25d5df4f3f8921a20efd231625d8c3e1eca5b280f598266ccefbda253b25382c"
+content-hash = "12d76520cd30f9dcb6458de365625db5202911f4201f0ed3c9f2355471792751"
