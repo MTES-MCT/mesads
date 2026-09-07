@@ -23,6 +23,7 @@ from django.views.generic import (
 from reversion.views import RevisionMixin
 from weasyprint import HTML
 
+from mesads.app.models import DemandeGestionPrefecture
 from mesads.app.reversion_diff import ModelHistory
 from mesads.app.views.export import ExcelExporter
 from mesads.fradm.models import Prefecture
@@ -109,8 +110,13 @@ class VehiculeView(TemplateView):
         vehicule = get_object_or_404(Vehicule, numero=kwargs["numero"])
 
         if self.request.user.is_authenticated:
-            administrator = self.request.user.adsmanageradministrator_set.first()
-            if administrator and administrator.prefecture == vehicule.departement:
+            demande_prefecture = self.request.user.demandes_gestion_prefecture.filter(
+                statut=DemandeGestionPrefecture.ACCEPTE
+            ).first()
+            if (
+                demande_prefecture
+                and demande_prefecture.administrator.prefecture == vehicule.departement
+            ):
                 context["show_links_edition"] = True
 
         context["vehicule"] = vehicule
@@ -272,11 +278,15 @@ class ProprietaireVehiculeDeleteView(VehiculeMixin, DeleteView):
     template_name = "pages/vehicules_relais/proprietaire_vehicule_confirm_delete.html"
 
     def get_success_url(self):
-        administrator = self.request.user.adsmanageradministrator_set.first()
-        if administrator:
+        demande_prefecture = self.request.user.demandes_gestion_prefecture.filter(
+            statut=DemandeGestionPrefecture.ACCEPTE
+        ).first()
+        if demande_prefecture:
             return reverse(
                 "vehicules-relais.vehicules_relais_departement",
-                kwargs={"prefecture_id": administrator.prefecture.id},
+                kwargs={
+                    "prefecture_id": demande_prefecture.administrator.prefecture.id
+                },
             )
 
         return reverse(
@@ -460,6 +470,15 @@ class HistoriqueVehiculeRelaisDepartementView(ListView):
     )
     paginate_by = 100
 
+    def get_administrator(self):
+        demande = DemandeGestionPrefecture.objects.filter(
+            user=self.request.user, statut=DemandeGestionPrefecture.ACCEPTE
+        ).first()
+        if demande:
+            return demande.administrator
+        else:
+            return None
+
     def get_queryset(self):
         qs = (
             Vehicule.with_deleted.annotate(
@@ -472,7 +491,7 @@ class HistoriqueVehiculeRelaisDepartementView(ListView):
         )
 
         form = self.get_form()
-        administrator = self.request.user.adsmanageradministrator_set.first()
+        administrator = self.get_administrator()
         if form.is_valid():
             departement = form.cleaned_data["departement"]
             if departement or administrator:
@@ -501,7 +520,7 @@ class HistoriqueVehiculeRelaisDepartementView(ListView):
     def get_form(self):
         return SearchVehiculeDepartementForm(
             data=self.request.GET or None,
-            administrator=self.request.user.adsmanageradministrator_set.first(),
+            administrator=self.get_administrator(),
         )
 
 
