@@ -25,7 +25,6 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from django.views.generic import CreateView, ListView, TemplateView, View
-from reversion.views import RevisionMixin
 
 from mesads.app.forms import DemandeGestionPrefectureForm
 from mesads.common.mail import envoi_email
@@ -46,7 +45,22 @@ from ..services.export import (
 from .export import ExcelExporter
 
 
-class ADSManagerAdministratorListeGestionnaires(ListView):
+class ADSManagerAdministratorMixin:
+    ads_manager_administrator = None
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["ads_manager_administrator"] = self.ads_manager_administrator
+        return context
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        self.ads_manager_administrator = get_object_or_404(
+            ADSManagerAdministrator, prefecture__id=self.kwargs.get("prefecture_id")
+        )
+
+
+class ADSManagerAdministratorListeGestionnaires(ADSManagerAdministratorMixin, ListView):
     template_name = "pages/ads_register/prefecture_liste_gestionnaires.html"
     model = ADSManager
     paginate_by = 50
@@ -107,9 +121,7 @@ class ADSManagerAdministratorListeGestionnaires(ListView):
         )
 
         qs = (
-            ADSManager.objects.filter(
-                administrator=self.kwargs["ads_manager_administrator"]
-            )
+            ADSManager.objects.filter(administrator=self.ads_manager_administrator)
             .annotate(
                 nb_managers=Coalesce(
                     nb_requests_subq, Value(0), output_field=IntegerField()
@@ -181,7 +193,7 @@ class ADSManagerAdministratorListeGestionnaires(ListView):
 
         nb_ads_completes_prefecture = (
             ADS.objects.filter(
-                ads_manager__administrator=self.kwargs["ads_manager_administrator"],
+                ads_manager__administrator=self.ads_manager_administrator,
             )
             .annotate(
                 latest_update_log=Subquery(latest_log_qs.values("update_at")[:1]),
@@ -207,7 +219,7 @@ class ADSManagerAdministratorListeGestionnaires(ListView):
         )
 
         nb_total_ads_prefecture = ADS.objects.filter(
-            ads_manager__administrator=self.kwargs["ads_manager_administrator"]
+            ads_manager__administrator=self.ads_manager_administrator
         ).count()
 
         context["total_ads_for_prefecture"] = nb_total_ads_prefecture
@@ -219,7 +231,7 @@ class ADSManagerAdministratorListeGestionnaires(ListView):
         )
 
         context["nb_administrations"] = ADSManager.objects.filter(
-            administrator=self.kwargs["ads_manager_administrator"]
+            administrator=self.ads_manager_administrator
         ).count()
 
         context["search"] = self.request.GET.get("search")
@@ -235,7 +247,7 @@ class ADSManagerAdministratorListeGestionnaires(ListView):
         )
         url_access = reverse(
             "app.ads-manager-admin.requests",
-            kwargs={"prefecture_id": kwargs["ads_manager_administrator"].prefecture.id},
+            kwargs={"prefecture_id": self.kwargs["prefecture_id"]},
         )
         messages.success(
             request,
@@ -251,7 +263,7 @@ class ADSManagerAdministratorListeGestionnaires(ListView):
         return self.get(request, *args, **kwargs)
 
 
-class ADSManagerAdminRequestsView(RevisionMixin, TemplateView):
+class ADSManagerAdminRequestsView(ADSManagerAdministratorMixin, TemplateView):
     """This view is used by ADSManagerAdministrators to validate
     ADSManagerRequests and list changes made by ADSManagers."""
 
@@ -273,7 +285,7 @@ class ADSManagerAdminRequestsView(RevisionMixin, TemplateView):
                 "ads_manager__content_type",
                 "ads_manager__content_object",
             )
-            .filter(ads_manager__administrator=self.kwargs["ads_manager_administrator"])
+            .filter(ads_manager__administrator=self.ads_manager_administrator)
         )
 
         if self.request.GET.get("sort") == "name":
@@ -300,13 +312,6 @@ class ADSManagerAdminRequestsView(RevisionMixin, TemplateView):
 
         ads_manager_request = get_object_or_404(ADSManagerRequest, id=request_id)
 
-        # Make sure current user can accept this request
-        get_object_or_404(
-            ADSManagerAdministrator,
-            users__in=[request.user],
-            adsmanager=ads_manager_request.ads_manager,
-        )
-
         if action == "accept" or action == "authorize":
             ads_manager_request.accepted = True
         else:
@@ -324,11 +329,10 @@ class ADSManagerAdminRequestsView(RevisionMixin, TemplateView):
             destinataires=[ads_manager_request.user.email],
             sujet_template="pages/email_ads_manager_request_result_subject.txt",
         )
-        request_administrator = ads_manager_request.ads_manager.administrator
         return redirect(
             reverse(
                 "app.ads-manager-admin.requests",
-                kwargs={"prefecture_id": request_administrator.prefecture.id},
+                kwargs={"prefecture_id": self.kwargs["prefecture_id"]},
             )
         )
 
@@ -359,13 +363,7 @@ class ADSManagerExportView(ExcelExporter, View):
         )
 
 
-class PrefectureExportView(ExcelExporter, View):
-    ads_manager_administrator = None
-
-    def setup(self, request, *args, **kwargs):
-        self.ads_manager_administrator = kwargs.get("ads_manager_administrator")
-        return super().setup(request, *args, **kwargs)
-
+class PrefectureExportView(ADSManagerAdministratorMixin, ExcelExporter, View):
     def get_filename(self):
         return f"ADS_prefecture_{self.ads_manager_administrator.prefecture.numero}.xlsx"
 
@@ -401,7 +399,7 @@ class PrefectureExportView(ExcelExporter, View):
         )
 
 
-class ADSManagerAdminUpdatesView(TemplateView):
+class ADSManagerAdminUpdatesView(ADSManagerAdministratorMixin, TemplateView):
     template_name = "pages/ads_register/ads_manager_admin_updates.html"
 
     def get_updates(self):
@@ -449,7 +447,7 @@ class ADSManagerAdminUpdatesView(TemplateView):
         ads_updated = list(
             ADS.objects.raw(
                 query,
-                (self.kwargs["ads_manager_administrator"].id,),
+                (self.ads_manager_administrator.id,),
             )
         )
 

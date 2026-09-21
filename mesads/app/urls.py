@@ -3,17 +3,20 @@ from django.contrib.auth.decorators import login_required
 from django.urls import path
 from django.views.generic import TemplateView
 
-from . import views
-from .decorators import (
-    ads_manager_administrator_required,
-    ads_manager_required,
-    inspecteur_required,
+from mesads.common.decorators import (
+    is_administrator,
+    is_inspecteur,
+    is_manager,
+    is_staff,
+    profil_required,
 )
+
+from . import views
 
 url_prefectures = [
     path(
         "espace-prefecture/<int:prefecture_id>/gestionnaires/",
-        ads_manager_administrator_required(
+        profil_required(is_staff, is_administrator)(
             views.ADSManagerAdministratorListeGestionnaires.as_view()
         ),
         name="app.ads-manager-admin.gestionnaires",
@@ -21,19 +24,25 @@ url_prefectures = [
     ),
     path(
         "espace-prefecture/<int:prefecture_id>/demandes-gestion/",
-        ads_manager_administrator_required(views.ADSManagerAdminRequestsView.as_view()),
+        profil_required(is_staff, is_administrator)(
+            views.ADSManagerAdminRequestsView.as_view()
+        ),
         name="app.ads-manager-admin.requests",
         # A GARDER
     ),
     path(
         "espace-prefecture/<int:prefecture_id>/changements",
-        ads_manager_administrator_required(views.ADSManagerAdminUpdatesView.as_view()),
+        profil_required(is_staff, is_administrator)(
+            views.ADSManagerAdminUpdatesView.as_view()
+        ),
         name="app.ads-manager-admin.updates",
         # A GARDER
     ),
     path(
         "registre_ads/prefectures/<int:prefecture_id>/export",
-        ads_manager_administrator_required(views.PrefectureExportView.as_view()),
+        profil_required(is_staff, is_administrator)(
+            views.PrefectureExportView.as_view()
+        ),
         name="app.exports.prefecture",
         # A GARDER
     ),
@@ -57,117 +66,163 @@ url_gestionnaire = [
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/",
-        ads_manager_required(views.ADSManagerView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ADSManagerView.as_view()
+        ),
         name="app.ads-manager.detail",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/arretes",
-        ads_manager_required(views.ADSManagerArreteView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ADSManagerArreteView.as_view()
+        ),
         name="app.ads-manager.decree.detail",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/arretes/<int:arrete_id>/update/",
-        ads_manager_required(views.ADSManagerArreteUpdateView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ADSManagerArreteUpdateView.as_view()
+        ),
         name="app.ads-manager.arrete.update",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/arretes/<int:arrete_id>/delete/",
-        ads_manager_required(views.ADSManagerArreteDeleteView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ADSManagerArreteDeleteView.as_view()
+        ),
         name="app.ads-manager.arrete.delete",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/export",
-        ads_manager_required(views.ADSManagerExportView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ADSManagerExportView.as_view()
+        ),
         name="app.exports.ads-manager",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/ads/<int:ads_id>",
-        ads_manager_required(views.ADSView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ADSView.as_view()
+        ),
         name="app.ads.detail",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/ads/<int:ads_id>/verification/",
-        ads_manager_required(views.ADSVerificationView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ADSVerificationView.as_view()
+        ),
         name="app.ads.verification",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/ads/<int:ads_id>/verification-confirmation/",
-        ads_manager_required(views.ADSVerificationConfirmationView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ADSVerificationConfirmationView.as_view()
+        ),
         name="app.ads.verification-confirmation",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/ads/<int:ads_id>/delete",
-        ads_manager_required(views.ADSDeleteView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ADSDeleteView.as_view()
+        ),
         name="app.ads.delete",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/ads/",
-        ads_manager_required(views.ADSCreateView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ADSCreateView.as_view()
+        ),
         name="app.ads.create",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/ads/<int:ads_id>/history",
-        ads_manager_required(views.ADSHistoryView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ADSHistoryView.as_view()
+        ),
         name="app.ads.history",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/arretes-modeles",
-        ads_manager_required(views.ListeArretesFilesView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ListeArretesFilesView.as_view()
+        ),
         name="app.arretes-list",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/telechargement-arrete",
-        ads_manager_required(views.TelechargementArreteView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.TelechargementArreteView.as_view()
+        ),
         name="app.arrete-download",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/registre-transactions/",
-        ads_manager_required(views.TransactionListView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.TransactionListView.as_view()
+        ),
         name="app.transaction-liste",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/registre-transactions/statut",
-        ads_manager_required(views.ChangementStatutRegistreTransactionView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ChangementStatutRegistreTransactionView.as_view()
+        ),
         name="app.transaction-statut",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/registre-transactions/creation",
-        ads_manager_required(views.TransactionCreateView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.TransactionCreateView.as_view()
+        ),
         name="app.transaction-creation",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/registre-transactions/selection-ads",
-        ads_manager_required(views.TransactionSelectionADSFormView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.TransactionSelectionADSFormView.as_view()
+        ),
         name="app.transaction-choix-ads",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/documents",
-        ads_manager_required(views.TransactionDocumentsFormView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.TransactionDocumentsFormView.as_view()
+        ),
         name="app.transaction-documents",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/enregistrement",
-        ads_manager_required(views.TransactionEnregistrementFormView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.TransactionEnregistrementFormView.as_view()
+        ),
         name="app.transaction-enregistrement",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/confirmation",
-        ads_manager_required(views.TransactionConfirmationView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.TransactionConfirmationView.as_view()
+        ),
         name="app.transaction-confirmation",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>",
-        ads_manager_required(views.TransactionEditView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.TransactionEditView.as_view()
+        ),
         name="app.transaction-edition",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/arrete",
-        ads_manager_required(views.ArreteChangementTitulaireExportView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ArreteChangementTitulaireExportView.as_view()
+        ),
         name="app.transaction-arrete",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/courrier-contact/",
-        ads_manager_required(views.DemandePiecesJustificativeWordExportView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.DemandePiecesJustificativeWordExportView.as_view()
+        ),
         name="app.transaction-courrier",
     ),
 ]
@@ -175,72 +230,100 @@ url_gestionnaire = [
 url_liste_attente = [
     path(
         "liste_attente/<int:manager_id>/",
-        ads_manager_required(views.ListeAttenteView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ListeAttenteView.as_view()
+        ),
         name="app.liste_attente",
     ),
     path(
         "liste_attente/<int:manager_id>/archives/",
-        ads_manager_required(views.DemandeArchiveesView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.DemandeArchiveesView.as_view()
+        ),
         name="app.liste_attente_archives",
     ),
     path(
         "liste_attente/<int:manager_id>/archives/modele-courrier/",
-        ads_manager_required(views.ModeleCourrierArchivageView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ModeleCourrierArchivageView.as_view()
+        ),
         name="app.liste_attente_archive_modele",
     ),
     path(
         "liste_attente/<int:manager_id>/attribution-ads/",
-        ads_manager_required(views.AttributionListeAttenteView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.AttributionListeAttenteView.as_view()
+        ),
         name="app.liste_attente_attribution",
     ),
     path(
         "liste_attente/<int:manager_id>/attribution-ads/<int:inscription_id>/",
-        ads_manager_required(views.InscriptionTraitementListeAttenteView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.InscriptionTraitementListeAttenteView.as_view()
+        ),
         name="app.liste_attente_traitement_demande",
     ),
     path(
         "liste_attente/<int:manager_id>/attribution-ads/modele-courrier/",
-        ads_manager_required(views.ModeleCourrierContactView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ModeleCourrierContactView.as_view()
+        ),
         name="app.liste_attente_contact_modele",
     ),
     path(
         "liste_attente/<int:manager_id>/export/",
-        ads_manager_required(views.ExportCSVInscriptionListeAttenteView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ExportCSVInscriptionListeAttenteView.as_view()
+        ),
         name="app.liste_attente_export",
     ),
     path(
         "liste_attente/<int:manager_id>/inscription/",
-        ads_manager_required(views.CreationInscriptionListeAttenteView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.CreationInscriptionListeAttenteView.as_view()
+        ),
         name="app.liste_attente_inscription",
     ),
     path(
         "liste_attente/<int:manager_id>/<int:inscription_id>/",
-        ads_manager_required(views.ModificationInscriptionListeAttenteView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ModificationInscriptionListeAttenteView.as_view()
+        ),
         name="app.liste_attente_inscription_update",
     ),
     path(
         "liste_attente/<int:manager_id>/archivage/<int:inscription_id>/",
-        ads_manager_required(views.ArchivageInscriptionListeAttenteView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ArchivageInscriptionListeAttenteView.as_view()
+        ),
         name="app.liste_attente_inscription_archivage",
     ),
     path(
         "liste_attente/<int:manager_id>/archivage/<int:inscription_id>/restaurer/",
-        ads_manager_required(views.RestaurationInscriptionView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.RestaurationInscriptionView.as_view()
+        ),
         name="app.liste_attente_inscription_restaurer",
     ),
     path(
         "liste_attente/<int:manager_id>/archivage/confirmation/",
-        ads_manager_required(views.ArchivageConfirmationView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ArchivageConfirmationView.as_view()
+        ),
         name="app.liste_attente_inscription_archivage_confirmation",
     ),
     path(
         "liste_attente/<int:manager_id>/make-public/",
-        ads_manager_required(views.ChangementStatutListeView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ChangementStatutListeView.as_view()
+        ),
         name="app.liste_attente_make_public",
     ),
     path(
         "liste_attente/<int:manager_id>/export/liste-publique/",
-        ads_manager_required(views.ExportPDFListePubliqueView.as_view()),
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ExportPDFListePubliqueView.as_view()
+        ),
         name="app.liste_attente_publique_export_pdf",
     ),
 ]
@@ -248,17 +331,19 @@ url_liste_attente = [
 url_consultation = [
     path(
         "registre_ads/consultation/recherche/",
-        inspecteur_required(views.ConsultationADSSearchView.as_view()),
+        profil_required(is_staff, is_inspecteur)(
+            views.ConsultationADSSearchView.as_view()
+        ),
         name="app.consultation_search",
     ),
     path(
         "registre_ads/consultation/recherche/<int:ads_id>/",
-        inspecteur_required(views.ConsultationADSView.as_view()),
+        profil_required(is_staff, is_inspecteur)(views.ConsultationADSView.as_view()),
         name="app.consultation_ads",
     ),
     path(
         "registre_ads/consultation/recherche/<int:ads_id>/export/",
-        inspecteur_required(views.ExportADSPDFView.as_view()),
+        profil_required(is_staff, is_inspecteur)(views.ExportADSPDFView.as_view()),
         name="app.consultation_ads_export",
     ),
 ]
