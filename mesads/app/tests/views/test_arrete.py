@@ -9,7 +9,7 @@ from mesads.unittest import ClientTestCase
 class TestArretesListView(ClientTestCase):
     def test_permissions(self):
         for client_name, client, expected_status in (
-            ("anonymous", self.anonymous_client, http.HTTPStatus.FOUND.value),
+            ("anonymous", self.anonymous_client, http.HTTPStatus.NOT_FOUND.value),
             ("auth", self.auth_client, http.HTTPStatus.NOT_FOUND.value),
             (
                 "ads_manager 35",

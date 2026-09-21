@@ -1,9 +1,15 @@
-from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.urls import path
 
+from mesads.common.decorators import (
+    is_administrator,
+    is_inspecteur,
+    is_proprietaire,
+    is_staff,
+    profil_required,
+)
+
 from . import views
-from .decorators import proprietaire_or_prefecture_required, proprietaire_required
 
 urlpatterns = [
     path(
@@ -33,75 +39,91 @@ urlpatterns = [
     ),
     path(
         "proprietaire/<int:proprietaire_id>",
-        proprietaire_required(views.ProprietaireDetailView.as_view()),
+        profil_required(is_staff, is_proprietaire)(
+            views.ProprietaireDetailView.as_view()
+        ),
         name="vehicules-relais.proprietaire.detail",
     ),
     path(
         "proprietaire/<int:proprietaire_id>/supprimer",
-        proprietaire_required(views.ProprietaireDeleteView.as_view()),
+        profil_required(is_staff, is_proprietaire)(
+            views.ProprietaireDeleteView.as_view()
+        ),
         name="vehicules-relais.proprietaire.delete",
     ),
     path(
         "proprietaire/<int:proprietaire_id>/modifier",
-        proprietaire_required(views.ProprietaireEditView.as_view()),
+        profil_required(is_staff, is_proprietaire)(
+            views.ProprietaireEditView.as_view()
+        ),
         name="vehicules-relais.proprietaire.edit",
     ),
     path(
         "proprietaire/<int:proprietaire_id>/historique",
-        staff_member_required(
-            proprietaire_required(views.ProprietaireHistoryView.as_view())
-        ),
+        profil_required(is_staff)(views.ProprietaireHistoryView.as_view()),
         name="vehicules-relais.proprietaire.history",
     ),
     path(
         "proprietaire/<int:proprietaire_id>/nouveau_vehicule",
-        proprietaire_required(views.ProprietaireVehiculeCreateView.as_view()),
+        profil_required(is_staff, is_proprietaire)(
+            views.ProprietaireVehiculeCreateView.as_view()
+        ),
         name="vehicules-relais.proprietaire.vehicule.new",
     ),
     path(
         "proprietaire/<int:proprietaire_id>/vehicules/<str:vehicule_numero>",
-        proprietaire_or_prefecture_required(
+        profil_required(is_staff, is_proprietaire, is_administrator)(
             views.ProprietaireVehiculeUpdateView.as_view()
         ),
         name="vehicules-relais.proprietaire.vehicule.edit",
     ),
     path(
         "proprietaire/<int:proprietaire_id>/vehicules/<str:vehicule_numero>/supprimer",
-        proprietaire_or_prefecture_required(
+        profil_required(is_staff, is_proprietaire, is_administrator)(
             views.ProprietaireVehiculeDeleteView.as_view()
         ),
         name="vehicules-relais.proprietaire.vehicule.delete",
     ),
     path(
         "proprietaire/<int:proprietaire_id>/vehicules/<str:vehicule_numero>/recepisse",
-        proprietaire_or_prefecture_required(
+        profil_required(is_staff, is_proprietaire, is_administrator)(
             views.ProprietaireVehiculeRecepisseView.as_view()
         ),
         name="vehicules-relais.proprietaire.vehicule.recepisse",
     ),
     path(
         "departement/<int:prefecture_id>/vehicules-relais/",
-        views.RepertoireVehiculeRelaisDepartementView.as_view(),
+        profil_required(is_staff, is_administrator)(
+            views.RepertoireVehiculeRelaisDepartementView.as_view()
+        ),
         name="vehicules-relais.vehicules_relais_departement",
     ),
     path(
         "departement/<int:prefecture_id>/vehicules-relais/export/",
-        views.PrefectureTaxisRelaisExportView.as_view(),
+        profil_required(is_staff, is_administrator)(
+            views.PrefectureTaxisRelaisExportView.as_view()
+        ),
         name="vehicules-relais.vehicules_relais_departement_export",
     ),
     path(
         "departement/vehicules-relais/history",
-        views.HistoriqueVehiculeRelaisDepartementView.as_view(),
+        profil_required(is_staff, is_administrator, is_inspecteur)(
+            views.HistoriqueVehiculeRelaisDepartementView.as_view()
+        ),
         name="vehicules-relais.vehicules_relais_history",
     ),
     path(
         "departement/<int:prefecture_id>/vehicules-relais/<str:numero>/",
-        views.VehiculeDepartementView.as_view(),
+        profil_required(is_staff, is_administrator, is_inspecteur)(
+            views.VehiculeDepartementView.as_view()
+        ),
         name="vehicules-relais.vehicule_relais_departement_detail",
     ),
     path(
         "departement/vehicules-relais/history/<str:vehicule_numero>/historique",
-        views.ProprietaireVehiculeHistoryView.as_view(),
+        profil_required(is_staff, is_administrator, is_inspecteur)(
+            views.ProprietaireVehiculeHistoryView.as_view()
+        ),
         name="vehicules-relais.vehicule_relais_departement_detail_history",
     ),
 ]

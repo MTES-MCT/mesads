@@ -91,7 +91,9 @@ class ADSView(ADSManagerMixin, RevisionMixin, UpdateView):
         return context
 
     def get_object(self, queryset=None):
-        ads = get_object_or_404(ADS, id=self.kwargs["ads_id"])
+        ads = get_object_or_404(
+            ADS, id=self.kwargs["ads_id"], ads_manager__id=self.kwargs["manager_id"]
+        )
         self.ads_users_formset, self.ads_legal_files_formset = self.build_formsets(ads)
         return ads
 
@@ -192,6 +194,11 @@ class ADSDeleteView(ADSManagerMixin, DeleteView):
     template_name = "pages/ads_register/ads_confirm_delete.html"
     model = ADS
     pk_url_kwarg = "ads_id"
+
+    def get_object(self):
+        return get_object_or_404(
+            ADS, id=self.kwargs["ads_id"], ads_manager__id=self.kwargs["manager_id"]
+        )
 
     def get_success_url(self):
         return reverse(

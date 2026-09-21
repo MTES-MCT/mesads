@@ -25,7 +25,7 @@ class TestADSView(ClientTestCase):
 
     def test_permissions(self):
         for client_name, client, expected_status in (
-            ("anonymous", self.anonymous_client, 302),
+            ("anonymous", self.anonymous_client, 404),
             ("auth", self.auth_client, 404),
             ("ads_manager 35", self.ads_manager_city35_client, 200),
         ):
@@ -538,7 +538,7 @@ class TestADSView(ClientTestCase):
     def test_get_incorrect_ads_manager(self):
         """If user requests /registre_ads/gestion/xxx/ads/yyy but xxx is an
         existing ADSManager, but not the one of the ADS, we want to make sure
-        the user is redirected to the correct page."""
+        the user have a 404"""
         commune = Commune.objects.create(
             type_commune="COM",
             insee="xx",
@@ -552,11 +552,7 @@ class TestADSView(ClientTestCase):
         resp = self.admin_client.get(
             f"/registre_ads/gestion/{ads_manager.id}/ads/{self.ads.id}",
         )
-        self.assertEqual(resp.status_code, 301)
-        self.assertEqual(
-            resp.headers["Location"],
-            f"/registre_ads/gestion/{self.ads_manager_city35.id}/ads/{self.ads.id}",
-        )
+        self.assertEqual(resp.status_code, 404)
 
 
 class TestADSDeleteView(ClientTestCase):
@@ -568,7 +564,7 @@ class TestADSDeleteView(ClientTestCase):
 
     def test_permissions(self):
         for client_name, client, expected_status in (
-            ("anonymous", self.anonymous_client, 302),
+            ("anonymous", self.anonymous_client, 404),
             ("auth", self.auth_client, 404),
             ("ads_manager 35", self.ads_manager_city35_client, 200),
         ):
@@ -600,7 +596,7 @@ class TestADSDeleteView(ClientTestCase):
 class TestADSCreateView(ClientTestCase):
     def test_permissions(self):
         for client_name, client, expected_status in (
-            ("anonymous", self.anonymous_client, 302),
+            ("anonymous", self.anonymous_client, 404),
             ("auth", self.auth_client, 404),
             ("ads_manager 35", self.ads_manager_city35_client, 200),
         ):
@@ -901,7 +897,7 @@ class TestADSHistoryView(ClientTestCase):
 
     def test_permissions(self):
         for client_name, client, expected_status in (
-            ("anonymous", self.anonymous_client, 302),
+            ("anonymous", self.anonymous_client, 404),
             ("auth", self.auth_client, 404),
             ("ads_manager 35", self.ads_manager_city35_client, 200),
         ):
