@@ -66,6 +66,10 @@ class TransactionDocumentsFormView(ADSManagerMixin, UpdateView):
         "pages/ads_register/registre_transactions/transaction_documents.html"
     )
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(ads__ads_manager=self.ads_manager)
+
     def form_valid(self, form):
         response = super().form_valid(form)
         action = self.request.POST.get("action")
@@ -108,6 +112,10 @@ class TransactionEnregistrementFormView(ADSManagerMixin, UpdateView):
     template_name = (
         "pages/ads_register/registre_transactions/transaction_enregistrement.html"
     )
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(ads__ads_manager=self.ads_manager)
 
     def get_initial(self):
         initial = super().get_initial()
@@ -154,6 +162,10 @@ class TransactionConfirmationView(ADSManagerMixin, DetailView):
         "pages/ads_register/registre_transactions/transaction_confirmation.html"
     )
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(ads__ads_manager=self.ads_manager)
+
 
 class TransactionListView(ADSManagerMixin, ListView):
     template_name = "pages/ads_register/registre_transactions/transaction_liste.html"
@@ -174,6 +186,10 @@ class TransactionEditView(ADSManagerMixin, UpdateView):
     form_class = TransactionUpdateForm
     pk_url_kwarg = "entree_id"
     template_name = "pages/ads_register/registre_transactions/transaction_edition.html"
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(ads__ads_manager=self.ads_manager)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -198,6 +214,10 @@ class TransactionCreateView(ADSManagerMixin, CreateView):
     model = EntreeRegistreTransaction
     form_class = TransactionUpdateForm
     template_name = "pages/ads_register/registre_transactions/transaction_creation.html"
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(ads__ads_manager=self.ads_manager)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -247,7 +267,9 @@ class ChangementStatutRegistreTransactionView(ADSManagerMixin, View):
 class ArreteChangementTitulaireExportView(View):
     def get(self, request, *args, **kwargs):
         entree = get_object_or_404(
-            EntreeRegistreTransaction, pk=self.kwargs["entree_id"]
+            EntreeRegistreTransaction,
+            pk=self.kwargs["entree_id"],
+            ads__ads_manager__id=self.kwargs["manager_id"],
         )
         context = {
             "numero_ads": entree.ads.number,
@@ -282,7 +304,9 @@ class ArreteChangementTitulaireExportView(View):
 class DemandePiecesJustificativeWordExportView(View):
     def get(self, request, *args, **kwargs):
         entree = get_object_or_404(
-            EntreeRegistreTransaction, pk=self.kwargs["entree_id"]
+            EntreeRegistreTransaction,
+            pk=self.kwargs["entree_id"],
+            ads__ads_manager__id=self.kwargs["manager_id"],
         )
         context = {
             "numero_ads": entree.ads.number,

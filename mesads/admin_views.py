@@ -5,12 +5,17 @@ from django.db.models import BooleanField, Count, OuterRef, Q, Subquery, Sum
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 
-from mesads.app.models import ADS, ADSManager, ADSUpdateLog, InscriptionListeAttente
+from mesads.app.models import (
+    ADS,
+    ADSManager,
+    ADSUpdateLog,
+    EntreeRegistreTransaction,
+    InscriptionListeAttente,
+)
 from mesads.app.services.export import get_prefectures_data_listes_attente
 from mesads.app.views.export import ExcelExporter
 from mesads.users.models import NoteUtilisateur, User, UserAuditEntry
 
-PREFECTURE_TEST = "999"
 PREFECTURE_PARIS = "75"
 
 
@@ -39,9 +44,7 @@ class StatistiquesView(TemplateView):
         date_limite_completion = timezone.now() - timedelta(
             days=ADSUpdateLog.OUTDATED_LOG_DAYS
         )
-        ads_qs = ADS.objects.exclude(
-            ads_manager__administrator__prefecture__numero=PREFECTURE_TEST
-        )
+        ads_qs = ADS.objects
         if exclude_paris:
             ads_qs = ads_qs.exclude(
                 ads_manager__administrator__prefecture__numero=PREFECTURE_PARIS
@@ -68,17 +71,13 @@ class StatistiquesView(TemplateView):
     def get_nombre_creation_modification_ads(
         self, start_date: date, end_date: date
     ) -> int:
-        return (
-            ADS.objects.filter(
-                Q(
-                    creation_date__date__gte=start_date,
-                    creation_date__date__lte=end_date,
-                )
-                | Q(last_update__date__gte=start_date, last_update__date__lte=end_date)
+        return ADS.objects.filter(
+            Q(
+                creation_date__date__gte=start_date,
+                creation_date__date__lte=end_date,
             )
-            .exclude(ads_manager__administrator__prefecture__numero=PREFECTURE_TEST)
-            .count()
-        )
+            | Q(last_update__date__gte=start_date, last_update__date__lte=end_date)
+        ).count()
 
     def get_nombre_connexions_unique(self, start_date: date, end_date: date) -> int:
         return (
@@ -94,13 +93,9 @@ class StatistiquesView(TemplateView):
     def get_nombre_creation_liste_attente(
         self, start_date: date, end_date: date
     ) -> int:
-        return (
-            InscriptionListeAttente.objects.filter(
-                date_creation__date__gte=start_date, date_creation__date__lte=end_date
-            )
-            .exclude(ads_manager__administrator__prefecture__numero=PREFECTURE_TEST)
-            .count()
-        )
+        return InscriptionListeAttente.objects.filter(
+            date_creation__date__gte=start_date, date_creation__date__lte=end_date
+        ).count()
 
     def get_nombre_listes_attente(self) -> int:
         return (
@@ -127,16 +122,19 @@ class StatistiquesView(TemplateView):
     def get_nombre_ads_cree_via_liste_attente(
         self, start_date: date, end_date: date
     ) -> int:
-        return (
-            InscriptionListeAttente.with_deleted.filter(
-                deleted_at__isnull=False,
-                deleted_at__date__gte=start_date,
-                deleted_at__date__lte=end_date,
-                motif_archivage=InscriptionListeAttente.ADS_ATTRIBUEE,
-            )
-            .exclude(ads_manager__administrator__prefecture__numero=PREFECTURE_TEST)
-            .count()
-        )
+        return InscriptionListeAttente.with_deleted.filter(
+            deleted_at__isnull=False,
+            deleted_at__date__gte=start_date,
+            deleted_at__date__lte=end_date,
+            motif_archivage=InscriptionListeAttente.ADS_ATTRIBUEE,
+        ).count()
+
+    def get_nombre_entree_registre_creees(
+        self, start_date: date, end_date: date
+    ) -> int:
+        return EntreeRegistreTransaction.objects.filter(
+            creation_date__gte=start_date, creation_date__lte=end_date
+        ).count()
 
     def get_note_moyenne_qualite(self) -> tuple[float, int]:
         notes = NoteUtilisateur.objects.filter(note_qualite__isnull=False)
@@ -225,6 +223,12 @@ class StatistiquesView(TemplateView):
         )
         context["nombre_ads_liste_attente"] = (
             self.get_nombre_ads_cree_via_liste_attente(
+                context["start_date"], context["end_date"]
+            )
+        )
+
+        context["nombre_entree_registre_creees"] = (
+            self.get_nombre_entree_registre_creees(
                 context["start_date"], context["end_date"]
             )
         )

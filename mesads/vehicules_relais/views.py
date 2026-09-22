@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.staticfiles.finders import find
 from django.db.models import CharField, F, IntegerField, Q, Value
 from django.db.models.functions import Cast, Replace
-from django.http import Http404, HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
@@ -23,7 +23,6 @@ from django.views.generic import (
 from reversion.views import RevisionMixin
 from weasyprint import HTML
 
-from mesads.app.models import DemandeAccesLectureSeule
 from mesads.app.reversion_diff import ModelHistory
 from mesads.app.views.export import ExcelExporter
 from mesads.fradm.models import Prefecture
@@ -184,8 +183,10 @@ class ProprietaireDetailView(ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["object"] = self.kwargs["proprietaire"]
-        ctx["deletable"] = self.kwargs["proprietaire"].vehicule_set.count() == 0
+        ctx["object"] = get_object_or_404(
+            Proprietaire, pk=self.kwargs["proprietaire_id"]
+        )
+        ctx["deletable"] = ctx["object"].vehicule_set.count() == 0
         return ctx
 
 
@@ -235,7 +236,9 @@ class ProprietaireVehiculeUpdateView(RevisionMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["proprietaire"] = self.kwargs["proprietaire"]
+        ctx["proprietaire"] = get_object_or_404(
+            Proprietaire, pk=self.kwargs["proprietaire_id"]
+        )
 
         if ctx.get("vehicule"):
             ctx["disposition_specifique"] = DispositionSpecifique.objects.filter(
@@ -282,7 +285,9 @@ class ProprietaireVehiculeDeleteView(RevisionMixin, DeleteView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["proprietaire"] = self.kwargs["proprietaire"]
+        ctx["proprietaire"] = get_object_or_404(
+            Proprietaire, pk=self.kwargs["proprietaire_id"]
+        )
         return ctx
 
     def get_success_url(self):
@@ -308,7 +313,9 @@ class ProprietaireVehiculeCreateView(ProprietaireVehiculeUpdateView, CreateView)
         return None
 
     def form_valid(self, form):
-        form.instance.proprietaire = self.kwargs["proprietaire"]
+        form.instance.proprietaire = get_object_or_404(
+            Proprietaire, pk=self.kwargs["proprietaire_id"]
+        )
         return super().form_valid(form)
 
     def get_success_message(self):
@@ -320,32 +327,6 @@ class ProprietaireVehiculeCreateView(ProprietaireVehiculeUpdateView, CreateView)
 
 class ProprietaireVehiculeHistoryView(DetailView):
     template_name = "pages/vehicules_relais/proprietaire_vehicule_history.html"
-
-    def get(self, request, *args, **kwargs):
-        response = super().get(self, request, *args, **kwargs)
-        if self.request.user.is_staff or self.get_is_inspecteur():
-            return response
-        administrator = self.get_ads_manager_administrator()
-        if administrator and administrator.prefecture == self.get_object().departement:
-            return response
-        raise Http404()
-
-    def get_ads_manager_administrator(self):
-        if self.request.user.is_authenticated:
-            ads_manager_administrators = (
-                self.request.user.adsmanageradministrator_set.all()
-            )
-            if len(ads_manager_administrators):
-                return ads_manager_administrators.first()
-        return None
-
-    def get_is_inspecteur(self):
-        return (
-            self.request.user.is_authenticated
-            and self.request.user.demandes_acces_lecture_seule.filter(
-                statut=DemandeAccesLectureSeule.ACCEPTE
-            ).exists()
-        )
 
     def get_object(self, queryset=None):
         return get_object_or_404(
@@ -389,14 +370,13 @@ class ProprietaireVehiculeRecepisseView(View):
     def get(
         self,
         request,
-        proprietaire=None,
         proprietaire_id=None,
         vehicule_numero=None,
     ):
         vehicule = get_object_or_404(
             Vehicule,
             numero=self.kwargs["vehicule_numero"],
-            proprietaire=proprietaire,
+            proprietaire__id=proprietaire_id,
         )
         disposition = f'attachment; filename="récépissé-vehicule-{vehicule_numero}.pdf"'
         response = HttpResponse(
@@ -496,33 +476,6 @@ class HistoriqueVehiculeRelaisDepartementView(ListView):
     )
     paginate_by = 100
 
-    def get(self, request, *args, **kwargs):
-        response = super().get(self, request, *args, **kwargs)
-        if (
-            self.request.user.is_staff
-            or self.get_ads_manager_administrator()
-            or self.get_is_inspecteur()
-        ):
-            return response
-        raise Http404()
-
-    def get_is_inspecteur(self):
-        return (
-            self.request.user.is_authenticated
-            and self.request.user.demandes_acces_lecture_seule.filter(
-                statut=DemandeAccesLectureSeule.ACCEPTE
-            ).exists()
-        )
-
-    def get_ads_manager_administrator(self):
-        if self.request.user.is_authenticated and not self.request.user.is_staff:
-            ads_manager_administrators = (
-                self.request.user.adsmanageradministrator_set.all()
-            )
-            if len(ads_manager_administrators):
-                return ads_manager_administrators.first()
-        return None
-
     def get_queryset(self):
         qs = (
             Vehicule.with_deleted.annotate(
@@ -535,7 +488,7 @@ class HistoriqueVehiculeRelaisDepartementView(ListView):
         )
 
         form = self.get_form()
-        administrator = self.get_ads_manager_administrator()
+        administrator = self.request.user.adsmanageradministrator_set.first()
         if form.is_valid():
             departement = form.cleaned_data["departement"]
             if departement or administrator:
@@ -564,7 +517,7 @@ class HistoriqueVehiculeRelaisDepartementView(ListView):
     def get_form(self):
         return SearchVehiculeDepartementForm(
             data=self.request.GET or None,
-            administrator=self.get_ads_manager_administrator(),
+            administrator=self.request.user.adsmanageradministrator_set.first(),
         )
 
 

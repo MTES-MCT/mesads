@@ -29,14 +29,18 @@
         Il est obligatoire de déclarer tous les taxis relais dans le répertoire départemental dédié avant de les exploiter. Si vous n'avez pas encore effectué cette déclaration, rendez-vous dans votre espace propriétaire
       </p>
       <div class="fr-grid-row fr-grid-row--center fr-m-2w">
-        <a class="fr-btn fr-btn--secondary"
+        {% if request.user.is_authenticated %}
+          <a class="fr-btn fr-btn--secondary"
+           href="{% url 'vehicules-relais.proprietaire' %}">
+           Mon espace propriétaire
+          </a>
+
+        {% else %}
+          <a class="fr-btn fr-btn--secondary"
            href="{% url 'override.login' %}?next={% url 'vehicules-relais.proprietaire' %}">
-          {% if request.user.is_authenticated %}
-            Mon espace propriétaire
-          {% else %}
-            Connectez-vous ou créez un compte pour enregistrer vos taxis relais
-          {% endif %}
-        </a>
+           Connectez-vous ou créez un compte pour enregistrer vos taxis relais
+          </a>
+        {% endif %}
       </div>
     </div>
   {% else %}

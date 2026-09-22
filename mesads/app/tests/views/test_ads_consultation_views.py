@@ -25,7 +25,7 @@ class TestConsultationADSSearchView(ClientTestCase):
 
     def test_permissions(self):
         for client_name, client, expected_status in (
-            ("anonymous", self.anonymous_client, 302),
+            ("anonymous", self.anonymous_client, 404),
             ("auth", self.auth_client, 404),
             ("ads_manager 35", self.ads_manager_city35_client, 404),
             ("inspecteur 35", self.inspecteur_client, 200),

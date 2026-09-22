@@ -1,10 +1,7 @@
-from django.conf import settings
 from django.contrib import messages
-from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
-from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views import View
 from django.views.generic import UpdateView
@@ -13,6 +10,7 @@ from django.views.generic.edit import CreateView, DeleteView
 from reversion.views import RevisionMixin
 
 from mesads.common.context_mixins import ADSManagerMixin
+from mesads.common.mail import envoi_email
 from mesads.fradm.models import EPCI
 
 from ..forms import (
@@ -93,7 +91,9 @@ class ADSView(ADSManagerMixin, RevisionMixin, UpdateView):
         return context
 
     def get_object(self, queryset=None):
-        ads = get_object_or_404(ADS, id=self.kwargs["ads_id"])
+        ads = get_object_or_404(
+            ADS, id=self.kwargs["ads_id"], ads_manager__id=self.kwargs["manager_id"]
+        )
         self.ads_users_formset, self.ads_legal_files_formset = self.build_formsets(ads)
         return ads
 
@@ -177,40 +177,16 @@ class ADSView(ADSManagerMixin, RevisionMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
     def send_notification(self, user, ads, is_new_ads):
-        email_subject = render_to_string(
-            "pages/email_ads_created_or_updated_subject.txt",
-            {
+        envoi_email(
+            content_template_txt="pages/email_ads_created_or_updated_content.txt",
+            content_template_mjml="pages/email_ads_created_or_updated_content.mjml",
+            context={
                 "user": self.request.user,
                 "ads": ads,
                 "is_new_ads": is_new_ads,
             },
-            request=self.request,
-        ).strip()
-        email_content = render_to_string(
-            "pages/email_ads_created_or_updated_content.txt",
-            {
-                "user": self.request.user,
-                "ads": ads,
-                "is_new_ads": is_new_ads,
-            },
-            request=self.request,
-        )
-        email_content_html = render_to_string(
-            "pages/email_ads_created_or_updated_content.mjml",
-            {
-                "user": self.request.user,
-                "ads": ads,
-                "is_new_ads": is_new_ads,
-            },
-            request=self.request,
-        )
-        send_mail(
-            email_subject,
-            email_content,
-            settings.MESADS_CONTACT_EMAIL,
-            [user.email],
-            fail_silently=True,
-            html_message=email_content_html,
+            destinataires=[user.email],
+            sujet_template="pages/email_ads_created_or_updated_subject.txt",
         )
 
 
@@ -218,6 +194,11 @@ class ADSDeleteView(ADSManagerMixin, DeleteView):
     template_name = "pages/ads_register/ads_confirm_delete.html"
     model = ADS
     pk_url_kwarg = "ads_id"
+
+    def get_object(self):
+        return get_object_or_404(
+            ADS, id=self.kwargs["ads_id"], ads_manager__id=self.kwargs["manager_id"]
+        )
 
     def get_success_url(self):
         return reverse(

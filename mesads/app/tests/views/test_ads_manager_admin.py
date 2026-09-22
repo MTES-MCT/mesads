@@ -26,7 +26,7 @@ class TestADSManagerAdminRequestsView(ClientTestCase):
     def test_permissions(self):
         for client_name, client, expected_status in (
             ("admin", self.admin_client, 200),
-            ("anonymous", self.anonymous_client, 302),
+            ("anonymous", self.anonymous_client, 404),
             ("auth", self.auth_client, 404),
             ("ads_manager 35", self.ads_manager_city35_client, 404),
             ("ads_manager_admin 35", self.ads_manager_administrator_35_client, 200),
@@ -105,7 +105,7 @@ class TestExportPrefecture(ClientTestCase):
     def test_permissions(self):
         for client_name, client, expected_status in (
             ("admin", self.admin_client, 200),
-            ("anonymous", self.anonymous_client, 302),
+            ("anonymous", self.anonymous_client, 404),
             ("auth", self.auth_client, 404),
             ("ads_manager 35", self.ads_manager_city35_client, 404),
             ("ads_manager_admin 35", self.ads_manager_administrator_35_client, 200),
@@ -305,7 +305,10 @@ class TestDemandeGestionPrefecture(ClientTestCase):
         )
         response = self.client.post(
             reverse("app.ads-manager-admin.demande_gestion_prefecture"),
-            {"departement": self.prefecture.id},
+            {
+                "administrator": self.administrator.id,
+                "statut_user": "Agent de contrôle",
+            },
         )
         self.assertRedirects(
             response,

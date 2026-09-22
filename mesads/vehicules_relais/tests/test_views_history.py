@@ -57,13 +57,13 @@ class ClientTestCase(CTC):
 class TestDepartementVehiculesView(ClientTestCase):
     def test_get_200(self):
         test_cases = [
-            (self.anonymous_client, 200),
-            (self.auth_client, 200),
+            (self.anonymous_client, 404),
+            (self.auth_client, 404),
             (self.admin_client, 200),
-            (self.client_gestionnaire, 200),
+            (self.client_gestionnaire, 404),
             (self.client_prefecture, 200),
-            (self.client_inspecteur, 200),
-            (self.client_proprietaire, 200),
+            (self.client_inspecteur, 404),
+            (self.client_proprietaire, 404),
         ]
         for client, expected_response in test_cases:
             with self.subTest(expected_response=expected_response):
@@ -77,13 +77,13 @@ class TestDepartementVehiculesView(ClientTestCase):
 
     def test_get_filtered_context(self):
         test_cases = [
-            (self.anonymous_client, 200),
-            (self.auth_client, 200),
+            (self.anonymous_client, 404),
+            (self.auth_client, 404),
             (self.admin_client, 200),
-            (self.client_gestionnaire, 200),
+            (self.client_gestionnaire, 404),
             (self.client_prefecture, 200),
-            (self.client_inspecteur, 200),
-            (self.client_proprietaire, 200),
+            (self.client_inspecteur, 404),
+            (self.client_proprietaire, 404),
         ]
         for client, expected_response in test_cases:
             with self.subTest(expected_response=expected_response):
@@ -95,10 +95,11 @@ class TestDepartementVehiculesView(ClientTestCase):
                     )
                 )
                 self.assertEqual(response.status_code, expected_response)
-                self.assertEqual(response.context["vehicule_list"].count(), 1)
-                self.assertQuerySetEqual(
-                    response.context["vehicule_list"], [self.vehicule]
-                )
+                if expected_response == 200:
+                    self.assertEqual(response.context["vehicule_list"].count(), 1)
+                    self.assertQuerySetEqual(
+                        response.context["vehicule_list"], [self.vehicule]
+                    )
 
 
 class TestDepartementHistoriqueView(ClientTestCase):
