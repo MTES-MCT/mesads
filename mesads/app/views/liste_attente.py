@@ -523,10 +523,12 @@ class ArchivageConfirmationView(ADSManagerMixin, TemplateView):
     )
 
 
-class RestaurationInscriptionView(View):
+class RestaurationInscriptionView(ADSManagerMixin, View):
     def post(self, request, *args, **kwargs):
         inscription = get_object_or_404(
-            InscriptionListeAttente.with_deleted, pk=kwargs["inscription_id"]
+            InscriptionListeAttente.with_deleted,
+            pk=kwargs["inscription_id"],
+            ads_manager=self.ads_manager,
         )
         inscription.deleted_at = None
         inscription.motif_archivage = ""

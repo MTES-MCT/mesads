@@ -38,6 +38,15 @@
     <div>
       <h1>Registre des transactions</h1>
       <p>Historique des cessions d'ADS — {{ ads_manager.content_object.display_text|capfirst }}</p>
+
+      <p>
+        <a
+          href="{% url 'app.transaction-liste-archives' manager_id=ads_manager.id %}"
+          class="fr-link fr-icon-arrow-right-line fr-link--icon-right"
+        >
+          Accéder aux entrées archivées
+        </a>
+      </p>
     </div>
 
       <form method="post" action="{% url 'app.transaction-statut' manager_id=ads_manager.id %}">
@@ -66,79 +75,100 @@
   </div>
   
 
-  <div class="flex justify-end gap-2">
-    <button aria-controls="modal-enregistrement-transaction" data-fr-opened="false" type="button" class="fr-btn">Enregistrer une transaction</button>
-    <dialog id="modal-enregistrement-transaction" class="fr-modal" aria-labelledby="modal-enregistrement-transaction-title" data-fr-concealing-backdrop="true">
-      <div class="fr-container fr-container--fluid fr-container-md">
-        <div class="fr-grid-row fr-grid-row--center">
-          <div class="fr-col-12 fr-col-md-10 fr-col-lg-8">
-            <div class="fr-modal__body">
-              <div class="fr-modal__header">
-                <button aria-controls="modal-enregistrement-transaction" title="Fermer" type="button" id="button-5" class="fr-btn--close fr-btn">Fermer</button>
-              </div>
-              <div class="fr-modal__content">
-                <h2 id="modal-enregistrement-transaction-title" class="fr-modal__title">
-                  Enregistrer une transaction
-                </h2>
-                <p>
-                  Choisissez la méthode d'enregistrement la plus adaptée à votre situation. Vous pourrez vérifier et compléter les informations avant enregistrement.
-                </p>
+  <div class="flex justify-between gap-2">
 
-                <div class="fr-container mb-2">
-                  <div class="fr-grid-row fr-grid-row--gutters">
+    <div>
+      <form method="get">
+        <div class="fr-toggle mt-2">
+          <input
+            type="checkbox"
+            value="on"
+            name="draft"
+            {% if request.GET.draft %}checked{% endif %}
+            class="fr-toggle__input"
+            onchange="this.form.submit()"
+          >
+          <label class="fr-toggle__label whitespace-nowrap" for="toggle-accepted-cpam">Afficher les dossiers en cours</label>
 
-                    <div class="fr-col-12 fr-col-md-6">
-                      <div class="fr-tile fr-enlarge-link" id="tile-reglementation">
-                        <div class="fr-tile__body">
-                          <div class="fr-tile__content">
-                            <h3 class="fr-tile__title">
-                              <a href="{% url 'app.transaction-creation' manager_id=ads_manager.id %}">Saisie directe dans le registre des transactions</a>
-                            </h3>
-                            <p class="fr-tile__detail">
-                              Dossier de cession déjà instruit en dehors de l'outil.
-                            </p>
-                            <p class="fr-tile__detail">
-                              Permet d'enregistrer directement les informations dans le registre public.
-                            </p>
+        </div>
+      </form>
+    </div>
+
+    <div>
+      <button aria-controls="modal-enregistrement-transaction" data-fr-opened="false" type="button" class="fr-btn">Enregistrer une transaction</button>
+      <dialog id="modal-enregistrement-transaction" class="fr-modal" aria-labelledby="modal-enregistrement-transaction-title" data-fr-concealing-backdrop="true">
+        <div class="fr-container fr-container--fluid fr-container-md">
+          <div class="fr-grid-row fr-grid-row--center">
+            <div class="fr-col-12 fr-col-md-10 fr-col-lg-8">
+              <div class="fr-modal__body">
+                <div class="fr-modal__header">
+                  <button aria-controls="modal-enregistrement-transaction" title="Fermer" type="button" id="button-5" class="fr-btn--close fr-btn">Fermer</button>
+                </div>
+                <div class="fr-modal__content">
+                  <h2 id="modal-enregistrement-transaction-title" class="fr-modal__title">
+                    Enregistrer une transaction
+                  </h2>
+                  <p>
+                    Choisissez la méthode d'enregistrement la plus adaptée à votre situation. Vous pourrez vérifier et compléter les informations avant enregistrement.
+                  </p>
+
+                  <div class="fr-container mb-2">
+                    <div class="fr-grid-row fr-grid-row--gutters">
+
+                      <div class="fr-col-12 fr-col-md-6">
+                        <div class="fr-tile fr-enlarge-link" id="tile-reglementation">
+                          <div class="fr-tile__body">
+                            <div class="fr-tile__content">
+                              <h3 class="fr-tile__title">
+                                <a href="{% url 'app.transaction-creation' manager_id=ads_manager.id %}">Saisie directe dans le registre des transactions</a>
+                              </h3>
+                              <p class="fr-tile__detail">
+                                Dossier de cession déjà instruit en dehors de l'outil.
+                              </p>
+                              <p class="fr-tile__detail">
+                                Permet d'enregistrer directement les informations dans le registre public.
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div class="fr-tile__header">
-                          <div class="fr-tile__pictogram">
+                          <div class="fr-tile__header">
+                            <div class="fr-tile__pictogram">
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div class="fr-col-12 fr-col-md-6">
-                      <div class="fr-tile fr-enlarge-link" id="tile-reglementation">
-                        <div class="fr-tile__body">
-                          <div class="fr-tile__content">
-                            <h3 class="fr-tile__title">
-                              <a href="{% url 'app.transaction-choix-ads' manager_id=ads_manager.id %}">Pas à pas pour l'enregistrement</a>
-                            </h3>
-                            <p class="fr-tile__detail">
-                              Nouvelle transaction avec démarche accompagnée.
-                            </p>
-                            <p class="fr-tile__detail">
-                              Un parcours guidé vous aide à saisir et vérifier toutes les informations nécessaires.
-                            </p>
+                      <div class="fr-col-12 fr-col-md-6">
+                        <div class="fr-tile fr-enlarge-link" id="tile-reglementation">
+                          <div class="fr-tile__body">
+                            <div class="fr-tile__content">
+                              <h3 class="fr-tile__title">
+                                <a href="{% url 'app.transaction-choix-ads' manager_id=ads_manager.id %}">Pas à pas pour l'enregistrement</a>
+                              </h3>
+                              <p class="fr-tile__detail">
+                                Nouvelle transaction avec démarche accompagnée.
+                              </p>
+                              <p class="fr-tile__detail">
+                                Un parcours guidé vous aide à saisir et vérifier toutes les informations nécessaires.
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div class="fr-tile__header">
-                          <div class="fr-tile__pictogram">
+                          <div class="fr-tile__header">
+                            <div class="fr-tile__pictogram">
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                  
                 </div>
-                
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </dialog>
+      </dialog>
+
+    </div>
   </div>
 
   <div class="fr-table fr-table--no-scroll fr-table--multiline fr-table--no-caption" id="table-0-component">
@@ -181,11 +211,22 @@
                   </td>
                   <td>
                     <a
-                      class="fr-btn fr-btn--secondary fr-icon-pencil-line fr-btn--icon-left full-width"
-                      aria-label="Modifier l'entree {{entree.id}} pour l'ADS {{ entree.ads.number }}"
+                      class="fr-btn fr-icon-pencil-line fr-btn--icon-left full-width"
+                      aria-label="Modifier l'entrée {{entree.id}} pour l'ADS {{ entree.ads.number }}"
                       href="{% modification_url entree %}"
                     >
+                      {% if entree.is_brouillon %}
+                      Reprendre
+                      {% else %}
                       Modifier
+                      {% endif %}
+                    </a>
+                    <a
+                      class="mt-1 fr-btn fr-btn--secondary fr-icon-archive-line fr-btn--icon-left full-width"
+                      aria-label="Archiver l'entrée {{entree.id}} pour l'ADS {{ entree.ads.number }}"
+                      href="{% url 'app.transaction-archivage' manager_id=ads_manager.id entree_id=entree.id %}"
+                    >
+                      Archiver
                     </a>
                   </td>
                 </tr>

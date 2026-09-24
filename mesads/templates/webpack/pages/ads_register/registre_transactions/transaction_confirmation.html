@@ -1,5 +1,4 @@
 {% extends "base_container.html" %}
-{% load show_pagination_links %}
 {% block body-content %}
 
   <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
@@ -35,20 +34,13 @@
   </nav>
 
   <h1>Enregistrer une transaction</h1>
-
-  <div class="fr-stepper">
-    <h2 class="fr-stepper__title"> Confirmation <span class="fr-stepper__state">Étape 4 sur 4</span>
-    </h2>
-    <div class="fr-stepper__steps" data-fr-current-step="4" data-fr-steps="4"></div>
-  </div>
-
   <div>
     <h2>Transaction enregistrée</h2>
     <p>La transaction est bien enregistrée dans votre registre des transactions.</p>
 
     <div class="fr-alert fr-alert--info">
       <h3 class="fr-alert__title">Modèle d'arrêté</h3>
-      <p>Un nouvel arrêté est nécessaire pour le acter le changement de titulaire de l'ADS. VOus pouvez en générer un prérempli à partir des informations saisies</p>
+      <p>Un nouvel arrêté est nécessaire pour acter le changement de titulaire de l'ADS. Vous pouvez en générer un prérempli à partir des informations saisies</p>
       <p>Le modèle d'arrêté vous permet de: </p>
       <ul>
         <li>gagner du temps lors de la rédaction</li>
@@ -93,12 +85,6 @@
           class="fr-btn fr-btn--secondary fr-mr-4v"
         >
           Retour au registre
-        </a>
-        <a
-          class="fr-btn fr-btn--secondary"
-          href="{% url 'app.transaction-choix-ads' manager_id=ads_manager.id %}"
-        >
-          Nouvelle transaction
         </a>
       </div>
     </div>

@@ -12,9 +12,9 @@ def modification_url(entree_registre):
         "manager_id": entree_registre.ads.ads_manager.id,
         "entree_id": entree_registre.id,
     }
-    if entree_registre.statut != EntreeRegistreTransaction.BROUILLON:
+    if entree_registre.statut == EntreeRegistreTransaction.ENREGISTREE:
         return reverse("app.transaction-edition", kwargs=kwargs)
 
-    if entree_registre.documents_complet:
+    if entree_registre.statut == EntreeRegistreTransaction.BROUILLON:
         return reverse("app.transaction-enregistrement", kwargs=kwargs)
     return reverse("app.transaction-documents", kwargs=kwargs)

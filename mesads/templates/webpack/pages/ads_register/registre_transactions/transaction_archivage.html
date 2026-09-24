@@ -1,4 +1,5 @@
 {% extends "base_container.html" %}
+{% load show_pagination_links %}
 {% block body-content %}
 
   <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
@@ -27,55 +28,35 @@
           </a>
         </li>
         <li>
-          <a class="fr-breadcrumb__link" aria-current="page">Enregistrer une transaction</a>
+          <a class="fr-breadcrumb__link" aria-current="page">Archiver l'entrée {{object.id}}</a>
         </li>
       </ol>
     </div>
   </nav>
 
-  <h1>Enregistrer une transaction</h1>
-
-  <div class="fr-stepper">
-    <h2 class="fr-stepper__title"> Sélection de l'ADS <span class="fr-stepper__state">Étape 1 sur 3</span>
-    </h2>
-    <div class="fr-stepper__steps" data-fr-current-step="1" data-fr-steps="3"></div>
-    <p class="fr-stepper__details"><span class="fr-text--bold">Étape suivante :</span> Réglementation et pièces</p>
-  </div>
+  <h1>Archiver une transaction</h1>
 
   <div>
-    <h2>Sélection de l'ADS</h2>
-
-    <div class="fr-notice fr-notice--info">
-      <div class="fr-container">
-        <div class="fr-notice__body">
-          <p>
-            <span class="fr-notice__title">Périmètre de cette fonctionnalité : </span>
-            <span class="fr-notice__desc">
-              les cessions d'ADS sont toujours à titre onéreux et concernent uniquement les autorisations 
-              délivrées avant octobre 2014, conformément à l'article L3121-2 du code des transports.
-            </span>
-          </p>
-        </div>
-      </div>
-    </div>
-
     <form method="post">
       {% csrf_token %}
-      {% include "form_fields/select.html" with empty_option=True field=form.ads field_errors=form.errors.ads required=form.fields.ads.required bold=True %}
+
+      <p class="text-center">
+        Êtes vous sûr de vouloir archiver cette entrée?
+      </p>
     
       <div class="w-full text-center">
         <div class="fr-my-6v">
           <a 
-            href="{% url 'app.ads-manager.detail' manager_id=ads_manager.id %}"
+            href="{% url 'app.transaction-liste' manager_id=ads_manager.id %}"
             class="fr-btn fr-btn--secondary fr-mr-4v"
           >
             Annuler
           </a>
           <button
             type="submit"
-            class="fr-btn" 
+            class="fr-btn"
           >
-            Valider la selection
+            Confirmer
           </button>
         </div>
       </div>

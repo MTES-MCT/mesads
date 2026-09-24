@@ -304,6 +304,13 @@ urls:
     title: "Registre des transactions {{ads_manager.content_object.display_text}} - MesADS"
     description: "Registre des transactions {{ads_manager.content_object.display_text}} - MesADS"
 
+  app.transaction-liste-archives:
+    title: "Archives du registre des transactions {{ads_manager.content_object.display_text}} - MesADS"
+    description: "Archives du registre des transactions {{ads_manager.content_object.display_text}} - MesADS"
+
+  app.transaction-restauration:
+    missing: true
+
   app.transaction-statut:
     missing: true
   
@@ -330,6 +337,10 @@ urls:
   app.transaction-edition:
     title: "Modification de l'entrée du registre - MesADS"
     description: "Modification de l'entrée du registre - MesADS"
+
+  app.transaction-archivage:
+    title: "Archivage de l'entrée du registre - MesADS"
+    description: "Archivage de l'entrée du registre - MesADS"
 
   app.transaction-arrete:
     missing: true
