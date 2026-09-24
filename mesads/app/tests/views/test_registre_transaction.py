@@ -4,6 +4,7 @@ from datetime import date
 from unittest.mock import patch
 
 from django.urls import reverse
+from django.utils import timezone
 
 from mesads.app.models import EntreeRegistreTransaction
 from mesads.users.unittest import ClientTestCase as BaseClientTestCase
@@ -71,6 +72,212 @@ class TestListeRegistreTransactions(ClientTestCase):
             response, "pages/ads_register/registre_transactions/transaction_liste.html"
         )
         self.assertNotIn(entree_autre, list(response.context["entrees"]))
+
+    def test_get_list_only_draft(self):
+        entree = EntreeRegistreTransaction.objects.create(
+            ads=self.old_ads, statut=EntreeRegistreTransaction.ENREGISTREE
+        )
+        EntreeRegistreTransaction.objects.create(
+            ads=self.old_ads, statut=EntreeRegistreTransaction.BROUILLON
+        )
+        EntreeRegistreTransaction.objects.create(
+            ads=self.old_ads, statut=EntreeRegistreTransaction.BROUILLON_DOC
+        )
+
+        response = self.client.get(
+            reverse(
+                "app.transaction-liste",
+                kwargs={"manager_id": self.ads_manager.id},
+                query={"draft": "on"},
+            )
+        )
+        self.assertEqual(response.status_code, http.HTTPStatus.OK)
+
+        self.assertQuerySetEqual(
+            response.context["entrees"],
+            EntreeRegistreTransaction.objects.filter(
+                ads__ads_manager=self.ads_manager,
+                statut__in=[
+                    EntreeRegistreTransaction.BROUILLON,
+                    EntreeRegistreTransaction.BROUILLON_DOC,
+                ],
+            ).order_by("-date_transaction"),
+        )
+        self.assertNotIn(entree, list(response.context["entrees"]))
+
+
+class TestArchiveRegistreTransactions(ClientTestCase):
+    def test_get_list(self):
+        EntreeRegistreTransaction.objects.create(
+            ads=self.old_ads,
+            statut=EntreeRegistreTransaction.ENREGISTREE,
+            deleted_at=timezone.now(),
+        )
+        EntreeRegistreTransaction.objects.create(
+            ads=self.old_ads, statut=EntreeRegistreTransaction.ENREGISTREE
+        )
+
+        entree_autre = EntreeRegistreTransaction.objects.create(
+            ads=self.ads_other_manager,
+            statut=EntreeRegistreTransaction.ENREGISTREE,
+            deleted_at=timezone.now(),
+        )
+
+        response = self.client.get(
+            reverse(
+                "app.transaction-liste-archives",
+                kwargs={"manager_id": self.ads_manager.id},
+            )
+        )
+        self.assertEqual(response.status_code, http.HTTPStatus.OK)
+
+        self.assertQuerySetEqual(
+            response.context["entrees"],
+            EntreeRegistreTransaction.with_deleted.filter(
+                ads__ads_manager=self.ads_manager, deleted_at__isnull=False
+            ).order_by("-date_transaction"),
+        )
+        self.assertTemplateUsed(
+            response,
+            "pages/ads_register/registre_transactions/transaction_liste_archives.html",
+        )
+        self.assertNotIn(entree_autre, list(response.context["entrees"]))
+
+
+class TestRestaurationRegistreTransactions(ClientTestCase):
+    def test_post_restauration(self):
+        entree = EntreeRegistreTransaction.objects.create(
+            ads=self.old_ads,
+            statut=EntreeRegistreTransaction.ENREGISTREE,
+            deleted_at=timezone.now(),
+        )
+
+        assert not EntreeRegistreTransaction.objects.filter(id=entree.id).exists()
+
+        response = self.client.post(
+            reverse(
+                "app.transaction-restauration",
+                kwargs={"manager_id": self.ads_manager.id, "entree_id": entree.id},
+            )
+        )
+        self.assertRedirects(
+            response,
+            expected_url=reverse(
+                "app.transaction-liste-archives",
+                kwargs={"manager_id": self.ads_manager.id},
+            ),
+            status_code=http.HTTPStatus.FOUND,
+            target_status_code=http.HTTPStatus.OK,
+            fetch_redirect_response=True,
+        )
+        assert EntreeRegistreTransaction.objects.filter(id=entree.id).exists()
+
+    def test_post_restauration_not_allowed(self):
+        entree = EntreeRegistreTransaction.objects.create(
+            ads=self.ads_other_manager,
+            statut=EntreeRegistreTransaction.ENREGISTREE,
+            deleted_at=timezone.now(),
+        )
+
+        assert not EntreeRegistreTransaction.objects.filter(id=entree.id).exists()
+
+        response = self.client.post(
+            reverse(
+                "app.transaction-restauration",
+                kwargs={"manager_id": self.ads_manager.id, "entree_id": entree.id},
+            )
+        )
+
+        assert response.status_code == http.HTTPStatus.NOT_FOUND
+        assert not EntreeRegistreTransaction.objects.filter(id=entree.id).exists()
+
+
+class TestArchivageRegistre(ClientTestCase):
+    def test_get(self):
+        entree = EntreeRegistreTransaction.objects.create(
+            ads=self.old_ads, statut=EntreeRegistreTransaction.ENREGISTREE
+        )
+
+        response = self.client.get(
+            reverse(
+                "app.transaction-archivage",
+                kwargs={"manager_id": self.ads_manager.id, "entree_id": entree.id},
+            )
+        )
+
+        assert response.status_code == http.HTTPStatus.OK
+        self.assertTemplateUsed(
+            response,
+            "pages/ads_register/registre_transactions/transaction_archivage.html",
+        )
+
+    def test_get_already_archived(self):
+        entree = EntreeRegistreTransaction.objects.create(
+            ads=self.old_ads,
+            statut=EntreeRegistreTransaction.ENREGISTREE,
+            deleted_at=timezone.now(),
+        )
+
+        response = self.client.get(
+            reverse(
+                "app.transaction-archivage",
+                kwargs={"manager_id": self.ads_manager.id, "entree_id": entree.id},
+            )
+        )
+
+        assert response.status_code == http.HTTPStatus.NOT_FOUND
+
+    def test_get_other_manager(self):
+        entree = EntreeRegistreTransaction.objects.create(
+            ads=self.ads_other_manager, statut=EntreeRegistreTransaction.ENREGISTREE
+        )
+
+        response = self.client.get(
+            reverse(
+                "app.transaction-archivage",
+                kwargs={"manager_id": self.ads_manager.id, "entree_id": entree.id},
+            )
+        )
+
+        assert response.status_code == http.HTTPStatus.NOT_FOUND
+
+    def test_post(self):
+        entree = EntreeRegistreTransaction.objects.create(
+            ads=self.old_ads, statut=EntreeRegistreTransaction.ENREGISTREE
+        )
+
+        response = self.client.post(
+            reverse(
+                "app.transaction-archivage",
+                kwargs={"manager_id": self.ads_manager.id, "entree_id": entree.id},
+            )
+        )
+        self.assertRedirects(
+            response,
+            expected_url=reverse(
+                "app.transaction-liste",
+                kwargs={"manager_id": self.ads_manager.id},
+            ),
+            status_code=http.HTTPStatus.FOUND,
+            target_status_code=http.HTTPStatus.OK,
+            fetch_redirect_response=True,
+        )
+        entree.refresh_from_db()
+        assert entree.deleted_at is not None
+
+    def test_post_other_manager(self):
+        entree = EntreeRegistreTransaction.objects.create(
+            ads=self.ads_other_manager, statut=EntreeRegistreTransaction.ENREGISTREE
+        )
+
+        response = self.client.post(
+            reverse(
+                "app.transaction-archivage",
+                kwargs={"manager_id": self.ads_manager.id, "entree_id": entree.id},
+            )
+        )
+
+        assert response.status_code == http.HTTPStatus.NOT_FOUND
 
 
 class TestChangementStatutRegistre(ClientTestCase):
@@ -523,18 +730,19 @@ class TestCreation(ClientTestCase):
             },
         )
 
+        assert EntreeRegistreTransaction.objects.count() == 1
+        entree = EntreeRegistreTransaction.objects.last()
+
         self.assertRedirects(
             response,
             expected_url=reverse(
-                "app.transaction-liste",
-                kwargs={"manager_id": self.ads_manager.id},
+                "app.transaction-confirmation",
+                kwargs={"manager_id": self.ads_manager.id, "entree_id": entree.id},
             ),
             status_code=http.HTTPStatus.FOUND,
             target_status_code=http.HTTPStatus.OK,
             fetch_redirect_response=True,
         )
-        assert EntreeRegistreTransaction.objects.count() == 1
-        entree = EntreeRegistreTransaction.objects.last()
         assert entree.ads == self.old_ads
         assert entree.date_transaction == date.today()
         assert entree.montant_transaction == 8000

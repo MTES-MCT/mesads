@@ -48,6 +48,23 @@ class TestTagUrlTransaction(BaseClientTestCase):
         url = modification_url(entree)
 
         assert url == reverse(
+            "app.transaction-documents",
+            kwargs={
+                "entree_id": entree.id,
+                "manager_id": self.ads_manager.id,
+            },
+        )
+
+    def test_get_brouillon_enregistrement(self):
+        entree = EntreeRegistreTransaction.objects.create(
+            ads=self.old_ads,
+            documents_complet=True,
+            statut=EntreeRegistreTransaction.BROUILLON,
+        )
+
+        url = modification_url(entree)
+
+        assert url == reverse(
             "app.transaction-enregistrement",
             kwargs={
                 "entree_id": entree.id,

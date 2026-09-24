@@ -1616,11 +1616,16 @@ class EntreeRegistreTransaction(CharFieldsStripperMixin, SoftDeleteMixin):
     )
 
     BROUILLON = "brouillon"
+    BROUILLON_DOC = "brouillon_doc"
     ENREGISTREE = "enregistree"
 
     STATUTS = [
         (
             BROUILLON,
+            "Brouillon",
+        ),
+        (
+            BROUILLON_DOC,
             "Brouillon",
         ),
         (ENREGISTREE, "Enregistrée"),
@@ -1630,10 +1635,10 @@ class EntreeRegistreTransaction(CharFieldsStripperMixin, SoftDeleteMixin):
         max_length=255,
         choices=STATUTS,
         blank=True,
-        default=BROUILLON,
+        default=BROUILLON_DOC,
         verbose_name="Statut de la transaction",
     )
 
     @property
     def is_brouillon(self):
-        return self.statut == self.BROUILLON
+        return self.statut in [self.BROUILLON, self.BROUILLON_DOC]

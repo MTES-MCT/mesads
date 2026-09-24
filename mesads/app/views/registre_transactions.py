@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import (
     CreateView,
+    DeleteView,
     DetailView,
     ListView,
     UpdateView,
@@ -66,6 +67,13 @@ class TransactionDocumentsFormView(ADSManagerMixin, UpdateView):
         "pages/ads_register/registre_transactions/transaction_documents.html"
     )
 
+    def get_initial(self):
+        initial = super().get_initial()
+        initial["documents_complet"] = (
+            "true" if self.object.documents_complet else "false"
+        )
+        return initial
+
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.filter(ads__ads_manager=self.ads_manager)
@@ -73,11 +81,19 @@ class TransactionDocumentsFormView(ADSManagerMixin, UpdateView):
     def form_valid(self, form):
         response = super().form_valid(form)
         action = self.request.POST.get("action")
+        entree = self.object
+        if action == "validate":
+            entree.statut = EntreeRegistreTransaction.BROUILLON
+            entree.save()
         messages.success(
             self.request,
             ("Les informations sur les pièces du dossier ont bien été enregistrées.")
             if action == "validate"
-            else "Le brouillon a bien été enregistré",
+            else (
+                "Le brouillon a bien été enregistré. "
+                "Vous pouvez reprendre le dossier à partir de la page "
+                "'Registre des transactions'"
+            ),
         )
         return response
 
@@ -140,7 +156,11 @@ class TransactionEnregistrementFormView(ADSManagerMixin, UpdateView):
             self.request,
             ("Les informations de l'entrée du registre ont bien été enregistrées.")
             if action == "validate"
-            else "Le brouillon a bien été enregistré",
+            else (
+                "Le brouillon a bien été enregistré. "
+                "Vous pouvez reprendre le dossier à partir de la page "
+                "'Registre des transactions'"
+            ),
         )
 
         return_url = (
@@ -172,12 +192,83 @@ class TransactionListView(ADSManagerMixin, ListView):
     context_object_name = "entrees"
 
     def get_queryset(self):
-        return (
+        queryset = (
             EntreeRegistreTransaction.objects.filter(
                 ads__ads_manager__id=self.ads_manager.id
             )
             .select_related("ads")
             .order_by("-date_transaction")
+        )
+        if self.request.GET.get("draft"):
+            queryset = queryset.filter(
+                statut__in=[
+                    EntreeRegistreTransaction.BROUILLON,
+                    EntreeRegistreTransaction.BROUILLON_DOC,
+                ]
+            )
+        return queryset
+
+
+class ArchivageTransactionDeleteView(ADSManagerMixin, DeleteView):
+    template_name = (
+        "pages/ads_register/registre_transactions/transaction_archivage.html"
+    )
+    model = EntreeRegistreTransaction
+    pk_url_kwarg = "entree_id"
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(ads__ads_manager=self.ads_manager)
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(
+            self.request,
+            ("L'entrée du registre a bien été archivée."),
+        )
+        return response
+
+    def get_success_url(self):
+        return reverse(
+            "app.transaction-liste",
+            kwargs={"manager_id": self.kwargs.get("manager_id")},
+        )
+
+
+class ArchiveTransactionListView(ADSManagerMixin, ListView):
+    template_name = (
+        "pages/ads_register/registre_transactions/transaction_liste_archives.html"
+    )
+    context_object_name = "entrees"
+
+    def get_queryset(self):
+        return (
+            EntreeRegistreTransaction.with_deleted.filter(
+                ads__ads_manager__id=self.ads_manager.id, deleted_at__isnull=False
+            )
+            .select_related("ads")
+            .order_by("-date_transaction")
+        )
+
+
+class RestaurationTransactionView(ADSManagerMixin, View):
+    def post(self, request, *args, **kwargs):
+        entree = get_object_or_404(
+            EntreeRegistreTransaction.with_deleted,
+            pk=kwargs["entree_id"],
+            ads__ads_manager=self.ads_manager,
+        )
+        entree.deleted_at = None
+        entree.save()
+        messages.success(
+            request,
+            ("L'entrée du registre a bien été restaurée."),
+        )
+        return HttpResponseRedirect(
+            redirect_to=reverse(
+                "app.transaction-liste-archives",
+                kwargs={"manager_id": self.ads_manager.id},
+            )
         )
 
 
@@ -215,10 +306,6 @@ class TransactionCreateView(ADSManagerMixin, CreateView):
     form_class = TransactionUpdateForm
     template_name = "pages/ads_register/registre_transactions/transaction_creation.html"
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        return qs.filter(ads__ads_manager=self.ads_manager)
-
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs.update({"ads_manager": self.ads_manager})
@@ -233,8 +320,8 @@ class TransactionCreateView(ADSManagerMixin, CreateView):
 
     def get_success_url(self):
         return reverse(
-            "app.transaction-liste",
-            kwargs={"manager_id": self.ads_manager.id},
+            "app.transaction-confirmation",
+            kwargs={"manager_id": self.ads_manager.id, "entree_id": self.object.id},
         )
 
 
@@ -419,7 +506,7 @@ class RegistreTransactionsPublicView(ListView):
     model = EntreeRegistreTransaction
     paginate_by = 50
     context_object_name = "entrees"
-    ordering = ["-date_transaction"]
+    ordering = ["statut", "-date_transaction"]
 
     def get_queryset(self):
         qs = super().get_queryset()
