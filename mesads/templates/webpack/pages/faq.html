@@ -1,11 +1,18 @@
-{% extends "base.html" %}
+{% extends "base_container.html" %}
 {% load static %}
-{% block body %}
-  <div class="fr-container fr-my-3v">
+
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" aria-current="page">Foire aux questions</a>
+  </li>
+{% endblock %}
+
+{% block body-content %}
     
     <div class="fr-grid-row fr-grid-row--gutters">
-
-
       <div class="fr-col-12 fr-col-lg-4">
         <nav class="fr-summary fr-mx-4v" role="navigation" aria-labelledby="fr-summary-title">
           <h2 class="fr-summary__title" id="fr-summary-title">Sommaire</h2>
@@ -838,4 +845,4 @@
     </div>
   </div>
  
-{% endblock body %}
+{% endblock %}

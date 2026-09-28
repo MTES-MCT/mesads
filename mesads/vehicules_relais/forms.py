@@ -69,12 +69,8 @@ class ProprietaireDeleteForm(forms.ModelForm):
         model = Proprietaire
         fields = []
 
-    def __init__(self, proprietaire, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.proprietaire = proprietaire
-
     def clean(self):
-        if self.proprietaire.vehicule_set.count():
+        if self.instance and self.instance.vehicule_set.count():
             raise ValidationError(
                 "Il est impossible de supprimer cet espace propriétaire, "
                 "car des véhicules y sont rattachés."
