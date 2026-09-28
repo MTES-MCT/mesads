@@ -1,29 +1,25 @@
 {% extends "base_container.html" %}
+
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link"
+      href="{% url 'app.homepage' %}">
+      Accueil - {{ ads_manager_administrator.prefecture.display_text|capfirst }}
+    </a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link"
+      href="{% url 'app.ads-manager-admin.gestionnaires' prefecture_id=ads_manager_administrator.prefecture.id %}">
+      Administrations de votre préfecture
+    </a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" aria-current="page">Modifications apportées par les gestionnaires de la préfecture</a>
+  </li>
+{% endblock %}
+
+
 {% block body-content %}
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button class="fr-breadcrumb__button"
-            aria-expanded="false"
-            aria-controls="breadcrumb-1">Voir le fil d'Ariane</button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
-        <li>
-          <a class="fr-breadcrumb__link"
-            href="{% url 'app.homepage' %}">
-            Accueil - {{ ads_manager_administrator.prefecture.display_text|capfirst }}
-          </a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link"
-            href="{% url 'app.ads-manager-admin.gestionnaires' prefecture_id=ads_manager_administrator.prefecture.id %}">
-            Administrations de votre préfecture
-          </a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" aria-current="page">Modifications apportées par les gestionnaires de la préfecture</a>
-        </li>
-      </ol>
-    </div>
-  </nav>
   <h1>Dernières modifications</h1>
   <p class="fr-text--lead">
     Ce tableau présente les ADS qui ont été modifiées par les gestionnaires de la préfecture. Seules les 100 dernières modifications sont affichées.

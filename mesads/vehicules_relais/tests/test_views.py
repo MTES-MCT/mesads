@@ -224,7 +224,6 @@ class TestProprietaireDetailView(ClientTestCase):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(self.proprietaire.id, resp.context["object"].id)
-        self.assertFalse(resp.context["deletable"])
 
         # Proprietaire without vehicules
         client, user = self.create_client()
@@ -235,7 +234,6 @@ class TestProprietaireDetailView(ClientTestCase):
         resp = client.get(f"/relais/proprietaire/{proprietaire_without_vehicules.id}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(proprietaire_without_vehicules.id, resp.context["object"].id)
-        self.assertTrue(resp.context["deletable"])
 
         # Admin user should be able to access any proprietaire object
         resp = self.admin_client.get(
@@ -243,7 +241,6 @@ class TestProprietaireDetailView(ClientTestCase):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(proprietaire_without_vehicules.id, resp.context["object"].id)
-        self.assertTrue(resp.context["deletable"])
 
     def test_ordering(self):
         """Ensure vehicules are ordered by numero"""

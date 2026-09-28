@@ -1,18 +1,13 @@
 {% extends "base_container.html" %}
 {% load static %}
-{% block body-content %}
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button class="fr-breadcrumb__button"
-            aria-expanded="false"
-            aria-controls="breadcrumb-1">Voir le fil d’Ariane</button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
+
+{% block breadcrumb %}
         <li>
           <a class="fr-breadcrumb__link" aria-current="page">Dashboards</a>
         </li>
-      </ol>
-    </div>
-  </nav>
+{% endblock %}
+
+{% block body-content %}
   <div class="fr-notice fr-notice--info fr-mb-3w">
     <div class="fr-container">
       <div class="fr-notice__body">

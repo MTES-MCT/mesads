@@ -1,33 +1,22 @@
 {% extends "base_container.html" %}
 {% load show_pagination_links %}
+
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link"
+      href="{% url 'app.ads-manager.administrations' %}">
+      Vos administrations en gestion
+    </a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" aria-current="page">{{ ads_manager.content_object.display_text|capfirst }}</a>
+  </li>
+{% endblock %}
+
 {% block body-content %}
-
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button
-      class="fr-breadcrumb__button"
-      aria-expanded="false"
-      aria-controls="breadcrumb-1"
-    >
-      Voir le fil d'Ariane
-    </button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link"
-            href="{% url 'app.ads-manager.administrations' %}">
-            Vos administrations en gestion
-          </a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" aria-current="page">{{ ads_manager.content_object.display_text|capfirst }}</a>
-        </li>
-      </ol>
-    </div>
-  </nav>
-
   <h1>{{ ads_manager.content_object.display_text|capfirst }}</h1>
 
   {% if not ads_manager.is_locked and not ads_manager.no_ads_declared %}

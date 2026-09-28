@@ -1,25 +1,19 @@
 {% extends "base_container.html" %}
 
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link"
+        href="{% url 'vehicules-relais.vehicules_relais_departement' prefecture_id=prefecture.id %}">Répertoire des taxis relais</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" aria-current="page">Véhicule {{ vehicule.numero }}</a>
+  </li>
+{% endblock %}
+
 {% block body-content %}
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button class="fr-breadcrumb__button"
-            aria-expanded="false"
-            aria-controls="breadcrumb-1">Voir le fil d'Ariane</button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link"
-             href="{% url 'vehicules-relais.vehicules_relais_departement' prefecture_id=prefecture.id %}">Répertoire des taxis relais</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" aria-current="page">Véhicule {{ vehicule.numero }}</a>
-        </li>
-      </ol>
-    </div>
-  </nav>
 
   <h1>Informations du taxi relais n°{{ vehicule.numero }}</h1>
   <div class="fr-table fr-table--lg">
