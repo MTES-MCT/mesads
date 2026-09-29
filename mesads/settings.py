@@ -45,7 +45,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_DIR = Path(__file__).resolve().parent
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = parse_env_bool("DEBUG", True)
+DEBUG = parse_env_bool("DEBUG", False)
 
 # Only enable matomo on production
 MESADS_STATS_ENABLED = parse_env_bool("MESADS_STATS_ENABLED", False)
@@ -110,17 +110,6 @@ if not DEBUG or os.environ.get("AWS_S3_ENDPOINT_URL"):
 
 ALLOWED_HOSTS = [part for part in os.getenv("ALLOWED_HOSTS", "").split(";") if part]
 
-# In debug, allow any origin for unsafe (POST, PUT, DELETE) requests.
-if DEBUG:
-    CSRF_TRUSTED_ORIGINS = [
-        "https://*.info",
-        "https://*.com",
-        "https://*.fr",
-        "http://*.info",
-        "http://*.com",
-        "http://*.fr",
-    ]
-
 
 INSTALLED_APPS = [
     # According to django-autocomplete-light documentation, DAL moduels must be
@@ -138,7 +127,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.postgres",
     "django_cron",
-    "debug_toolbar",
     "reversion",
     "reversion_compare",
     "rest_framework",
@@ -167,7 +155,6 @@ CRON_CLASSES = [
 AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -182,9 +169,6 @@ AUTHENTICATION_BACKENDS = [
     "mesads.mesads_oidc.backends.OIDCAuthenticationBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
-
-if DEBUG:
-    MIDDLEWARE.insert(0, "query_counter.middleware.DjangoQueryCounterMiddleware")
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
@@ -320,17 +304,6 @@ OIDC_AUTH_REQUEST_EXTRA_PARAMS = {"acr_values": "eidas1"}
 OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 4 * 60 * 60
 OIDC_STORE_ID_TOKEN = True
 ALLOW_LOGOUT_GET_METHOD = True
-# Setup INTERNAL_IPS for django-debug-toolbar.
-if DEBUG:
-    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
-    INTERNAL_IPS = [ip[:-1] + "1" for ip in ips] + [
-        "127.0.0.1",
-    ]
-
-# Display toolbar if DEBUG is True
-DEBUG_TOOLBAR_CONFIG = {
-    "SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG,
-}
 
 MESADS_CONTACT_EMAIL = "equipe@mesads.beta.gouv.fr"
 
@@ -392,6 +365,10 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.TokenAuthentication",
     ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/hour",
+        "user": "1000/hour",
+    },
 }
 
 MESADS_SENTRY_JS_URL = os.environ.get("SENTRY_JS_URL")
@@ -407,3 +384,28 @@ if "test" in sys.argv:
 
 
 OLD_ADS_DATE = date(2014, 10, 1)
+
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+ENABLE_DEBUG_TOOLBAR = DEBUG
+if DEBUG:
+    INSTALLED_APPS += [
+        "debug_toolbar",
+    ]
+
+    MIDDLEWARE.insert(0, "query_counter.middleware.DjangoQueryCounterMiddleware")
+    MIDDLEWARE += [
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
+    ]
+
+    _, _, ips = socket.gethostbyname_ex(socket.gethostname())
+    INTERNAL_IPS = [ip[:-1] + "1" for ip in ips] + [
+        "127.0.0.1",
+    ]

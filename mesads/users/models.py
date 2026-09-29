@@ -150,13 +150,13 @@ class NoteUtilisateur(models.Model):
     note_facilite = models.PositiveSmallIntegerField(
         verbose_name="Note de facilité d'usage (sur 5)",
         null=True,
-        validators=[MaxValueValidator(MINIMUM_NOTE), MinValueValidator(MAXIMUM_NOTE)],
+        validators=[MinValueValidator(MINIMUM_NOTE), MaxValueValidator(MAXIMUM_NOTE)],
     )
 
     note_qualite = models.PositiveSmallIntegerField(
         verbose_name="Note de qualité de service (sur 5)",
         null=True,
-        validators=[MaxValueValidator(MINIMUM_NOTE), MinValueValidator(MAXIMUM_NOTE)],
+        validators=[MinValueValidator(MINIMUM_NOTE), MaxValueValidator(MAXIMUM_NOTE)],
     )
 
     class Meta:

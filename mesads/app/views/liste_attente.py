@@ -219,7 +219,9 @@ class InscriptionTraitementListeAttenteView(ADSManagerMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         inscription = get_object_or_404(
-            InscriptionListeAttente, id=self.kwargs["inscription_id"]
+            InscriptionListeAttente,
+            id=self.kwargs["inscription_id"],
+            ads_manager=self.kwargs["manager_id"],
         )
         context["inscription"] = inscription
 
