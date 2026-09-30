@@ -80,7 +80,7 @@ STORAGES = {
 }
 
 # Upload to S3 in production, or if S3 is defined in debug mode
-if not DEBUG or os.environ.get("AWS_S3_ENDPOINT_URL"):
+if not DEBUG and os.environ.get("AWS_S3_ENDPOINT_URL"):
     if os.environ.get("ENV", "") == "PREPROD":
         STORAGES["default"] = {
             # See documentation in s3storage.py to understand why we use this custom storage.
