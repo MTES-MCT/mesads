@@ -63,7 +63,7 @@ COPY --from=node-builder /app/node_modules /app/node_modules
 COPY --from=python-builder /venv /venv
 
 RUN npm run build
-RUN poetry run python manage.py collectstatic
+RUN SECRET_KEY=temporary-build-key poetry run python manage.py collectstatic
 
 EXPOSE 8000
 
