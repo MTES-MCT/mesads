@@ -4,7 +4,11 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-from .admin_views import ExportListeAttenteDataExcel, StatistiquesView
+from .admin_views import (
+    ExportListeAttenteDataExcel,
+    ExportRegistreTransactionDataExcel,
+    StatistiquesView,
+)
 from .app import views
 
 urlpatterns = [
@@ -20,6 +24,11 @@ urlpatterns = [
         "admin/statistiques/export-data-liste-attente",
         admin.site.admin_view(ExportListeAttenteDataExcel.as_view()),
         name="admin-statistiques-export-data-liste-attente",
+    ),
+    path(
+        "admin/statistiques/export-data-registre-transaction",
+        admin.site.admin_view(ExportRegistreTransactionDataExcel.as_view()),
+        name="admin-statistiques-export-data-registre-transaction",
     ),
     path("admin/", admin.site.urls),
     path("", include("mesads.app.urls")),

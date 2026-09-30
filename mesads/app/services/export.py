@@ -284,3 +284,91 @@ def get_prefectures_data_listes_attente():
         "Nombre d'inscrits sur des aéroports",
     ]
     return headers, rows
+
+
+def get_prefectures_data_registres_transaction():
+    ct_commune = ContentType.objects.get_for_model(Commune)
+    ct_epci = ContentType.objects.get_for_model(EPCI)
+    ct_prefecture = ContentType.objects.get_for_model(Prefecture)
+    ct_aeroport = ContentType.objects.get_for_model(Aeroport)
+
+    prefectures = ADSManagerAdministrator.objects.annotate(
+        nb_communes=Count("adsmanager", filter=Q(adsmanager__content_type=ct_commune)),
+        nb_registres_commune=Count(
+            "adsmanager",
+            filter=Q(
+                adsmanager__content_type=ct_commune,
+                adsmanager__ads__transactions__isnull=False,
+            ),
+            distinct=True,
+        ),
+        nb_registres_epci=Count(
+            "adsmanager",
+            filter=Q(
+                adsmanager__content_type=ct_epci,
+                adsmanager__ads__transactions__isnull=False,
+            ),
+            distinct=True,
+        ),
+        nb_registres_prefecture=Count(
+            "adsmanager",
+            filter=Q(
+                adsmanager__content_type=ct_prefecture,
+                adsmanager__ads__transactions__isnull=False,
+            ),
+            distinct=True,
+        ),
+        nb_registres_aeroport=Count(
+            "adsmanager",
+            filter=Q(
+                adsmanager__content_type=ct_aeroport,
+                adsmanager__ads__transactions__isnull=False,
+            ),
+            distinct=True,
+        ),
+        nb_entrees_commune=Count(
+            "adsmanager__ads__transactions",
+            filter=Q(adsmanager__content_type=ct_commune),
+            distinct=True,
+        ),
+        nb_entrees_epci=Count(
+            "adsmanager__ads__transactions",
+            filter=Q(adsmanager__content_type=ct_epci),
+            distinct=True,
+        ),
+        nb_entrees_prefecture=Count(
+            "adsmanager__ads__transactions",
+            filter=Q(adsmanager__content_type=ct_prefecture),
+            distinct=True,
+        ),
+        nb_entrees_aeroport=Count(
+            "adsmanager__ads__transactions",
+            filter=Q(adsmanager__content_type=ct_aeroport),
+            distinct=True,
+        ),
+    )
+    rows = prefectures.values_list(
+        "prefecture__libelle",
+        "nb_communes",
+        "nb_registres_commune",
+        "nb_registres_epci",
+        "nb_registres_prefecture",
+        "nb_registres_aeroport",
+        "nb_entrees_commune",
+        "nb_entrees_epci",
+        "nb_entrees_prefecture",
+        "nb_entrees_aeroport",
+    )
+    headers = [
+        "Département",
+        "Nombre de communes",
+        "Nombre de communes avec un registre des transaction publique ou non",
+        "Nombre d'EPCI avec un registre des transaction ou non",
+        "Préfecture avec un registre des transaction ou non",
+        "Nombre d'aéroports un registre des transaction ou non",
+        "Nombre d'entrées sur des communes",
+        "Nombre d'entrées sur des EPCI",
+        "Nombre d'entrées sur la préfecture",
+        "Nombre d'entrées sur des aéroports",
+    ]
+    return headers, rows
