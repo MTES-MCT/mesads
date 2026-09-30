@@ -33,12 +33,12 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("mesads.app.urls")),
     path("relais/", include("mesads.vehicules_relais.urls")),
-    path("__debug__/", include(debug_toolbar.urls)),
     path("markdownx/", include("markdownx.urls")),
     path("oidc/", include("mozilla_django_oidc.urls")),
 ]
 
 if settings.DEBUG:
+    urlpatterns += (path("__debug__/", include(debug_toolbar.urls)),)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
