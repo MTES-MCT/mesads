@@ -53,6 +53,7 @@ class NotationView(View):
             note_utilisateur.derniere_note = timezone.now().date()
             note_utilisateur.note_qualite = request.POST.get("note_qualite")
             note_utilisateur.note_facilite = request.POST.get("note_facilite")
+            note_utilisateur.full_clean()
             note_utilisateur.save()
             return JsonResponse(
                 data={

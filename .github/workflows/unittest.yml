@@ -38,3 +38,4 @@ jobs:
           DB_PORT: 5432
           DB_USER: postgres
           DB_PASSWORD: postgres
+          DEBUG: true
