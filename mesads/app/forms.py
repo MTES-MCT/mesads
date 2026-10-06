@@ -475,7 +475,7 @@ class DemandeGestionPrefectureForm(forms.ModelForm):
     user = None
 
     administrator = AdministratorChoiceField(
-        queryset=ADSManagerAdministrator.objects.all(),
+        queryset=ADSManagerAdministrator.objects.all().order_by("prefecture__numero"),
         label="Département",
         required=True,
     )
