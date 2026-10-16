@@ -19,11 +19,12 @@ class TestMigrationsApplied(unittest.TestCase):
         applications.
         """
         our_apps = [
-            app.split(".")[-1] for app in settings.INSTALLED_APPS if "mesads" in app
+            app.split(".")[-1]
+            for app in settings.INSTALLED_APPS
+            if "mesads" in app and app != "mesads.admin.apps.MesADSAdminConfig"
         ]
 
         command = ["makemigrations", "--check", "--dry-run", *our_apps]
-
         with io.StringIO() as out:
             try:
                 call_command(*command, stdout=out)
