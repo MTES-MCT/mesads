@@ -64,12 +64,6 @@ class User(AbstractUser):
         },
     )
 
-    otp_secret = models.CharField(
-        blank=True,
-        null=False,
-        max_length=64,
-    )
-
     proconnect_sub = models.UUIDField(
         "Identifiant unique proconnect", null=True, blank=True
     )

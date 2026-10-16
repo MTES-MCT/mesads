@@ -17,6 +17,13 @@ class ClientTestCase(TestCase):
         self.anonymous_client = Client()
         self.auth_client, self.auth_user = self.create_client()
         self.admin_client, self.admin_user = self.create_client(superuser=True)
+        session = self.admin_client.session
+        session["admin_mfa"] = {
+            "user_id": str(self.admin_user.pk),
+            "acr": "eidas1-mfa",
+        }
+
+        session.save()
 
     def create_user(self, superuser=False):
         return UserFactory(superuser=superuser)
