@@ -310,6 +310,10 @@ MESADS_CONTACT_EMAIL = "equipe@mesads.beta.gouv.fr"
 DEFAULT_FROM_EMAIL = MESADS_CONTACT_EMAIL
 SERVER_EMAIL = MESADS_CONTACT_EMAIL
 
+# Configuration Clamav
+CLAMAV_HOST = os.getenv("CLAMAV_HOST", "127.0.0.1")
+CLAMAV_PORT = int(os.getenv("CLAMAV_PORT", "3310"))
+
 # Configuration Mail
 if DEBUG:
     EMAIL_HOST = os.getenv("EMAIL_HOST", "maildev")

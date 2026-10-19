@@ -1,12 +1,16 @@
 from django.db import models
 from solo.models import SingletonModel
 
+from mesads.common.validators import validate_file_antivirus
+
 
 class NewsLetter(models.Model):
     newsletter_date = models.DateField(verbose_name="Date d'envoi")
 
     newsletter = models.FileField(
-        verbose_name="Newsletter (format PDF)", upload_to="newsletters/"
+        verbose_name="Newsletter (format PDF)",
+        upload_to="newsletters/",
+        validators=[validate_file_antivirus],
     )
 
     class Meta:

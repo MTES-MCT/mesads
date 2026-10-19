@@ -12,6 +12,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from mesads.app.services.liste_attente import set_next_date_fin_validite
+from mesads.common.validators import validate_file_antivirus
 from mesads.fradm.forms import FrenchAdministrationForm
 from mesads.fradm.models import EPCI, Aeroport, Commune, Prefecture
 
@@ -230,7 +231,7 @@ ADSLegalFileFormSet = inlineformset_factory(
 
 
 class ADSManagerDecreeForm(forms.Form):
-    file = forms.FileField(label="Fichier")
+    file = forms.FileField(label="Fichier", validators=[validate_file_antivirus])
     date_arrete = forms.DateField(
         label="Date de prise de l'arrêté",
         validators=[MaxValueValidator(limit_value=date.today)],
@@ -438,7 +439,9 @@ class AttributionADSForm(forms.Form):
     numero = forms.CharField(label="Numéro de l'ADS")
     date_attribution = forms.DateField(label="Date de signature de l'arrêté")
 
-    arrete = forms.FileField(label="Fichier de l'arrêté")
+    arrete = forms.FileField(
+        label="Fichier de l'arrêté", validators=[validate_file_antivirus]
+    )
 
     def __init__(self, *args, **kwargs):
         self.ads_manager = kwargs.pop("ads_manager")
@@ -519,7 +522,9 @@ class ConsultationADSForm(forms.Form):
 
 
 class ADSImportForm(forms.Form):
-    file = forms.FileField(label="Fichier à importer")
+    file = forms.FileField(
+        label="Fichier à importer", validators=[validate_file_antivirus]
+    )
 
 
 class ADSChoiceField(forms.ModelChoiceField):

@@ -1,6 +1,7 @@
 volumes:
   db: {}
   app-poetry: {}
+  clamav-data: {}
 
 services:
   maildev:
@@ -18,6 +19,18 @@ services:
     ports:
       - 9432:5432
 
+  clamav:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+    volumes:
+      - clamav-data:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 180s
+
   app:
     build:
       context: .
@@ -28,5 +41,9 @@ services:
     depends_on:
       - db
       - maildev
+      - clamav
+    environment:
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
     ports:
       - '9400:8000'

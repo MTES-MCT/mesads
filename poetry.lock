@@ -435,6 +435,18 @@ files = [
 ]
 
 [[package]]
+name = "clamav-client"
+version = "0.7.2"
+description = "Python client library for the ClamAV antivirus."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "clamav_client-0.7.2-py3-none-any.whl", hash = "sha256:294ade0fb1e902db2399daa3f27a7023ca216282f129f0b2466abd5672b27397"},
+    {file = "clamav_client-0.7.2.tar.gz", hash = "sha256:d136f44acc79ceada188a200ac0f68840abb7cfae1fa5f9d535f11cfc244cccd"},
+]
+
+[[package]]
 name = "click"
 version = "8.1.7"
 description = "Composable command line interface toolkit"
@@ -2753,4 +2765,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "1a4f85fea433a5c7b2a1eba94d8749eb2b81949ed3337aed7e6f690ee62026c0"
+content-hash = "89ce629c2dcab1f5858399e21c2a659cb3db91653596f18190b25150a35acd3e"
