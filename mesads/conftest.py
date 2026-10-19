@@ -53,3 +53,14 @@ def ads_manager_request(user, commune):
         )
 
     return _ads_manager_request
+
+
+@pytest.fixture(autouse=True)
+def mock_clamav(monkeypatch):
+    def fake_scan_file(file):
+        return {"stream": ("OK", None)}
+
+    monkeypatch.setattr(
+        "mesads.common.validators.scan_file",
+        fake_scan_file,
+    )
