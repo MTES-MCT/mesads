@@ -118,7 +118,7 @@ INSTALLED_APPS = [
     "dal",
     "dal_select2",
     "dal_queryset_sequence",
-    "django.contrib.admin",
+    "mesads.admin.apps.MesADSAdminConfig",
     "django.contrib.auth",
     "mozilla_django_oidc",
     "django.contrib.contenttypes",
@@ -167,7 +167,6 @@ MIDDLEWARE = [
 
 AUTHENTICATION_BACKENDS = [
     "mesads.mesads_oidc.backends.OIDCAuthenticationBackend",
-    "django.contrib.auth.backends.ModelBackend",
 ]
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -303,6 +302,7 @@ OIDC_OP_LOGOUT_ENDPOINT = os.getenv("PROCONNECT_SESSION_END")
 OIDC_AUTH_REQUEST_EXTRA_PARAMS = {"acr_values": "eidas1"}
 OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 4 * 60 * 60
 OIDC_STORE_ID_TOKEN = True
+OIDC_CALLBACK_CLASS = "mesads.mesads_oidc.views.ProConnectCallbackView"
 ALLOW_LOGOUT_GET_METHOD = True
 
 MESADS_CONTACT_EMAIL = "equipe@mesads.beta.gouv.fr"

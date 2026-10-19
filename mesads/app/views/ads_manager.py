@@ -318,7 +318,9 @@ class ADSManagerArreteView(TemplateView):
 class ADSManagerArreteUpdateView(View):
     def post(self, request, *args, **kwargs):
         arrete_id = self.kwargs.get("arrete_id")
-        arrete = get_object_or_404(ADSManagerDecree, id=arrete_id)
+        arrete = get_object_or_404(
+            ADSManagerDecree, id=arrete_id, ads_manager__id=kwargs["manager_id"]
+        )
         try:
             arrete.date_arrete = request.POST.get("date_arrete")
             arrete.nombre_ads = request.POST.get("nombre_ads")
@@ -338,7 +340,9 @@ class ADSManagerArreteUpdateView(View):
 class ADSManagerArreteDeleteView(View):
     def post(self, request, *args, **kwargs):
         arrete_id = self.kwargs.get("arrete_id")
-        arrete = get_object_or_404(ADSManagerDecree, id=arrete_id)
+        arrete = get_object_or_404(
+            ADSManagerDecree, id=arrete_id, ads_manager__id=kwargs["manager_id"]
+        )
         try:
             arrete.delete()
             messages.success(request, "L'arrêté a bien été supprimé.")

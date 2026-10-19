@@ -42,3 +42,17 @@ MIDDLEWARE = [
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
+
+# Configuration OIDC réservée aux tests.
+OIDC_RP_CLIENT_ID = "test-client-id"
+OIDC_RP_CLIENT_SECRET = "test-client-secret"
+
+OIDC_OP_JWKS_ENDPOINT = "https://oidc.example.test/jwks"
+
+OIDC_OP_AUTHORIZATION_ENDPOINT = "https://oidc.example.test/authorize"
+
+OIDC_OP_TOKEN_ENDPOINT = "https://oidc.example.test/token"
+
+OIDC_OP_USER_ENDPOINT = "https://oidc.example.test/userinfo"
+
+OIDC_OP_LOGOUT_ENDPOINT = "https://oidc.example.test/logout"

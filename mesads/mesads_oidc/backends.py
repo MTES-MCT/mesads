@@ -3,8 +3,35 @@ from mozilla_django_oidc.auth import (
     OIDCAuthenticationBackend as MozillaOIDCAuthenticationBackend,
 )
 
+from .mfa import MFA_ACR_VALUES
+
 
 class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
+    def verify_token(self, token, **kwargs):
+        payload = super().verify_token(token, **kwargs)
+
+        if payload is None:
+            return None
+
+        if "nonce" in kwargs:
+            acr = payload.get("acr")
+
+            # On mémorise systématiquement le niveau
+            # d'authentification retourné par ProConnect.
+            self.request.oidc_verified_acr = acr
+
+            # Si le parcours admin a demandé la MFA,
+            # on vérifie qu'elle a réellement été effectuée.
+            if getattr(
+                self.request,
+                "admin_mfa_requested",
+                False,
+            ):
+                if acr not in MFA_ACR_VALUES:
+                    return None
+
+        return payload
+
     def get_userinfo(self, access_token, id_token, payload):
         # Surcharge de la récupération des informations utilisateur:
         # le décodage JSON du contenu JWT pose problème avec ProConnect

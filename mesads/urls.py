@@ -2,7 +2,9 @@ import debug_toolbar
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import include, path
+from markdownx.views import ImageUploadView, MarkdownifyView
 
 from .admin_views import (
     ExportListeAttenteDataExcel,
@@ -10,6 +12,7 @@ from .admin_views import (
     StatistiquesView,
 )
 from .app import views
+from .mesads_oidc.views import AdminOIDCAuthenticationRequestView
 
 urlpatterns = [
     path("api/", include("mesads.api.urls")),
@@ -33,7 +36,21 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("mesads.app.urls")),
     path("relais/", include("mesads.vehicules_relais.urls")),
-    path("markdownx/", include("markdownx.urls")),
+    path(
+        "markdownx/upload/",
+        staff_member_required(ImageUploadView.as_view()),
+        name="markdownx_upload",
+    ),
+    path(
+        "markdownx/markdownify/",
+        staff_member_required(MarkdownifyView.as_view()),
+        name="markdownx_markdownify",
+    ),
+    path(
+        "oidc/admin/authenticate/",
+        AdminOIDCAuthenticationRequestView.as_view(),
+        name="oidc_admin_authenticate",
+    ),
     path("oidc/", include("mozilla_django_oidc.urls")),
 ]
 
