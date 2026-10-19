@@ -23,6 +23,7 @@ from django.views.generic import (
 from reversion.views import RevisionMixin
 from weasyprint import HTML
 
+from mesads.app.models import DemandeGestionPrefecture
 from mesads.app.reversion_diff import ModelHistory
 from mesads.app.views.export import ExcelExporter
 from mesads.fradm.models import Prefecture
@@ -109,8 +110,13 @@ class VehiculeView(TemplateView):
         vehicule = get_object_or_404(Vehicule, numero=kwargs["numero"])
 
         if self.request.user.is_authenticated:
-            administrator = self.request.user.adsmanageradministrator_set.first()
-            if administrator and administrator.prefecture == vehicule.departement:
+            demande_prefecture = self.request.user.demandes_gestion_prefecture.filter(
+                statut=DemandeGestionPrefecture.ACCEPTE
+            ).first()
+            if (
+                demande_prefecture
+                and demande_prefecture.administrator.prefecture == vehicule.departement
+            ):
                 context["show_links_edition"] = True
 
         context["vehicule"] = vehicule
@@ -135,10 +141,9 @@ class ProprietaireListView(ListView):
         return ctx
 
 
-class ProprietaireEditView(RevisionMixin, UpdateView):
+class ProprietaireMixin(RevisionMixin):
     template_name = "pages/vehicules_relais/proprietaire_edit.html"
     model = Proprietaire
-    pk_url_kwarg = "proprietaire_id"
     form_class = ProprietaireForm
 
     def get_success_url(self):
@@ -148,17 +153,15 @@ class ProprietaireEditView(RevisionMixin, UpdateView):
         )
 
 
-class ProprietaireCreateView(ProprietaireEditView, CreateView):
-    template_name = "pages/vehicules_relais/proprietaire_edit.html"
-    form_class = ProprietaireForm
+class ProprietaireEditView(ProprietaireMixin, UpdateView):
+    pk_url_kwarg = "proprietaire_id"
 
-    def get_object(self, queryset=None):
-        return None
 
+class ProprietaireCreateView(ProprietaireMixin, CreateView):
     def form_valid(self, form):
-        redirection = super().form_valid(form)
+        response = super().form_valid(form)
         self.object.users.set([self.request.user])
-        return redirection
+        return response
 
 
 class ProprietaireDetailView(ListView):
@@ -182,31 +185,26 @@ class ProprietaireDetailView(ListView):
         )
 
     def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["object"] = get_object_or_404(
+        context = super().get_context_data(**kwargs)
+        context["object"] = get_object_or_404(
             Proprietaire, pk=self.kwargs["proprietaire_id"]
         )
-        ctx["deletable"] = ctx["object"].vehicule_set.count() == 0
-        return ctx
+        return context
 
 
 class ProprietaireDeleteView(RevisionMixin, DeleteView):
     template_name = "pages/vehicules_relais/proprietaire_confirm_delete.html"
     model = Proprietaire
+    pk_url_kwarg = "proprietaire_id"
     form_class = ProprietaireDeleteForm
-
-    def get_object(self, queryset=None):
-        return Proprietaire.objects.filter(id=self.kwargs["proprietaire_id"]).first()
+    success_url = reverse_lazy("vehicules-relais.proprietaire")
 
     def get_form_kwargs(self):
+        """Return the keyword arguments for instantiating the form."""
         kwargs = super().get_form_kwargs()
-        kwargs["proprietaire"] = self.object
+        if hasattr(self, "object"):
+            kwargs.update({"instance": self.object})
         return kwargs
-
-    def get_success_url(self):
-        return reverse(
-            "vehicules-relais.proprietaire",
-        )
 
 
 class ProprietaireHistoryView(DetailView):
@@ -229,38 +227,42 @@ class ProprietaireHistoryView(DetailView):
         return ctx
 
 
-class ProprietaireVehiculeUpdateView(RevisionMixin, UpdateView):
-    template_name = "pages/vehicules_relais/proprietaire_vehicule.html"
-    form_class = VehiculeForm
-    success_message = "Les modifications ont été enregistrées."
+class VehiculeMixin(RevisionMixin):
+    model = Vehicule
+    slug_field = "numero"
+    slug_url_kwarg = "vehicule_numero"
+    success_message = ""
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["proprietaire"] = get_object_or_404(
-            Proprietaire, pk=self.kwargs["proprietaire_id"]
-        )
-
-        if ctx.get("vehicule"):
-            ctx["disposition_specifique"] = DispositionSpecifique.objects.filter(
-                departement=ctx["vehicule"].departement
-            ).first()
-
-        return ctx
-
-    def get_object(self):
-        return get_object_or_404(
-            Vehicule,
-            numero=self.kwargs["vehicule_numero"],
-            proprietaire=self.kwargs["proprietaire_id"],
-        )
+    def get_queryset(self):
+        qs = super().get_queryset()
+        qs = qs.filter(proprietaire=self.kwargs["proprietaire_id"])
+        return qs
 
     def get_success_message(self):
         return self.success_message
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["proprietaire"] = get_object_or_404(
+            Proprietaire, pk=self.kwargs["proprietaire_id"]
+        )
+
+        if self.object:
+            context["disposition_specifique"] = DispositionSpecifique.objects.filter(
+                departement=self.object.departement
+            ).first()
+
+        return context
+
+
+class ProprietaireVehiculeUpdateView(VehiculeMixin, UpdateView):
+    template_name = "pages/vehicules_relais/proprietaire_vehicule.html"
+    form_class = VehiculeForm
+    success_message = "Les modifications ont été enregistrées."
+
     def form_valid(self, form):
-        ret = super().form_valid(form)
         messages.success(self.request, self.get_success_message())
-        return ret
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse(
@@ -272,30 +274,19 @@ class ProprietaireVehiculeUpdateView(RevisionMixin, UpdateView):
         )
 
 
-class ProprietaireVehiculeDeleteView(RevisionMixin, DeleteView):
+class ProprietaireVehiculeDeleteView(VehiculeMixin, DeleteView):
     template_name = "pages/vehicules_relais/proprietaire_vehicule_confirm_delete.html"
-    model = Vehicule
-
-    def get_object(self, queryset=None):
-        return get_object_or_404(
-            Vehicule,
-            proprietaire_id=self.kwargs["proprietaire_id"],
-            numero=self.kwargs["vehicule_numero"],
-        )
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["proprietaire"] = get_object_or_404(
-            Proprietaire, pk=self.kwargs["proprietaire_id"]
-        )
-        return ctx
 
     def get_success_url(self):
-        administrator = self.request.user.adsmanageradministrator_set.first()
-        if administrator:
+        demande_prefecture = self.request.user.demandes_gestion_prefecture.filter(
+            statut=DemandeGestionPrefecture.ACCEPTE
+        ).first()
+        if demande_prefecture:
             return reverse(
                 "vehicules-relais.vehicules_relais_departement",
-                kwargs={"prefecture_id": administrator.prefecture.id},
+                kwargs={
+                    "prefecture_id": demande_prefecture.administrator.prefecture.id
+                },
             )
 
         return reverse(
@@ -306,22 +297,25 @@ class ProprietaireVehiculeDeleteView(RevisionMixin, DeleteView):
         )
 
 
-class ProprietaireVehiculeCreateView(ProprietaireVehiculeUpdateView, CreateView):
+class ProprietaireVehiculeCreateView(VehiculeMixin, CreateView):
+    template_name = "pages/vehicules_relais/proprietaire_vehicule.html"
     form_class = VehiculeCreateForm
-
-    def get_object(self, queryset=None):
-        return None
+    success_message = "Le véhicule a été enregistré."
 
     def form_valid(self, form):
         form.instance.proprietaire = get_object_or_404(
             Proprietaire, pk=self.kwargs["proprietaire_id"]
         )
+        messages.success(self.request, self.get_success_message())
         return super().form_valid(form)
 
-    def get_success_message(self):
-        return (
-            "Le véhicule a été enregistré. "
-            f"Le numéro <strong>{self.object.numero}</strong> lui a été attribué."
+    def get_success_url(self):
+        return reverse(
+            "vehicules-relais.proprietaire.vehicule.edit",
+            kwargs={
+                "proprietaire_id": self.object.proprietaire.id,
+                "vehicule_numero": self.object.numero,
+            },
         )
 
 
@@ -476,6 +470,15 @@ class HistoriqueVehiculeRelaisDepartementView(ListView):
     )
     paginate_by = 100
 
+    def get_administrator(self):
+        demande = DemandeGestionPrefecture.objects.filter(
+            user=self.request.user, statut=DemandeGestionPrefecture.ACCEPTE
+        ).first()
+        if demande:
+            return demande.administrator
+        else:
+            return None
+
     def get_queryset(self):
         qs = (
             Vehicule.with_deleted.annotate(
@@ -488,7 +491,7 @@ class HistoriqueVehiculeRelaisDepartementView(ListView):
         )
 
         form = self.get_form()
-        administrator = self.request.user.adsmanageradministrator_set.first()
+        administrator = self.get_administrator()
         if form.is_valid():
             departement = form.cleaned_data["departement"]
             if departement or administrator:
@@ -517,7 +520,7 @@ class HistoriqueVehiculeRelaisDepartementView(ListView):
     def get_form(self):
         return SearchVehiculeDepartementForm(
             data=self.request.GET or None,
-            administrator=self.request.user.adsmanageradministrator_set.first(),
+            administrator=self.get_administrator(),
         )
 
 

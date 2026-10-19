@@ -1,45 +1,33 @@
 {% extends "base_container.html" %}
-{% load show_pagination_links %}
+
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link"
+      href="{% url 'app.ads-manager.administrations' %}">
+      Vos administrations en gestion
+    </a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link"
+      href="{% url 'app.ads-manager.detail' manager_id=ads_manager.id %}">
+      {{ ads_manager.content_object.display_text|capfirst }}
+    </a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" aria-current="page">Enregistrer une transaction</a>
+  </li>
+{% endblock %}
+
 {% block body-content %}
-
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button
-      class="fr-breadcrumb__button"
-      aria-expanded="false"
-      aria-controls="breadcrumb-1"
-    >
-      Voir le fil d'Ariane
-    </button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link"
-            href="{% url 'app.ads-manager.administrations' %}">
-            Vos administrations en gestion
-          </a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link"
-            href="{% url 'app.ads-manager.detail' manager_id=ads_manager.id %}">
-            {{ ads_manager.content_object.display_text|capfirst }}
-          </a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" aria-current="page">Enregistrer une transaction</a>
-        </li>
-      </ol>
-    </div>
-  </nav>
-
   <h1>Enregistrer une transaction</h1>
 
   <div class="fr-stepper">
-    <h2 class="fr-stepper__title"> Sélection de l'ADS <span class="fr-stepper__state">Étape 1 sur 4</span>
+    <h2 class="fr-stepper__title"> Sélection de l'ADS <span class="fr-stepper__state">Étape 1 sur 3</span>
     </h2>
-    <div class="fr-stepper__steps" data-fr-current-step="1" data-fr-steps="4"></div>
+    <div class="fr-stepper__steps" data-fr-current-step="1" data-fr-steps="3"></div>
     <p class="fr-stepper__details"><span class="fr-text--bold">Étape suivante :</span> Réglementation et pièces</p>
   </div>
 

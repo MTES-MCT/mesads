@@ -64,12 +64,6 @@ class User(AbstractUser):
         },
     )
 
-    otp_secret = models.CharField(
-        blank=True,
-        null=False,
-        max_length=64,
-    )
-
     proconnect_sub = models.UUIDField(
         "Identifiant unique proconnect", null=True, blank=True
     )
@@ -150,13 +144,13 @@ class NoteUtilisateur(models.Model):
     note_facilite = models.PositiveSmallIntegerField(
         verbose_name="Note de facilité d'usage (sur 5)",
         null=True,
-        validators=[MaxValueValidator(MINIMUM_NOTE), MinValueValidator(MAXIMUM_NOTE)],
+        validators=[MinValueValidator(MINIMUM_NOTE), MaxValueValidator(MAXIMUM_NOTE)],
     )
 
     note_qualite = models.PositiveSmallIntegerField(
         verbose_name="Note de qualité de service (sur 5)",
         null=True,
-        validators=[MaxValueValidator(MINIMUM_NOTE), MinValueValidator(MAXIMUM_NOTE)],
+        validators=[MinValueValidator(MINIMUM_NOTE), MaxValueValidator(MAXIMUM_NOTE)],
     )
 
     class Meta:

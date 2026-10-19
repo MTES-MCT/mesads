@@ -163,6 +163,20 @@ url_gestionnaire = [
         name="app.transaction-liste",
     ),
     path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/archives",
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ArchiveTransactionListView.as_view()
+        ),
+        name="app.transaction-liste-archives",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/archives/<int:entree_id>",
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.RestaurationTransactionView.as_view()
+        ),
+        name="app.transaction-restauration",
+    ),
+    path(
         "registre_ads/gestion/<int:manager_id>/registre-transactions/statut",
         profil_required(is_staff, is_administrator, is_manager)(
             views.ChangementStatutRegistreTransactionView.as_view()
@@ -210,6 +224,13 @@ url_gestionnaire = [
             views.TransactionEditView.as_view()
         ),
         name="app.transaction-edition",
+    ),
+    path(
+        "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/archivage",
+        profil_required(is_staff, is_administrator, is_manager)(
+            views.ArchivageTransactionDeleteView.as_view()
+        ),
+        name="app.transaction-archivage",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/registre-transactions/<int:entree_id>/arrete",

@@ -1,22 +1,17 @@
 {% extends "base_container.html" %}
 {% load static %}
 {% load show_pagination_links %}
+
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil {{ ads_manager_administrator.prefecture.display_text|capfirst }}</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" aria-current="page">Administrations de votre préfecture</a>
+  </li>
+{% endblock %}
+
 {% block body-content %}
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button class="fr-breadcrumb__button"
-            aria-expanded="false"
-            aria-controls="breadcrumb-1">Voir le fil d'Ariane</button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil {{ ads_manager_administrator.prefecture.display_text|capfirst }}</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" aria-current="page">Administrations de votre préfecture</a>
-        </li>
-      </ol>
-    </div>
-  </nav>
 
   <h1>Administrations de votre préfecture</h1>
   
@@ -171,10 +166,5 @@
     </div>
     {% show_pagination_links page_obj %}
   </div>
-  {% if complete_ads_for_prefecture %}
-    <p class="fr-text--xs">
-      Nombre d'ADS vérifiées, avec toutes les informations : {{ complete_ads_for_prefecture }}/{{ total_ads_for_prefecture }}
-    </p>
-  {% endif %}
 
 {% endblock body-content %}

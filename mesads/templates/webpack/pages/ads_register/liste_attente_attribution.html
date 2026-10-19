@@ -1,4 +1,20 @@
 {% extends "base_container.html" %}
+{% load show_pagination_links %}
+
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Administrations en gestion</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.liste_attente' manager_id=ads_manager.id %}">
+      Liste d'attente {{ads_manager.content_object.display_text}}
+    </a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" aria-current="page">Attribution</a>
+  </li>
+{% endblock %}
+
 {% block body-content %}
   <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
     <button
@@ -113,33 +129,7 @@
         </div>
       </div>
     </div>
-    <nav role="navigation" class="fr-pagination self-center" aria-label="Pagination">
-      <ul class="fr-pagination__list">
-
-        {% if page_obj.has_previous %}
-        <li>
-          <a class="fr-pagination__link fr-pagination__link--first" href="?page=1&no_modale=1" title="Première page"> Première page </a>
-        </li>
-        <li>
-          <a class="fr-pagination__link fr-pagination__link--prev fr-pagination__link--lg-label" href="?page={{page_obj.previous_page_number}}&no_modale=1" title="Page précédente"> Page précédente </a>
-        </li>
-        {% endif %}
-        <li>
-          <a class="fr-pagination__link" aria-current="page" title="Page {{page_obj.number}}"> {{page_obj.number}} </a>
-        </li>
-
-        {% if page_obj.has_next %}
-        <li>
-          <a class="fr-pagination__link fr-pagination__link--next fr-pagination__link--lg-label" href="?page={{page_obj.next_page_number}}&no_modale=1" title="Page suivante"> Page suivante </a>
-        </li>
-        <li>
-          <a class="fr-pagination__link fr-pagination__link--last" href="?page={{ page_obj.paginator.num_pages }}&no_modale=1" title="Dernière page"> Dernière page </a>
-        </li>
-
-        {% endif %}
-
-      </ul>
-    </nav>
+    {% show_pagination_links page_obj %}
   </div>
 
   {% if not no_modale %}

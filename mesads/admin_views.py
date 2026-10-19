@@ -12,7 +12,10 @@ from mesads.app.models import (
     EntreeRegistreTransaction,
     InscriptionListeAttente,
 )
-from mesads.app.services.export import get_prefectures_data_listes_attente
+from mesads.app.services.export import (
+    get_prefectures_data_listes_attente,
+    get_prefectures_data_registres_transaction,
+)
 from mesads.app.views.export import ExcelExporter
 from mesads.users.models import NoteUtilisateur, User, UserAuditEntry
 
@@ -30,8 +33,26 @@ class ExportListeAttenteDataExcel(ExcelExporter, View):
         headers, rows = get_prefectures_data_listes_attente()
         self.add_sheet(
             workbook,
-            "DataInscriptiosn",
+            "DataInscriptions",
             "TableauDataInscriptions",
+            headers,
+            rows,
+        )
+
+
+class ExportRegistreTransactionDataExcel(ExcelExporter, View):
+    def get_filename(self):
+        return f"data_registres_transaction_{timezone.now().strftime('%d_%m%Y')}.xlsx"
+
+    def get_file_title(self):
+        return "Data Registres transaction"
+
+    def generate(self, workbook):
+        headers, rows = get_prefectures_data_registres_transaction()
+        self.add_sheet(
+            workbook,
+            "DataRegistres",
+            "TableauDataRegistres",
             headers,
             rows,
         )

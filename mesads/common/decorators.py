@@ -4,9 +4,9 @@ from django.http import Http404
 
 from mesads.app.models import (
     ADSManager,
-    ADSManagerAdministrator,
     ADSManagerRequest,
     DemandeAccesLectureSeule,
+    DemandeGestionPrefecture,
 )
 from mesads.vehicules_relais.models import Proprietaire, Vehicule
 
@@ -27,26 +27,34 @@ def is_manager(user, *args, **kwargs):
 
 def is_administrator(user, *args, **kwargs):
     if kwargs.get("prefecture_id"):
-        return ADSManagerAdministrator.objects.filter(
-            prefecture__id=kwargs.get("prefecture_id"), users__in=[user]
+        return DemandeGestionPrefecture.objects.filter(
+            administrator__prefecture__id=kwargs.get("prefecture_id"),
+            user=user,
+            statut=DemandeGestionPrefecture.ACCEPTE,
         ).exists()
     elif kwargs.get("manager_id"):
         ads_manager = ADSManager.objects.filter(id=kwargs.get("manager_id")).first()
         if not ads_manager:
             return False
 
-        return ADSManagerAdministrator.objects.filter(
-            id=ads_manager.administrator.id, users__in=[user]
+        return DemandeGestionPrefecture.objects.filter(
+            administrator=ads_manager.administrator,
+            user=user,
+            statut=DemandeGestionPrefecture.ACCEPTE,
         ).exists()
     elif kwargs.get("vehicule_numero"):
         vehicule = Vehicule.objects.filter(numero=kwargs.get("vehicule_numero")).first()
         if not vehicule:
             return False
-        return ADSManagerAdministrator.objects.filter(
-            prefecture=vehicule.departement, users__in=[user]
+        return DemandeGestionPrefecture.objects.filter(
+            administrator__prefecture=vehicule.departement,
+            user=user,
+            statut=DemandeGestionPrefecture.ACCEPTE,
         ).exists()
     else:
-        return ADSManagerAdministrator.objects.filter(users__in=[user]).exists()
+        return DemandeGestionPrefecture.objects.filter(
+            user=user, statut=DemandeGestionPrefecture.ACCEPTE
+        ).exists()
 
 
 def is_proprietaire(user, *args, **kwargs):

@@ -1,44 +1,46 @@
 {% extends "base_container.html" %}
+
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'vehicules-relais.index' %}">Répertoires des taxis relais</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link"
+        href="{% url 'vehicules-relais.proprietaire' %}">Espace propriétaire</a>
+  </li>
+  {% if object %}
+    <li>
+      <a class="fr-breadcrumb__link"
+          href="{% url 'vehicules-relais.proprietaire.detail' proprietaire_id=object.id %}">{{ object.nom }}</a>
+    </li>
+    <li>
+      <a class="fr-breadcrumb__link" aria-current="page">Modifications des coordonnées</a>
+    </li>
+  {% else %}
+    <li>
+      <a class="fr-breadcrumb__link" aria-current="page">Créer un espace propriétaire</a>
+    </li>
+  {% endif %}
+{% endblock %}
+
+
 {% block body-content %}
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button class="fr-breadcrumb__button"
-            aria-expanded="false"
-            aria-controls="breadcrumb-1">Voir le fil d'Ariane</button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'vehicules-relais.index' %}">Répertoires des taxis relais</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link"
-             href="{% url 'vehicules-relais.proprietaire' %}">Espace propriétaire</a>
-        </li>
-        {% if object %}
-          <li>
-            <a class="fr-breadcrumb__link"
-               href="{% url 'vehicules-relais.proprietaire.detail' proprietaire_id=object.id %}">{{ object.nom }}</a>
-          </li>
-          <li>
-            <a class="fr-breadcrumb__link" aria-current="page">Modifications des coordonnées</a>
-          </li>
-        {% else %}
-          <li>
-            <a class="fr-breadcrumb__link" aria-current="page">Créer un espace propriétaire</a>
-          </li>
-        {% endif %}
-      </ol>
-    </div>
-  </nav>
+
   {% if object %}
     <h1>Modifier votre espace propriétaire</h1>
+
     <p class="fr-text--lead">
-      Vous pouvez mettre vos coordonnées à jour ici. <strong>Ces informations sont publiques et seront accessibles dans les répertoires des taxis relais.</strong>
+      Vous pouvez mettre vos coordonnées à jour ici. 
+      <strong>Ces informations sont publiques et seront accessibles dans les répertoires des taxis relais.</strong>
     </p>
+
   {% else %}
+
     <h1>Créer un espace propriétaire de véhicules</h1>
+
     <p class="fr-text--lead">
       Conformément aux dispositions de 
       <a 
@@ -47,14 +49,18 @@
       >
         l'article 3 de l'arrêté du 28 juillet 2023
         <span class="fr-sr-only"> Nouvelle fenêtre</span>
-      </a>, tout détenteur d'un véhicule relais doit le déclarer dans le registre départemental des taxis relais.
+      </a>
+      , tout détenteur d'un véhicule relais doit le déclarer dans le registre départemental des taxis relais.
     </p>
+
     <p class="fr-text--lead">
       Renseignez vos coordonnées pour pouvoir enregistrer le nouveau profil.
       Ces informations sont publiques et seront accessibles dans les registres des taxis relais.
     </p>
+  
   {% endif %}
-  <hr />
+
+
   <form method="post" enctype="multipart/form-data">
     {% if form.non_field_errors %}
       <div class="fr-input-group fr-input-group--error">

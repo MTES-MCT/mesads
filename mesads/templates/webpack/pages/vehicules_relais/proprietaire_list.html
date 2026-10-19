@@ -1,25 +1,21 @@
 {% extends "base_container.html" %}
 {% load show_pagination_links %}
+
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'vehicules-relais.index' %}">Répertoires des taxis relais</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" aria-current="page">Espace propriétaire</a>
+  </li>
+{% endblock %}
+
 {% block body-content %}
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button class="fr-breadcrumb__button"
-            aria-expanded="false"
-            aria-controls="breadcrumb-1">Voir le fil d'Ariane</button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'vehicules-relais.index' %}">Répertoires des taxis relais</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" aria-current="page">Espace propriétaire</a>
-        </li>
-      </ol>
-    </div>
-  </nav>
   <h1>Mon espace propriétaire</h1>
+
   {% if not is_proprietaire %}
     <div class="fr-alert fr-alert--error">
       <p class="fr-alert__title">Votre compte propriétaire n'est pas activé</p>
@@ -37,9 +33,10 @@
            href="{% url 'vehicules-relais.proprietaire.new' %}">Activer mon espace propriétaire</a>
       </p>
     </div>
+
   {% else %}
+
     <p>
-      <span aria-hidden="true">➕</span>
       <a
         class="fr-link fr-icon-arrow-right-line fr-link--icon-right"
         href="{% url 'vehicules-relais.proprietaire.new' %}"

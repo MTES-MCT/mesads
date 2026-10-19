@@ -8,9 +8,7 @@ from mesads.common.mail import envoi_email
 from ..forms import (
     ADSManagerForm,
 )
-from ..models import (
-    ADSManagerRequest,
-)
+from ..models import ADSManagerRequest, DemandeGestionPrefecture
 
 
 class DemandeGestionADSView(FormView):
@@ -39,11 +37,17 @@ class DemandeGestionADSView(FormView):
                 self.get_message_for_new_request(form.cleaned_data["ads_manager"]),
             )
 
+            demandes_prefecture = form.cleaned_data[
+                "ads_manager"
+            ].administrator.demandes_gestion_prefecture.filter(
+                statut=DemandeGestionPrefecture.ACCEPTE
+            )
+
             emails = [
-                user.email
-                for user in form.cleaned_data["ads_manager"].administrator.users.all()
-                if getattr(user, "notification", None) is None
-                or getattr(user, "notification", None).ads_manager_requests
+                demande.user.email
+                for demande in demandes_prefecture
+                if getattr(demande.user, "notification", None) is None
+                or getattr(demande.user, "notification", None).ads_manager_requests
             ]
 
             envoi_email(

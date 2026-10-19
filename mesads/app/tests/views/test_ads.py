@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -10,6 +12,7 @@ from mesads.app.models import (
     ADSManagerAdministrator,
     ADSUpdateLog,
     ADSUser,
+    DemandeGestionPrefecture,
     Notification,
 )
 from mesads.fradm.models import EPCI, Commune
@@ -69,7 +72,12 @@ class TestADSView(ClientTestCase):
 
     def test_update_with_notification(self):
         # Add admin user to the ADSManagerAdministrator
-        self.ads.ads_manager.administrator.users.add(self.admin_user)
+        DemandeGestionPrefecture.objects.create(
+            user=self.admin_user,
+            administrator=self.ads.ads_manager.administrator,
+            statut=DemandeGestionPrefecture.ACCEPTE,
+            accepted_at=date.today(),
+        )
 
         # Setup notification
         Notification.objects.create(

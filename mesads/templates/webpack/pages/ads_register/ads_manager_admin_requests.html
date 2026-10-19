@@ -1,4 +1,17 @@
 {% extends "base_container.html" %}
+
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link"
+        href="{% url 'app.homepage' %}">
+        Accueil - {{ ads_manager_administrator.prefecture.display_text|capfirst }}
+    </a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" aria-current="page">Demandes d'accès gestionnaire </a>
+  </li>
+{% endblock %}
+
 {% block body-content %}
   <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
     <button class="fr-breadcrumb__button"
@@ -6,15 +19,6 @@
             aria-controls="breadcrumb-1">Voir le fil d'Ariane</button>
     <div class="fr-collapse" id="breadcrumb-1">
       <ol class="fr-breadcrumb__list">
-        <li>
-          <a class="fr-breadcrumb__link"
-             href="{% url 'app.homepage' %}">
-             Accueil - {{ ads_manager_administrator.prefecture.display_text|capfirst }}
-          </a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" aria-current="page">Demandes d'accès gestionnaire </a>
-        </li>
       </ol>
     </div>
   </nav>

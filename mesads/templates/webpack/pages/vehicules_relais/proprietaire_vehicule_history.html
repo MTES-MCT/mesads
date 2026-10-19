@@ -1,27 +1,22 @@
 {% extends "base_container.html" %}
 {% load meta %}
 {% load selectattr %}
+
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'vehicules-relais.index' %}">Répertoires des taxis relais</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'vehicules-relais.vehicules_relais_history' %}">Historique des modifications</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" aria-current="page">Historique du véhicule {{object.numero}}</a>
+  </li>
+{% endblock %}
+
 {% block body-content %}
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button class="fr-breadcrumb__button"
-            aria-expanded="false"
-            aria-controls="breadcrumb-1">Voir le fil d'Ariane</button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'vehicules-relais.index' %}">Répertoires des taxis relais</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'vehicules-relais.vehicules_relais_history' %}">Historique des modifications</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" aria-current="page">Historique du véhicule {{object.numero}}</a>
-        </li>
-      </ol>
-    </div>
-  </nav>
   {% include "history.html" with empty_template="history_empty.html" %}
 {% endblock body-content %}

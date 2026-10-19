@@ -60,11 +60,14 @@ from .public import (  # noqa: F401
     StatsView,
 )
 from .registre_transactions import (  # noqa: F401
+    ArchivageTransactionDeleteView,
+    ArchiveTransactionListView,
     ArreteChangementTitulaireExportView,
     ChangementStatutRegistreTransactionView,
     DemandePiecesJustificativeWordExportView,
     RegistresTransactionsPublicsView,
     RegistreTransactionsPublicView,
+    RestaurationTransactionView,
     TransactionConfirmationView,
     TransactionCreateView,
     TransactionDocumentsFormView,

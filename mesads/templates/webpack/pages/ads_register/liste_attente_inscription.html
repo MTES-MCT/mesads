@@ -1,27 +1,18 @@
 {% extends "base_container.html" %}
+
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Administrations en gestion</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.liste_attente' manager_id=ads_manager.id %}">Liste d'attente {{ads_manager.content_object.display_text}}</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" aria-current="page">{% if object %}Modification de l'inscription{% else %}Nouvelle inscription{% endif %}</a>
+  </li>
+{% endblock %}
+
 {% block body-content %}
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button
-      class="fr-breadcrumb__button"
-      aria-expanded="false"
-      aria-controls="breadcrumb-1"
-    >
-      Voir le fil d’Ariane
-    </button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Administrations en gestion</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.liste_attente' manager_id=ads_manager.id %}">Liste d'attente {{ads_manager.content_object.display_text}}</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" aria-current="page">{% if object %}Modification de l'inscription{% else %}Nouvelle inscription{% endif %}</a>
-        </li>
-      </ol>
-    </div>
-  </nav>
   <div>
     <h1>
       {% if object %}

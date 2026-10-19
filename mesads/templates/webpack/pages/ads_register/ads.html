@@ -1,40 +1,30 @@
 {% extends "base_container.html" %}
 {% load str_to_date %}
-{% block body-content %}
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button
-      class="fr-breadcrumb__button"
-      aria-expanded="false"
-      aria-controls="breadcrumb-1"
-    >
-      Voir le fil d'Ariane
-    </button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
-        <li>
-          <a class="fr-breadcrumb__link"
-            href="{% url 'app.homepage' %}">
-            Accueil
-          </a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.ads-manager.administrations' %}">Administrations en gestion</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link"
-            href="{% url 'app.ads-manager.detail' manager_id=ads_manager.id %}">{{ ads_manager.content_object.display_text|capfirst }}</a>
-        </li>
-        <li>
-          {% if ads %}
-            <a class="fr-breadcrumb__link" aria-current="page">ADS #{{ ads.number }}</a>
-          {% else %}
-            <a class="fr-breadcrumb__link" aria-current="page">Enregistrement d'une ADS</a>
-          {% endif %}
-        </li>
-      </ol>
-    </div>
-  </nav>
 
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link"
+      href="{% url 'app.homepage' %}">
+      Accueil
+    </a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.ads-manager.administrations' %}">Administrations en gestion</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link"
+      href="{% url 'app.ads-manager.detail' manager_id=ads_manager.id %}">{{ ads_manager.content_object.display_text|capfirst }}</a>
+  </li>
+  <li>
+    {% if ads %}
+      <a class="fr-breadcrumb__link" aria-current="page">ADS #{{ ads.number }}</a>
+    {% else %}
+      <a class="fr-breadcrumb__link" aria-current="page">Enregistrement d'une ADS</a>
+    {% endif %}
+  </li>
+{% endblock %}
+
+{% block body-content %}
   <div>
     {% if ads %}
       <h1>

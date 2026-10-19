@@ -1,21 +1,17 @@
 {% extends "base_container.html" %}
 {% load show_pagination_links %}
+
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" aria-current="page">Répertoires des taxis relais</a>
+  </li>
+{% endblock %}
+
 {% block body-content %}
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button class="fr-breadcrumb__button"
-            aria-expanded="false"
-            aria-controls="breadcrumb-1">Voir le fil d'Ariane</button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" aria-current="page">Répertoires des taxis relais</a>
-        </li>
-      </ol>
-    </div>
-  </nav>
+
   <h1>Consulter les répertoires des taxis relais</h1>
   <p class="fr-text--lead">
     Un « taxi relais » est un véhicule utilisé temporairement en cas d'immobilisation d'origine mécanique, à la suite d'une panne ou 
@@ -92,15 +88,11 @@
                   <th scope="col">Numéro</th>
                   <th scope="col">Type de véhicule</th>
                   <th scope="col">
-                    Caractéristiques
-                    <br />
-                    principales
+                    Caractéristiques principales
                   </th>
                   <th scope="col">Propriétaire du véhicule</th>
                   <th scope="col">
-                    Ville de localisation
-                    <br />
-                    du véhicule
+                    Ville de localisation du véhicule
                   </th>
                   <th scope="col">Consulter</th>
                 </tr>
@@ -149,8 +141,3 @@
     </div>
   {% endif %}
 {% endblock body-content %}
-{% block endbody %}
-  {{ block.super }}
-  {% comment %}Extra javascript to display form for new requests.{% endcomment %}
-  {{ form.media }}
-{% endblock endbody %}

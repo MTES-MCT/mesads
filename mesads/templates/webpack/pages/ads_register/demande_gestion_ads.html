@@ -1,28 +1,22 @@
 {% extends "base_container.html" %}
 {% load static %}
-{% block body-content %}
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button class="fr-breadcrumb__button"
-            aria-expanded="false"
-            aria-controls="breadcrumb-1">Voir le fil d'Ariane</button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link"
-            href="{% url 'app.ads-manager.administrations' %}">
-            Vos administrations en gestion
-          </a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" aria-current="page">Demande de gestion d'ADS</a>
-        </li>
-      </ol>
-    </div>
-  </nav>
-  
+
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link"
+      href="{% url 'app.ads-manager.administrations' %}">
+      Vos administrations en gestion
+    </a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" aria-current="page">Demande de gestion d'ADS</a>
+  </li>
+{% endblock %}
+
+{% block body-content %}  
   <h1>Demander à gérer les ADS pour une nouvelle administration</h1>
   <form method="post">
     {% csrf_token %}

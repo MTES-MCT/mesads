@@ -1,30 +1,27 @@
 {% extends "base_container.html" %}
 {% load show_pagination_links %}
-{% block body-content %}
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button class="fr-breadcrumb__button"
-            aria-expanded="false"
-            aria-controls="breadcrumb-1">Voir le fil d'Ariane</button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
 
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" href="{% url 'vehicules-relais.index' %}">Répertoires des taxis relais</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link"
-             href="{% url 'vehicules-relais.proprietaire' %}">Espace propriétaire</a>
-        </li>
-        <li>
-          <a class="fr-breadcrumb__link" aria-current="page">{{ object.nom }}</a>
-        </li>
-      </ol>
-    </div>
-  </nav>
-  {% if user.is_staff %}
+{% block breadcrumb %}
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'app.homepage' %}">Accueil</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" href="{% url 'vehicules-relais.index' %}">Répertoires des taxis relais</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link"
+        href="{% url 'vehicules-relais.proprietaire' %}">Espace propriétaire</a>
+  </li>
+  <li>
+    <a class="fr-breadcrumb__link" aria-current="page">{{ object.nom }}</a>
+  </li>
+{% endblock %}
+
+{% block body-content %}
+
+<h1>Mon espace propriétaire — {{ object.nom }}</h1>
+
+{% if user.is_staff %}
     <p>
       <span aria-hidden="true">🕰️</span><a class="fr-link fr-icon-arrow-right-line fr-link--icon-right"
    href="{% url 'vehicules-relais.proprietaire.history' proprietaire_id=object.id %}">
@@ -32,18 +29,18 @@
     </a>
   </p>
 {% endif %}
-{% if deletable %}
-  <p>
-    <a class="fr-link fr-icon-delete-line fr-link--icon-left !text-[var(--text-default-error)]"
-       href="{% url 'vehicules-relais.proprietaire.delete' proprietaire_id=object.id %}">Supprimer mon espace propriétaire</a>
-  </p>
-{% endif %}
-<h1>Mon espace propriétaire — {{ object.nom }}</h1>
+
+<p>
+  <a class="fr-link fr-icon-delete-line fr-link--icon-left !text-[var(--text-default-error)]"
+      href="{% url 'vehicules-relais.proprietaire.delete' proprietaire_id=object.id %}">Supprimer mon espace propriétaire</a>
+</p>
+
 <h2 class="fr-h4">Mes coordonnées</h2>
 <p>
   <span aria-hidden="true">📄</span> <a class="fr-link fr-icon-arrow-right-line fr-link--icon-right"
    href="{% url 'vehicules-relais.proprietaire.edit' proprietaire_id=object.id %}">Modifier mes coordonnées</a>
 </p>
+
 <div class="fr-table fr-table--md fr-table--no-caption">
   <div class="fr-table__wrapper">
     <div class="fr-table__container">
@@ -59,7 +56,7 @@
             <td>{{ object.siret|default:"-" }}</td>
           </tr>
           <tr>
-            <th>Numéro de tel</th>
+            <th>Numéro de téléphone</th>
             <td>{{ object.telephone|default:"-" }}</td>
           </tr>
           <tr>

@@ -3,7 +3,7 @@ import io
 
 from pypdf import PdfReader
 
-from mesads.app.models import ADSManagerAdministrator
+from mesads.app.models import ADSManagerAdministrator, DemandeGestionPrefecture
 from mesads.fradm.models import Commune, Prefecture
 from mesads.vehicules_relais.models import Proprietaire, Vehicule
 
@@ -224,7 +224,6 @@ class TestProprietaireDetailView(ClientTestCase):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(self.proprietaire.id, resp.context["object"].id)
-        self.assertFalse(resp.context["deletable"])
 
         # Proprietaire without vehicules
         client, user = self.create_client()
@@ -235,7 +234,6 @@ class TestProprietaireDetailView(ClientTestCase):
         resp = client.get(f"/relais/proprietaire/{proprietaire_without_vehicules.id}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(proprietaire_without_vehicules.id, resp.context["object"].id)
-        self.assertTrue(resp.context["deletable"])
 
         # Admin user should be able to access any proprietaire object
         resp = self.admin_client.get(
@@ -243,7 +241,6 @@ class TestProprietaireDetailView(ClientTestCase):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(proprietaire_without_vehicules.id, resp.context["object"].id)
-        self.assertTrue(resp.context["deletable"])
 
     def test_ordering(self):
         """Ensure vehicules are ordered by numero"""
@@ -438,7 +435,12 @@ class TestProprietaireVehiculeDeleteView(ClientTestCase):
         prefecture_client, prefecture_user = self.create_client()
         departement = Prefecture.objects.first()
         administrator = ADSManagerAdministrator.objects.create(prefecture=departement)
-        administrator.users.add(prefecture_user)
+        DemandeGestionPrefecture.objects.create(
+            user=prefecture_user,
+            administrator=administrator,
+            statut=DemandeGestionPrefecture.ACCEPTE,
+            accepted_at=datetime.date.today(),
+        )
         vehicule = Vehicule.objects.create(
             proprietaire=self.proprietaire,
             departement=departement,
