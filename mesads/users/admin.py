@@ -53,9 +53,9 @@ class ADSManagerAdministratorFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == "yes":
-            return queryset.filter(adsmanageradministrator__isnull=False)
+            return queryset.filter(demandes_gestion_prefecture__statut="ACCEPTE")
         elif self.value() == "no":
-            return queryset.filter(adsmanageradministrator__isnull=True)
+            return queryset.exclude(demandes_gestion_prefecture__statut="ACCEPTE")
 
 
 class ProprietaireFilter(admin.SimpleListFilter):
@@ -142,7 +142,6 @@ class UserAdmin(BaseUserAdmin):
         "notifications_link",
         "relais_links",
         "audit_entries_link",
-        "double_authentication_enabled",
     )
 
     readonly_fields = (
@@ -158,13 +157,9 @@ class UserAdmin(BaseUserAdmin):
         "is_superuser",
         "relais_links",
         "audit_entries_link",
-        "double_authentication_enabled",
     )
 
-    search_fields = (
-        "email",
-        "adsmanageradministrator__prefecture__libelle",
-    )
+    search_fields = ("email",)
 
     def pro_connect(self, obj):
         return bool(obj.proconnect_sub)
@@ -261,9 +256,6 @@ class UserAdmin(BaseUserAdmin):
             Q(
                 collated_email__icontains=search_term,
             )
-            | Q(
-                adsmanageradministrator__prefecture__libelle__icontains=search_term,
-            )
         )
         return (
             queryset,
@@ -272,23 +264,22 @@ class UserAdmin(BaseUserAdmin):
 
     def get_queryset(self, request):
         req = super().get_queryset(request)
-        req = req.prefetch_related("adsmanageradministrator_set__prefecture")
         return req
 
     def admin_roles(self, user):
-        roles = user.adsmanageradministrator_set.all()
-        return format_html("<br />".join(str(role) for role in roles))
+        roles = user.demandes_gestion_prefecture.filter(statut="ACCEPTE")
+        return format_html("<br />".join(str(role.administrator) for role in roles))
 
     @admin.display(description="Compte administrateur des gestionnaires")
     def admin_roles_link(self, obj):
         ads_manager_request_link = (
-            reverse("admin:app_adsmanageradministrator_changelist")
-            + "?users__in="
+            reverse("admin:app_demandegestionprefecture_changelist")
+            + "?user="
             + str(obj.id)
         )
         return mark_safe(
             f'<a href="{ads_manager_request_link}">'
-            f"Voir les {obj.adsmanageradministrator_set.count()} "
+            f"Voir les  "
             "administrateurs des gestionnaires</a>"
         )
 
@@ -353,12 +344,6 @@ class UserAdmin(BaseUserAdmin):
             + f"?user__id__exact={obj.id}"
         )
         return format_html('<a href="{}">Voir les connexions</a>', url)
-
-    @admin.display(description="Double authentification")
-    def double_authentication_enabled(self, obj):
-        return obj.otp_secret != ""
-
-    double_authentication_enabled.boolean = True
 
 
 @admin.register(UserAuditEntry)
