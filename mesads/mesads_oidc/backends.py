@@ -13,22 +13,9 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
         if payload is None:
             return None
 
-        if "nonce" in kwargs:
-            acr = payload.get("acr")
-
-            # On mémorise systématiquement le niveau
-            # d'authentification retourné par ProConnect.
-            self.request.oidc_verified_acr = acr
-
-            # Si le parcours admin a demandé la MFA,
-            # on vérifie qu'elle a réellement été effectuée.
-            if getattr(
-                self.request,
-                "admin_mfa_requested",
-                False,
-            ):
-                if acr not in MFA_ACR_VALUES:
-                    return None
+        # On vérifie la MFA uniquement sur l'ID Token.
+        if "nonce" in kwargs and payload.get("acr") not in MFA_ACR_VALUES:
+            return None
 
         return payload
 
