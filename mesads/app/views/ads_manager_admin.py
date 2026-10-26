@@ -506,3 +506,33 @@ class DemandeGestionPrefectureView(CreateView):
             destinataires=[settings.MESADS_CONTACT_EMAIL],
             sujet_template="demande_gestion_prefecture/email_demande_gestion_prefecture_subject.txt",
         )
+
+
+class RenouvellementDemandeGestionPrefecture(ADSManagerAdministratorMixin, View):
+    def post(self, request, *args, **kwargs):
+        demande_gestion_prefecture = get_object_or_404(
+            DemandeGestionPrefecture,
+            user=request.user,
+            administrator=self.ads_manager_administrator,
+            statut__in=[
+                DemandeGestionPrefecture.ACCEPTE,
+                DemandeGestionPrefecture.EXPIRE,
+            ],
+        )
+        envoi_email(
+            content_template_txt="demande_gestion_prefecture/email_demande_gestion_prefecture_demande_renouvellement.txt",
+            content_template_mjml="demande_gestion_prefecture/email_demande_gestion_prefecture_demande_renouvellement.mjml",
+            context={
+                "demande": demande_gestion_prefecture,
+                "base_url": settings.MESADS_BASE_URL,
+            },
+            destinataires=[settings.MESADS_CONTACT_EMAIL],
+            sujet="Mes ADS - Demande de renouvellement d'accès préfecture.",
+        )
+        demande_gestion_prefecture.demande_renouvellement = True
+        demande_gestion_prefecture.save()
+        messages.success(
+            self.request,
+            "Votre demande de renouvellement a bien été transmise à notre équipe",
+        )
+        return redirect("app.mes_acces")

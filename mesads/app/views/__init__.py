@@ -21,6 +21,7 @@ from .ads_manager_admin import (  # noqa: F401
     ADSManagerExportView,
     DemandeGestionPrefectureView,
     PrefectureExportView,
+    RenouvellementDemandeGestionPrefecture,
 )
 from .ads_manager_request import (  # noqa: F401
     DemandeGestionADSView,
@@ -51,6 +52,7 @@ from .liste_attente import (  # noqa: F401
     RestaurationInscriptionView,
 )
 from .notation_view import NotationView  # noqa: F401
+from .permissions import PermissionsUserListView  # noqa: F401
 from .public import (  # noqa: F401
     FAQView,
     HomepageView,

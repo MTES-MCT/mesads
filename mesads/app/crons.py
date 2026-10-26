@@ -7,6 +7,11 @@ from django.utils import timezone
 from django_cron import CronJobBase, Schedule
 from sentry_sdk import capture_exception
 
+from mesads.app.services.demande_gestion import (
+    notify_demande_gestion_prefecture,
+    update_statut_demande_gestion_prefecture,
+)
+
 
 def sentry_exceptions(func):
     @functools.wraps(func)
@@ -105,3 +110,27 @@ class SupressionInscriptionsArchivees(CronJobBase):
         with redirect_stdout(buf), redirect_stderr(buf):
             call_command("supression_inscriptions_archivees")
         return buf.getvalue()
+
+
+class NotifiactionExpirationDemandeGestionPrefecture(CronJobBase):
+    # Tout les jours
+    schedule = Schedule(run_every_mins=60 * 24)
+
+    code = "notification_expiration_demande_gestion_prefecture"
+
+    @sentry_exceptions
+    def do(self):
+        nb_notifications = notify_demande_gestion_prefecture()
+        return f"{nb_notifications} ont été envoyés"
+
+
+class UpdateStatutDemandeGestionPrefecture(CronJobBase):
+    # Tout les jours
+    schedule = Schedule(run_every_mins=60 * 24)
+
+    code = "update_statut_demande_gestion_prefecture"
+
+    @sentry_exceptions
+    def do(self):
+        nb_notifications = update_statut_demande_gestion_prefecture()
+        return f"{nb_notifications} demandes ont expirés"
