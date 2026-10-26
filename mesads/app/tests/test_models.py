@@ -1,6 +1,7 @@
 import json
 from datetime import date, timedelta
 
+import pytest
 import requests
 import requests_mock
 from django.contrib.contenttypes.models import ContentType
@@ -24,6 +25,7 @@ from ..models import (
     ADSUpdateFile,
     ADSUpdateLog,
     ADSUser,
+    DemandeGestionPrefecture,
     Notification,
     get_decree_filename,
     get_legal_filename,
@@ -350,3 +352,58 @@ class TestADSUpdateLog(TestCase):
             update_at=timezone.now() - timedelta(days=model.OUTDATED_LOG_DAYS * 2)
         )
         self.assertTrue(model.is_outdated())
+
+
+@pytest.mark.parametrize(
+    "statut, expected",
+    [
+        (DemandeGestionPrefecture.EN_ATTENTE, False),
+        (DemandeGestionPrefecture.REFUSE, False),
+        (DemandeGestionPrefecture.ACCEPTE, False),
+        (DemandeGestionPrefecture.EXPIRE, True),
+    ],
+)
+def test_expiree(statut, expected):
+    demande = DemandeGestionPrefecture(statut=statut)
+
+    assert demande.expiree == expected
+
+
+@pytest.mark.parametrize(
+    "statut, expected",
+    [
+        (DemandeGestionPrefecture.EN_ATTENTE, False),
+        (DemandeGestionPrefecture.REFUSE, False),
+        (DemandeGestionPrefecture.ACCEPTE, True),
+        (DemandeGestionPrefecture.EXPIRE, False),
+    ],
+)
+def test_acceptee(statut, expected):
+    demande = DemandeGestionPrefecture(statut=statut)
+
+    assert demande.acceptee == expected
+
+
+@pytest.mark.parametrize(
+    "statut, expiration_delta, expected",
+    [
+        (DemandeGestionPrefecture.EN_ATTENTE, None, False),
+        (DemandeGestionPrefecture.REFUSE, None, False),
+        (DemandeGestionPrefecture.ACCEPTE, 7, True),
+        (DemandeGestionPrefecture.ACCEPTE, 31, False),
+        (DemandeGestionPrefecture.EXPIRE, -7, True),
+    ],
+)
+def test_renouvelable(statut, expiration_delta, expected):
+    expiration_date = (
+        date.today() + timedelta(days=expiration_delta)
+        if expiration_delta is not None
+        else None
+    )
+
+    demande = DemandeGestionPrefecture(
+        statut=statut,
+        expire_at=expiration_date,
+    )
+
+    assert demande.renouvelable == expected

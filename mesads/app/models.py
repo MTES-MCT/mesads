@@ -7,6 +7,7 @@ from datetime import date, datetime
 
 import requests
 import reversion
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -294,8 +295,14 @@ class DemandeAcces(models.Model):
     EN_ATTENTE = "EN_ATTENTE"
     ACCEPTE = "ACCEPTE"
     REFUSE = "REFUSE"
+    EXPIRE = "EXPIRE"
 
-    STATUTS = [(EN_ATTENTE, "En attente"), (ACCEPTE, "Acceptée"), (REFUSE, "Refusée")]
+    STATUTS = [
+        (EN_ATTENTE, "En attente"),
+        (ACCEPTE, "Acceptée"),
+        (REFUSE, "Refusée"),
+        (EXPIRE, "Expirée"),
+    ]
     statut = models.CharField(
         choices=STATUTS,
         default=EN_ATTENTE,
@@ -303,11 +310,55 @@ class DemandeAcces(models.Model):
         verbose_name="Statut de la demande",
     )
 
-    accepted_at = models.DateField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True, null=False)
+    accepted_at = models.DateField(
+        null=True, blank=True, verbose_name="Date initiale d'acceptation"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        null=False,
+        verbose_name="Date initiale de création de la demande",
+    )
+    expire_at = models.DateField(
+        null=True, blank=True, default=None, verbose_name="Date d'expiration"
+    )
+    last_renew = models.DateField(
+        null=True,
+        blank=True,
+        default=None,
+        verbose_name="Date du dernier renouvellement",
+    )
+    notified = models.BooleanField(
+        default=False,
+        verbose_name=(
+            "Utilisateur notifié de l'expiration prochaine de ses droits d'accès"
+        ),
+    )
+    demande_renouvellement = models.BooleanField(
+        default=False,
+        verbose_name="L'utilisateur a envoyé une demande de renouvellement",
+    )
 
     class Meta:
         abstract = True
+
+    @property
+    def renouvelable(self):
+        if self.statut not in [self.ACCEPTE, self.EXPIRE]:
+            return False
+        if self.statut == self.EXPIRE:
+            return True
+        today = date.today()
+        if self.expire_at and today <= self.expire_at < today + relativedelta(months=1):
+            return True
+        return False
+
+    @property
+    def expiree(self):
+        return self.statut == self.EXPIRE
+
+    @property
+    def acceptee(self):
+        return self.statut == self.ACCEPTE
 
 
 @reversion.register

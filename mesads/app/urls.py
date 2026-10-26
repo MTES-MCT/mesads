@@ -51,6 +51,11 @@ url_prefectures = [
         login_required(views.DemandeGestionPrefectureView.as_view()),
         name="app.ads-manager-admin.demande_gestion_prefecture",
     ),
+    path(
+        "mes-acces/prefecture/<int:prefecture_id>/renouvellement",
+        login_required(views.RenouvellementDemandeGestionPrefecture.as_view()),
+        name="app.ads-manager-admin.renouvellement_demande_gestion",
+    ),
 ]
 
 url_gestionnaire = [
@@ -437,6 +442,11 @@ url_public = [
         "registres-transactions/<int:manager_id>/",
         views.RegistreTransactionsPublicView.as_view(),
         name="app.registre-transactions-public",
+    ),
+    path(
+        "mes-acces/",
+        login_required(views.PermissionsUserListView.as_view()),
+        name="app.mes_acces",
     ),
 ]
 

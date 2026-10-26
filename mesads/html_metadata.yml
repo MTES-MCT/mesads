@@ -42,6 +42,10 @@ urls:
     title: "Plan du site - MesADS"
     description: "Plan du site MesADS"
 
+  app.mes_acces:
+    title: "Mes accès - MesADS"
+    description: "Mes accès - MesADS"
+
   ###
   ### Registration
   ###
@@ -65,6 +69,8 @@ urls:
 
   app.note-service:
     missing: true
+
+
 
   ###
   ### Registre ADS
@@ -93,6 +99,9 @@ urls:
   app.ads-manager-admin.gestionnaires:
     title: "MesADS - Administrations de votre préfecture"
     description: "MesADS - Administrations de votre préfecture"
+
+  app.ads-manager-admin.renouvellement_demande_gestion:
+    missing: true
 
   app.ads-manager-admin.updates:
     title: "Les dernières modifications des ADS de votre préfecture"
