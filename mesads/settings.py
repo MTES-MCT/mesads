@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+import json
 import logging
 import os
 import socket
@@ -299,10 +300,25 @@ OIDC_OP_AUTHORIZATION_ENDPOINT = os.getenv(
 OIDC_OP_TOKEN_ENDPOINT = os.getenv("PROCONNECT_TOKEN_ENDPOINT")
 OIDC_OP_USER_ENDPOINT = os.getenv("PROCONNECT_USER_ENDPOINT")
 OIDC_OP_LOGOUT_ENDPOINT = os.getenv("PROCONNECT_SESSION_END")
-OIDC_AUTH_REQUEST_EXTRA_PARAMS = {"acr_values": "eidas1"}
+OIDC_AUTH_REQUEST_EXTRA_PARAMS = {
+    "claims": json.dumps(
+        {
+            "id_token": {
+                "acr": {
+                    "essential": True,
+                    "values": [
+                        "eidas0-mfa",
+                        "eidas1-mfa",
+                        "eidas2",
+                        "eidas3",
+                    ],
+                },
+            },
+        }
+    ),
+}
 OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 4 * 60 * 60
 OIDC_STORE_ID_TOKEN = True
-OIDC_CALLBACK_CLASS = "mesads.mesads_oidc.views.ProConnectCallbackView"
 ALLOW_LOGOUT_GET_METHOD = True
 
 MESADS_CONTACT_EMAIL = "equipe@mesads.beta.gouv.fr"
