@@ -59,7 +59,7 @@ exclude_lines = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.12"
 Django = "~5.2"
 django-autocomplete-light = "^3.8.2"
 psycopg2 = "^2.9.12"
@@ -91,6 +91,7 @@ mozilla_django_oidc = "^4.0.1"
 python-dotenv = "^1.1.1"
 django-solo = "^2.5.1"
 pillow = "^13.0.0"
+puremagic = "^2.2"
 
 
 [build-system]

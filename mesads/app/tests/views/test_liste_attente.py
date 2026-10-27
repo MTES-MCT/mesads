@@ -1230,7 +1230,9 @@ class TestTraitementDemandeView(ClientTestCase):
                 "numero": ads.number,
                 "date_attribution": today,
                 "arrete": SimpleUploadedFile(
-                    "arrete.pdf", b"Contenu arrete", content_type="application/pdf"
+                    name="myfile.png",
+                    content=(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"),
+                    content_type="image/png",
                 ),
             },
         )
@@ -1271,7 +1273,9 @@ class TestTraitementDemandeView(ClientTestCase):
                 "numero": "1",
                 "date_attribution": today,
                 "arrete": SimpleUploadedFile(
-                    "arrete.pdf", b"Contenu arrete", content_type="application/pdf"
+                    name="myfile.png",
+                    content=(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"),
+                    content_type="image/png",
                 ),
             },
         )
@@ -1345,7 +1349,9 @@ class TestTraitementDemandeView(ClientTestCase):
                 "numero": "1",
                 "date_attribution": today,
                 "arrete": SimpleUploadedFile(
-                    "arrete.pdf", b"Contenu arrete", content_type="application/pdf"
+                    name="myfile.png",
+                    content=(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"),
+                    content_type="image/png",
                 ),
             },
         )
