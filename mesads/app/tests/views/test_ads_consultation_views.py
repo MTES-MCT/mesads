@@ -38,7 +38,10 @@ class TestConsultationADSSearchView(ClientTestCase):
         response = self.inspecteur_client.get(
             reverse(
                 "app.consultation_search",
-                query={"departement": self.ads_manager_administrator_35.prefecture.id},
+                query={
+                    "departement": self.ads_manager_administrator_35.prefecture.id,
+                    "numero": self.ads.number,
+                },
             )
         )
         self.assertEqual(response.status_code, 200)
@@ -48,7 +51,10 @@ class TestConsultationADSSearchView(ClientTestCase):
         response = self.inspecteur_client.get(
             reverse(
                 "app.consultation_search",
-                query={"commune": "melesse"},
+                query={
+                    "departement": self.ads_manager_administrator_35.prefecture.id,
+                    "commune": "melesse",
+                },
             )
         )
         self.assertEqual(response.status_code, 200)
@@ -58,7 +64,10 @@ class TestConsultationADSSearchView(ClientTestCase):
         response = self.inspecteur_client.get(
             reverse(
                 "app.consultation_search",
-                query={"immatriculation": "FDJR-0D-01"},
+                query={
+                    "departement": self.ads_manager_administrator_35.prefecture.id,
+                    "immatriculation": "FDJR-0D-01",
+                },
             )
         )
         self.assertEqual(response.status_code, 200)
@@ -68,7 +77,10 @@ class TestConsultationADSSearchView(ClientTestCase):
         response = self.inspecteur_client.get(
             reverse(
                 "app.consultation_search",
-                query={"conducteur": "antoine chonchon"},
+                query={
+                    "departement": self.ads_manager_administrator_35.prefecture.id,
+                    "conducteur": "antoine chonchon",
+                },
             )
         )
         self.assertEqual(response.status_code, 200)
@@ -78,7 +90,10 @@ class TestConsultationADSSearchView(ClientTestCase):
         response = self.inspecteur_client.get(
             reverse(
                 "app.consultation_search",
-                query={"siret": "123456781012"},
+                query={
+                    "departement": self.ads_manager_administrator_35.prefecture.id,
+                    "siret": "123456781012",
+                },
             )
         )
         self.assertEqual(response.status_code, 200)
@@ -88,7 +103,10 @@ class TestConsultationADSSearchView(ClientTestCase):
         response = self.inspecteur_client.get(
             reverse(
                 "app.consultation_search",
-                query={"numero": "456"},
+                query={
+                    "departement": self.ads_manager_administrator_35.prefecture.id,
+                    "numero": "456",
+                },
             )
         )
         self.assertEqual(response.status_code, 200)
