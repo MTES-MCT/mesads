@@ -189,6 +189,7 @@ class ADSView(ADSManagerMixin, RevisionMixin, UpdateView):
                 "user": self.request.user,
                 "ads": ads,
                 "is_new_ads": is_new_ads,
+                "request": self.request,
             },
             destinataires=[user.email],
             sujet_template="pages/email_ads_created_or_updated_subject.txt",
