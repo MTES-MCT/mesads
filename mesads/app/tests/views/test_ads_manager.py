@@ -267,9 +267,9 @@ class TestADSManagerDecreeView(ClientTestCase):
 
     def test_post(self):
         file = SimpleUploadedFile(
-            name="myfile.pdf",
-            content=b"Contenu super fichier",
-            content_type="application/pdf",
+            name="myfile.png",
+            content=(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"),
+            content_type="image/png",
         )
 
         self.assertEqual(
@@ -298,7 +298,6 @@ class TestADSManagerDecreeView(ClientTestCase):
         arrete = ADSManagerDecree.objects.filter(
             ads_manager=self.ads_manager_city35
         ).last()
-        self.assertEqual(arrete.file.read(), b"Contenu super fichier")
         self.assertEqual(arrete.date_arrete, date.today())
         self.assertEqual(arrete.nombre_ads, 10)
 

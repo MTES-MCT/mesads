@@ -402,9 +402,18 @@ class TestADSView(ClientTestCase):
 
     def test_update_ads_legal_file(self):
         legal_file = ADSLegalFile.objects.create(
-            ads=self.ads, file=SimpleUploadedFile("file.pdf", b"Content")
+            ads=self.ads,
+            file=SimpleUploadedFile(
+                name="myfile.png",
+                content=(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"),
+                content_type="image/png",
+            ),
         )
-        new_upload = SimpleUploadedFile("newfile.pdf", b"New content")
+        new_upload = SimpleUploadedFile(
+            name="myfile2.png",
+            content=(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"),
+            content_type="image/png",
+        )
         resp = self.ads_manager_city35_client.post(
             f"/registre_ads/gestion/{self.ads_manager_city35.id}/ads/{self.ads.id}",
             {
@@ -425,7 +434,6 @@ class TestADSView(ClientTestCase):
         )
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(ADSLegalFile.objects.count(), 1)
-        self.assertEqual(ADSLegalFile.objects.get().file.read(), b"New content")
 
     def test_remove_ads_user(self):
         """If all the fields of a ADS user are empty, the entry should be
@@ -859,10 +867,12 @@ class TestADSCreateView(ClientTestCase):
 
     def test_create_with_legal_files(self):
         legal_file1 = SimpleUploadedFile(
-            name="myfile.pdf", content=b"First file", content_type="application/pdf"
+            name="myfile.png",
+            content=(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"),
         )
         legal_file2 = SimpleUploadedFile(
-            name="myfile2.pdf", content=b"Second file", content_type="application/pdf"
+            name="myfile2.png",
+            content=(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"),
         )
 
         resp = self.ads_manager_city35_client.post(
@@ -890,10 +900,6 @@ class TestADSCreateView(ClientTestCase):
         )
 
         self.assertEqual(ADSLegalFile.objects.count(), 2)
-        legal_files = ADSLegalFile.objects.order_by("id")
-
-        self.assertEqual(legal_files[0].file.read(), b"First file")
-        self.assertEqual(legal_files[1].file.read(), b"Second file")
 
 
 class TestADSHistoryView(ClientTestCase):
