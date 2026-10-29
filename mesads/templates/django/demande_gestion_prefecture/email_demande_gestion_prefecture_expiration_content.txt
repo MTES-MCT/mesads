@@ -1,0 +1,17 @@
+{% extends "base_mail.txt" %}
+
+{% block body %}
+
+Bonjour,
+
+Vos droits de gestionnaires sur {{demande.adminstrator.prefecture.display_fulltext}} vont arriver à terme le {{demande.expire_at}}
+
+Vous pouvez les renouveller en vous rendant sur la page suivante: {{base_url}}{% url 'app.mes_acces' %}
+En l'absence d'action de votre part, vos accès expireront automatiquement à la date mentionné ci dessus.
+
+Nous restons à votre disposition pour tout renseignement complémentaire, 
+
+Bien cordialement, 
+
+L'équipe MesADS
+{% endblock %}

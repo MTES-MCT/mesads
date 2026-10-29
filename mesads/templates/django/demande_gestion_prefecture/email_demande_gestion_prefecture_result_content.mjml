@@ -15,7 +15,7 @@ Demande Mes ADS acceptée
     </p>
     <ul>
       <li>
-        Pour toute question concernant l'utilisation de l'outil MesADS, vous pouvez consulter la FAQ ou nous contacter par mail (<a href="{{email_contact}}">equipe@mesads.beta.gouv.fr</a>)
+        Pour toute question concernant l'utilisation de l'outil MesADS, vous pouvez consulter la FAQ ou nous contacter par mail (<a href="mailto:{{email_contact}}">{{email_contact}}</a>)
       </li>
       <li>
         Pour toute question d'ordre réglementaire nous vous invitons à utiliser la plateforme Cosmose.

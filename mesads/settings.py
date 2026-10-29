@@ -151,6 +151,8 @@ CRON_CLASSES = [
     "mesads.app.crons.NotificationListeAttente",
     "mesads.app.crons.NotificationVerification",
     "mesads.app.crons.SupressionInscriptionsArchivees",
+    "mesads.app.crons.NotifiactionExpirationDemandeGestionPrefecture",
+    "mesads.app.crons.UpdateStatutDemandeGestionPrefecture",
 ]
 
 AUTH_USER_MODEL = "users.User"

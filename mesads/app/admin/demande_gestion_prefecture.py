@@ -1,13 +1,19 @@
+from datetime import date
+
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.staticfiles import finders
+from django.core.exceptions import PermissionDenied
 from django.core.mail import EmailMultiAlternatives
 from django.db.models import F, Q
 from django.db.models.functions import Collate
+from django.http import Http404, HttpResponseRedirect
 from django.template.loader import render_to_string
 from django.utils import timezone
 
 from mesads.app.models import ADSManagerAdministrator, DemandeGestionPrefecture
+from mesads.common.mail import envoi_email
 
 
 class AdministratorSelectFilter(admin.SimpleListFilter):
@@ -31,7 +37,15 @@ class AdministratorSelectFilter(admin.SimpleListFilter):
 @admin.register(DemandeGestionPrefecture)
 class DemandeGestionPrefectureAdmin(admin.ModelAdmin):
     autocomplete_fields = ["user"]
-    list_display = ("user", "prefecture", "statut", "created_at")
+    list_display = (
+        "user",
+        "prefecture",
+        "statut",
+        "accepted_at",
+        "expire_at",
+        "created_at",
+    )
+    change_form_template = "admin/app/demande_gestion_prefecture/change_form.html"
 
     search_fields = ("user__email",)
 
@@ -40,6 +54,57 @@ class DemandeGestionPrefectureAdmin(admin.ModelAdmin):
     @admin.display(description="Préfecture")
     def prefecture(self, obj):
         return obj.administrator.prefecture
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        if request.method == "POST" and "_renouvellement" in request.POST:
+            demande = self.get_object(request, object_id)
+            if demande is None:
+                raise Http404
+
+            if not self.has_change_permission(request, demande):
+                raise PermissionDenied
+
+            self.renouvellement_demande(demande, request)
+
+            self.message_user(
+                request,
+                "La demande a été renouvelée avec succès.",
+                messages.SUCCESS,
+            )
+
+            return HttpResponseRedirect(request.path)
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
+    def renouvellement_demande(self, demande, request):
+        demande.statut = DemandeGestionPrefecture.ACCEPTE
+        demande.expire_at = demande.expire_at + relativedelta(years=2)
+        demande.last_renew = date.today()
+        demande.notified = False
+        demande.demande_renouvellement = False
+
+        demande.save(
+            update_fields=[
+                "statut",
+                "expire_at",
+                "last_renew",
+                "notified",
+                "demande_renouvellement",
+            ]
+        )
+
+        self.notification_renouvellement(demande, request)
+
+    def notification_renouvellement(self, demande, request):
+        envoi_email(
+            content_template_txt="demande_gestion_prefecture/email_demande_gestion_prefecture_confirmation_renouvellement.txt",
+            content_template_mjml="demande_gestion_prefecture/email_demande_gestion_prefecture_confirmation_renouvellement.mjml",
+            context={
+                "demande": demande,
+                "email_contact": settings.MESADS_CONTACT_EMAIL,
+            },
+            destinataires=[demande.user.email],
+            sujet="Mes ADS - Confirmation de renouvellement d'accès préfecture.",
+        )
 
     def save_model(self, request, obj, form, change):
         accepted = False
@@ -50,6 +115,7 @@ class DemandeGestionPrefectureAdmin(admin.ModelAdmin):
                 and obj.statut == DemandeGestionPrefecture.ACCEPTE
             ):
                 obj.accepted_at = timezone.now()
+                obj.expire_at = obj.accepted_at + relativedelta(years=2)
                 accepted = True
 
         super().save_model(request, obj, form, change)
