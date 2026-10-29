@@ -54,15 +54,63 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
             "proconnect_chorusdt": claims.get("chorusdt", ""),
         }
 
+    def filter_users_by_claims(self, claims):
+        sub = claims.get("sub")
+
+        if not sub:
+            return self.UserModel.objects.none()
+
+        return self.UserModel.objects.filter(proconnect_sub=sub)
+
+    def verify_claims(self, claims):
+        return (
+            super().verify_claims(claims)
+            and bool(claims.get("sub"))
+            and bool(claims.get("email"))
+        )
+
     def create_user(self, claims):
+        email = claims.get("email")
+
+        if self.UserModel.objects.filter(email__iexact=email).exists():
+            self.request.session["oidc_account_conflict"] = True
+            return None
+
         return self.UserModel.objects.create_user(
             **self.get_data_for_user_create_and_update(claims)
         )
 
     def update_user(self, user, claims):
-        for key, value in self.get_data_for_user_create_and_update(claims).items():
+        email = claims.get("email")
+
+        if (
+            self.UserModel.objects.filter(email__iexact=email)
+            .exclude(pk=user.pk)
+            .exists()
+        ):
+            self.request.session["oidc_account_conflict"] = True
+            return None
+
+        if (
+            str(user.proconnect_sub) != claims.get("sub")
+            or (user.proconnect_uid and user.proconnect_uid != claims.get("uid"))
+            or (
+                user.proconnect_idp_id
+                and str(user.proconnect_idp_id) != claims.get("idp_id")
+            )
+        ):
+            self.request.session["oidc_account_conflict"] = True
+            return None
+
+        data = self.get_data_for_user_create_and_update(claims)
+
+        for key in ("proconnect_sub", "proconnect_uid", "proconnect_idp_id"):
+            data.pop(key, None)
+
+        for key, value in data.items():
             if value:
-                user.__setattr__(key, value)
+                setattr(user, key, value)
+
         user.save()
         return user
 
