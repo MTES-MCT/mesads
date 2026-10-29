@@ -11,6 +11,7 @@ def envoi_email(
     sujet: str = None,
     sujet_template: str = None,
     from_email: str = settings.MESADS_CONTACT_EMAIL,
+    fail_silently: bool = True,
 ):
     email_subject = None
     if sujet:
@@ -38,6 +39,6 @@ def envoi_email(
         email_content,
         from_email,
         destinataires,
-        fail_silently=True,
+        fail_silently=fail_silently,
         html_message=email_content_html,
     )

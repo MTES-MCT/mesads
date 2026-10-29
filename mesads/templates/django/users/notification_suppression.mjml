@@ -1,0 +1,27 @@
+{% extends "base_mail.mjml" %}
+
+{% block title %}
+Suppression de votre compte
+{% endblock %}
+
+{% block content %}
+<mj-column>
+  <mj-text>
+    <p>
+        Bonjour,
+    </p>
+    <p>
+      Vous disposez d'un compte sur MesADS et ne vous êtes pas connecté depuis bientôt deux ans.
+    </p>
+
+    <p>
+      Sauf action de votre part, votre compte sera supprimé le {{deletion_date}}
+    </p>
+
+    <p>
+    Si vous souhaitez conserver votre compte, vous pouvez simplement vous connecter à MesADS à l'adresse suivante:
+    <a href="{{base_url}}{% url 'override.login' %}">MesADS</a>
+    </p>
+  </mj-text>
+</mj-column>
+{% endblock %}
