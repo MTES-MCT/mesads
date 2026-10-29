@@ -1,0 +1,15 @@
+{% extends "base_mail.txt" %}
+
+{% block body %}
+Bonjour,
+
+Vous disposez d'un compte sur MesADS et ne vous êtes pas connecté depuis bientôt deux ans.
+
+Sauf action de votre part, votre compte sera supprimé le {{deletion_date}}
+
+Si vous souhaitez conserver votre compte, vous pouvez simplement vous connecter à MesADS à l'adresse suivante:
+
+{{base_url}}{% url 'override.login' %}
+
+
+{% endblock %}

@@ -6,7 +6,6 @@ from django.contrib.auth.models import (
 from django.contrib.auth.signals import (
     user_logged_in,
     user_logged_out,
-    user_login_failed,
 )
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -78,6 +77,11 @@ class User(AbstractUser):
         "Entité ministérielle / Matricule Agent",
         default="",
         blank=True,
+    )
+
+    delete_notification_sent = models.BooleanField(
+        verbose_name="Notification de suppression iminente envoyée",
+        default=False,
     )
 
     EMAIL_FIELD = "email"
@@ -173,20 +177,11 @@ def get_client_ip(request):
 @receiver(user_logged_in)
 def user_logged_in_callback(sender, request, user, **kwargs):
     UserAuditEntry.objects.create(user=user, action="login", ip=get_client_ip(request))
+    if user.delete_notification_sent:
+        user.delete_notification_sent = False
+        user.save(update_fields=["delete_notification_sent"])
 
 
 @receiver(user_logged_out)
 def user_logged_out_callback(sender, request, user, **kwargs):
     UserAuditEntry.objects.create(user=user, action="logout", ip=get_client_ip(request))
-
-
-@receiver(user_login_failed)
-def user_login_failed_callback(sender, credentials, request, **kwargs):
-    try:
-        user = User.objects.get(email=credentials.get("username"))
-    except User.DoesNotExist:
-        user = None
-
-    UserAuditEntry.objects.create(
-        user=user, action="login_failed", ip=get_client_ip(request), body=credentials
-    )

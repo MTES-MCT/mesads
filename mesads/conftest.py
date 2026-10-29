@@ -42,7 +42,7 @@ def client_factory(user):
 
 @pytest.fixture
 def commune():
-    return ADSManagerFactory(for_commune=True)
+    return ADSManagerFactory()
 
 
 @pytest.fixture

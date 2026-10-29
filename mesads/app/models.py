@@ -827,9 +827,10 @@ class ADSUpdateLog(SoftDeleteMixin, models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.RESTRICT,
-        null=False,
+        null=True,
         blank=False,
         verbose_name="Utilisateur ayant effectué la mise à jour",
+        related_name="ads_update_logs",
     )
 
     serialized = models.TextField(
@@ -1230,7 +1231,11 @@ class ADSUpdateFile(models.Model):
     )
 
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.RESTRICT, null=False, blank=False
+        settings.AUTH_USER_MODEL,
+        on_delete=models.RESTRICT,
+        null=False,
+        blank=False,
+        related_name="ads_update_files",
     )
 
     update_file = models.FileField(upload_to=get_update_filename, blank=False)

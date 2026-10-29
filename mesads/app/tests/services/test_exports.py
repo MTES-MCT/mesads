@@ -16,7 +16,7 @@ def test_get_export_data_liste_attente():
     prefecture = ADSManagerFactory(
         administrator=administrator, for_object=administrator.prefecture
     )
-    commune = ADSManagerFactory(administrator=administrator, for_commune=True)
+    commune = ADSManagerFactory(administrator=administrator)
     epci = ADSManagerFactory(administrator=administrator, for_epci=True)
 
     InscriptionListeAttenteFactory(ads_manager=prefecture)
