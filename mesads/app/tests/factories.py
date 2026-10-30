@@ -54,7 +54,7 @@ class ADSManagerRequestFactory(factory.django.DjangoModelFactory):
         model = ADSManagerRequest
 
     ads_manager = factory.SubFactory(ADSManagerFactory)
-    accepted = True
+    statut = ADSManagerRequest.ACCEPTE
 
 
 class ADSManagerDecreeFactory(factory.django.DjangoModelFactory):

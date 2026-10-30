@@ -12,7 +12,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from reversion.models import Revision
 
-from mesads.app.models import Notification
+from mesads.app.models import ADSManagerRequest, Notification
 from mesads.vehicules_relais.models import Proprietaire
 
 from .models import NoteUtilisateur, User, UserAuditEntry
@@ -32,11 +32,11 @@ class ADSManagerRequestFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         if self.value() == "yes":
             return queryset.filter(
-                adsmanagerrequest__isnull=False,
+                ads_manager_requests__isnull=False,
             )
         elif self.value() == "no":
             return queryset.filter(
-                adsmanagerrequest__isnull=True,
+                ads_amanger_requests__isnull=True,
             )
 
 
@@ -186,11 +186,13 @@ class UserAdmin(BaseUserAdmin):
     def export_gestionnaire(self, request):
         """
         Vue qui renvoie le CSV des emails des Users reliés à un ADSManager
-        via un ADSManagerRequest(accepted=True).
+        via un ADSManagerRequest(statut=ADSManagerRequest.ACCEPTE).
         """
         qs = (
             self.get_queryset(request)
-            .filter(adsmanagerrequest__accepted=True, is_active=True)
+            .filter(
+                ads_manager_requests__statut=ADSManagerRequest.ACCEPTE, is_active=True
+            )
             .distinct()
             .values_list("email", flat=True)
         )
@@ -293,7 +295,7 @@ class UserAdmin(BaseUserAdmin):
         )
         return mark_safe(
             f'<a href="{ads_manager_request_link}">'
-            f"Voir les {obj.adsmanagerrequest_set.count()} "
+            f"Voir les {obj.ads_manager_requests.count()} "
             "requêtes</a>"
         )
 

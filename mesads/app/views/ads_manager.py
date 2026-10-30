@@ -108,8 +108,8 @@ class AdministrationsEnGestionView(TemplateView):
                     output_field=IntegerField(),
                 ),
                 tri_bool=Case(
-                    When(accepted=True, then=Value(0)),
-                    When(accepted__isnull=True, then=Value(1)),
+                    When(statut=ADSManagerRequest.ACCEPTE, then=Value(0)),
+                    When(statut=ADSManagerRequest.EN_ATTENTE, then=Value(1)),
                     default=Value(2),
                     output_field=IntegerField(),
                 ),

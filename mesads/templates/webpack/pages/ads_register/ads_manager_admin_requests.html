@@ -71,8 +71,8 @@
                   </thead>
                   <tbody>
                     {% for ads_manager_request in ads_manager_requests %}
-                      <tr class="table-row-{% if ads_manager_request.accepted is True %}success{% elif ads_manager_request.accepted is False %}failure{% else %}unknown{% endif %}">
-                        <td {% if ads_manager_request.accepted is False %}class="line-through"{% endif %}>
+                      <tr class="table-row-{% if ads_manager_request.statut == "ACCEPTE" %}success{% elif ads_manager_request.statut == "REFUSE" %}failure{% else %}unknown{% endif %}">
+                        <td {% if ads_manager_request.statut == "REFUSE" %}class="line-through"{% endif %}>
                           {{ ads_manager_request.user.email }}
                         </td>
                         <td>{{ ads_manager_request.ads_manager.content_object.display_text|capfirst }}</td>
@@ -87,7 +87,7 @@
                         users to contact our team to revoke an access, or grant when the
                         request has been mistakenly denied.
                           {% endcomment %}
-                          {% if ads_manager_request.accepted is None %}
+                          {% if ads_manager_request.statut == "EN_ATTENTE" %}
                             <div class="fr-grid-row fr-grid-row--gutters">
                               <div class="fr-p-1w">
                                 <form method="post">
@@ -115,7 +115,7 @@
                           {% else %}
                             <div>
                               Demande
-                              {% if ads_manager_request.accepted %}
+                              {% if ads_manager_request.statut == "ACCEPTE" %}
                                 <strong>acceptée</strong>
                               {% else %}
                                 <strong>refusée</strong>
@@ -125,7 +125,7 @@
                           </div>
                         </td>
                         <td>
-                          {% if ads_manager_request.accepted %}
+                          {% if ads_manager_request.statut == "ACCEPTE" %}
                             <form method="post">
                               {% csrf_token %}
                               <input type="hidden" name="request_id" value="{{ ads_manager_request.id }}" />
@@ -134,7 +134,7 @@
                                 Révoquer
                               </button>
                             </form>
-                          {% elif ads_manager_request.accepted is not None %}
+                          {% elif ads_manager_request.statut == "REFUSE"  %}
                             <form method="post">
                               {% csrf_token %}
                               <input type="hidden" name="request_id" value="{{ ads_manager_request.id }}" />

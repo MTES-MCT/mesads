@@ -1,4 +1,4 @@
-{% if not ads_manager_request.accepted %}
+{% if not ads_manager_request.statut == "ACCEPTE" %}
 Demande refusée pour gérer les ADS de {{ ads_manager_request.ads_manager.content_object.display_fulltext|safe }}
 {% else %}
 Demande acceptée pour gérer les ADS de {{ ads_manager_request.ads_manager.content_object.display_fulltext|safe }}
