@@ -1,6 +1,6 @@
 import pytest
 
-from mesads.app.models import DemandeGestionPrefecture
+from mesads.app.models import DemandeAcces, DemandeGestionPrefecture
 
 from ..decorators import (
     is_administrator,
@@ -39,21 +39,21 @@ def test_is_manager_without_user_manager(user, ads_manager):
 def test_is_manager_with_user_manager_not_accepted(
     user, ads_manager, ads_manager_request_factory
 ):
-    ads_manager_request_factory(user, ads_manager, accepted=False)
+    ads_manager_request_factory(user, ads_manager, statut=DemandeAcces.REFUSE)
     assert not is_manager(user, manager_id=ads_manager.id)
 
 
 def test_is_manager_with_valid_user_manager(
     user, ads_manager, ads_manager_request_factory
 ):
-    ads_manager_request_factory(user, ads_manager, accepted=True)
+    ads_manager_request_factory(user, ads_manager, statut=DemandeAcces.ACCEPTE)
     assert is_manager(user, manager_id=ads_manager.id)
 
 
 def test_is_manager_with_other_ads_manager(
     user, ads_manager, ads_manager_factory, ads_manager_request_factory
 ):
-    ads_manager_request_factory(user, ads_manager, accepted=True)
+    ads_manager_request_factory(user, ads_manager, statut=DemandeAcces.ACCEPTE)
     other_manager = ads_manager_factory()
     assert not is_manager(user, manager_id=other_manager.id)
 

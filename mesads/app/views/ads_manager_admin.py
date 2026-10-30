@@ -1,5 +1,6 @@
-from datetime import timedelta
+from datetime import date, timedelta
 
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
@@ -19,7 +20,7 @@ from django.db.models import (
     Value,
     When,
 )
-from django.db.models.functions import Cast, Coalesce, Now, Round
+from django.db.models.functions import Cast, Coalesce, Collate, Now, Round
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -29,6 +30,7 @@ from django.views.generic import CreateView, ListView, TemplateView, View
 from mesads.app.forms import DemandeGestionPrefectureForm
 from mesads.common.mail import envoi_email
 from mesads.fradm.models import EPCI, Aeroport, Commune, Prefecture
+from mesads.users.models import User
 
 from ..models import (
     ADS,
@@ -112,7 +114,7 @@ class ADSManagerAdministratorListeGestionnaires(ADSManagerAdministratorMixin, Li
         nb_requests_subq = Subquery(
             ADSManagerRequest.objects.filter(
                 ads_manager=OuterRef("pk"),
-                accepted=True,
+                statut=ADSManagerRequest.ACCEPTE,
             )
             .values("ads_manager")
             .annotate(c=Count("pk"))
@@ -245,7 +247,11 @@ class ADSManagerAdministratorListeGestionnaires(ADSManagerAdministratorMixin, Li
             administrator=self.ads_manager_administrator,
         )
         ADSManagerRequest.objects.create(
-            user=self.request.user, ads_manager=ads_manager, accepted=True
+            user=self.request.user,
+            ads_manager=ads_manager,
+            statut=ADSManagerRequest.ACCEPTE,
+            accepted_at=date.today(),
+            expire_at=date.today() + relativedelta(years=2),
         )
         url_access = reverse(
             "app.ads-manager-admin.requests",
@@ -265,6 +271,123 @@ class ADSManagerAdministratorListeGestionnaires(ADSManagerAdministratorMixin, Li
         return self.get(request, *args, **kwargs)
 
 
+class ADSManagerRequestsChangeView(ADSManagerAdministratorMixin, View):
+    AUTORISER = "autoriser"
+    REFUSER = "refuser"
+    RENOUVELER = "renouveler"
+
+    actions = [AUTORISER, REFUSER, RENOUVELER]
+
+    def post(self, request, *args, **kwargs):
+        action = self.kwargs.get("action")
+        ads_manager_request = get_object_or_404(
+            ADSManagerRequest,
+            pk=self.kwargs.get("ads_manager_request_id"),
+            ads_manager__administrator=self.ads_manager_administrator,
+        )
+        if action not in self.actions:
+            raise SuspiciousOperation("Invalid action")
+
+        if action == self.AUTORISER:
+            if ads_manager_request.statut in [
+                ADSManagerRequest.EN_ATTENTE,
+                ADSManagerRequest.REFUSE,
+            ]:
+                ads_manager_request.statut = ADSManagerRequest.ACCEPTE
+                ads_manager_request.accepted_at = date.today()
+                ads_manager_request.expire_at = date.today() + relativedelta(years=2)
+                ads_manager_request.save(
+                    update_fields=[
+                        "statut",
+                        "accepted_at",
+                        "expire_at",
+                    ]
+                )
+                messages.success(
+                    self.request,
+                    "La demande a bien été acceptée.",
+                )
+                envoi_email(
+                    content_template_txt="pages/email_ads_manager_request_result_content.txt",
+                    content_template_mjml="pages/email_ads_manager_request_result_content.mjml",
+                    context={
+                        "request": request,
+                        "ads_manager_request": ads_manager_request,
+                    },
+                    destinataires=[ads_manager_request.user.email],
+                    sujet_template="pages/email_ads_manager_request_result_subject.txt",
+                )
+            else:
+                raise SuspiciousOperation("Invalid action")
+
+        if action == self.REFUSER:
+            ads_manager_request.statut = ADSManagerRequest.REFUSE
+            ads_manager_request.save(
+                update_fields=[
+                    "statut",
+                ]
+            )
+            messages.success(
+                self.request,
+                "La demande a bien été refusée.",
+            )
+            envoi_email(
+                content_template_txt="pages/email_ads_manager_request_result_content.txt",
+                content_template_mjml="pages/email_ads_manager_request_result_content.mjml",
+                context={
+                    "request": request,
+                    "ads_manager_request": ads_manager_request,
+                },
+                destinataires=[ads_manager_request.user.email],
+                sujet_template="pages/email_ads_manager_request_result_subject.txt",
+            )
+        if action == self.RENOUVELER:
+            if not (
+                ads_manager_request.renouvelable
+                and ads_manager_request.demande_renouvellement
+            ):
+                raise SuspiciousOperation("Invalid action")
+            else:
+                ads_manager_request.statut = ADSManagerRequest.ACCEPTE
+                ads_manager_request.last_renew = date.today()
+                ads_manager_request.expire_at = max(
+                    date.today(), ads_manager_request.expire_at
+                ) + relativedelta(years=2)
+                ads_manager_request.notified = False
+                ads_manager_request.demande_renouvellement = False
+                ads_manager_request.save(
+                    update_fields=[
+                        "statut",
+                        "last_renew",
+                        "expire_at",
+                        "notified",
+                        "demande_renouvellement",
+                    ]
+                )
+                messages.success(
+                    self.request,
+                    "La demande a bien été renouvelée.",
+                )
+                envoi_email(
+                    content_template_txt="pages/email_ads_manager_request_confirmation_renouvellement.txt",
+                    content_template_mjml="pages/email_ads_manager_request_confirmation_renouvellement.mjml",
+                    context={
+                        "demande": ads_manager_request,
+                        "email_contact": settings.MESADS_CONTACT_EMAIL,
+                    },
+                    destinataires=[ads_manager_request.user.email],
+                    sujet=(
+                        "Mes ADS - Confirmation de renouvellement d'accès gestionnaire."
+                    ),
+                )
+        return redirect(
+            reverse(
+                "app.ads-manager-admin.requests",
+                kwargs={"prefecture_id": self.kwargs["prefecture_id"]},
+            )
+        )
+
+
 class ADSManagerAdminRequestsView(ADSManagerAdministratorMixin, TemplateView):
     """This view is used by ADSManagerAdministrators to validate
     ADSManagerRequests and list changes made by ADSManagers."""
@@ -275,9 +398,10 @@ class ADSManagerAdminRequestsView(ADSManagerAdministratorMixin, TemplateView):
         """
         Populate context with the list of ADSManagerRequest current user can accept.
         """
-        ctx = super().get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
+        context["statuts"] = ADSManagerRequest.STATUTS
 
-        query = (
+        qs = (
             ADSManagerRequest.objects.select_related(
                 "ads_manager",
                 "ads_manager__administrator",
@@ -290,57 +414,63 @@ class ADSManagerAdminRequestsView(ADSManagerAdministratorMixin, TemplateView):
             .filter(ads_manager__administrator=self.ads_manager_administrator)
         )
 
-        if self.request.GET.get("sort") == "name":
-            ctx["sort"] = "name"
-            ctx["ads_manager_requests"] = query.order_by(
-                "ads_manager__administrator",
-                "ads_manager__commune__libelle",
-                "ads_manager__epci__name",
-                "ads_manager__prefecture__libelle",
+        demande_id = self.request.GET.get("id", "").strip()
+        if demande_id.isdigit():
+            qs = qs.filter(pk=int(demande_id))
+            context["selected_id"] = demande_id
+
+        if self.request.GET.get("statut"):
+            qs = qs.filter(statut=self.request.GET.get("statut"))
+            context["selected_statut"] = self.request.GET.get("statut")
+
+        if self.request.GET.get("search"):
+            context["search"] = self.request.GET.get("search")
+            content_type_commune = ContentType.objects.get_for_model(Commune)
+            content_type_prefecture = ContentType.objects.get_for_model(Prefecture)
+            content_type_epci = ContentType.objects.get_for_model(EPCI)
+            content_type_aeroport = ContentType.objects.get_for_model(Aeroport)
+
+            splitted_terms = self.request.GET.get("search").strip().split(" ")
+
+            communes = Commune.objects
+            prefectures = Prefecture.objects
+            epcis = EPCI.objects
+            aeroports = Aeroport.objects
+            users = User.objects
+
+            for term in splitted_terms:
+                communes = communes.filter(libelle__unaccent__icontains=term)
+                prefectures = prefectures.filter(libelle__unaccent__icontains=term)
+                epcis = epcis.filter(name__unaccent__icontains=term)
+                aeroports = aeroports.filter(name__unaccent__icontains=term)
+                users = users.annotate(collated_email=Collate(F("email"), "C")).filter(
+                    collated_email__icontains=term
+                )
+
+            qs = qs.filter(
+                Q(
+                    ads_manager__content_type=content_type_commune,
+                    ads_manager__object_id__in=communes.values("pk"),
+                )
+                | Q(
+                    ads_manager__content_type=content_type_prefecture,
+                    ads_manager__object_id__in=prefectures.values("pk"),
+                )
+                | Q(
+                    ads_manager__content_type=content_type_epci,
+                    ads_manager__object_id__in=epcis.values("pk"),
+                )
+                | Q(
+                    ads_manager__content_type=content_type_aeroport,
+                    ads_manager__object_id__in=aeroports.values("pk"),
+                )
+                | Q(user__in=users)
             )
-        else:
-            ctx["ads_manager_requests"] = query.order_by(
-                "ads_manager__administrator",
-                "-created_at",
-            )
-        return ctx
 
-    def post(self, request, **kwargs):
-        request_id = request.POST.get("request_id")
-        action = request.POST.get("action")
-
-        if action not in ("accept", "deny", "revoke", "authorize"):
-            raise SuspiciousOperation("Invalid action")
-
-        ads_manager_request = get_object_or_404(
-            ADSManagerRequest,
-            id=request_id,
-            ads_manager__administrator=self.ads_manager_administrator,
+        context["ads_manager_requests"] = qs.order_by(
+            "-created_at",
         )
-
-        if action == "accept" or action == "authorize":
-            ads_manager_request.accepted = True
-        else:
-            ads_manager_request.accepted = False
-        ads_manager_request.save()
-
-        # Send notification to user
-        envoi_email(
-            content_template_txt="pages/email_ads_manager_request_result_content.txt",
-            content_template_mjml="pages/email_ads_manager_request_result_content.mjml",
-            context={
-                "request": request,
-                "ads_manager_request": ads_manager_request,
-            },
-            destinataires=[ads_manager_request.user.email],
-            sujet_template="pages/email_ads_manager_request_result_subject.txt",
-        )
-        return redirect(
-            reverse(
-                "app.ads-manager-admin.requests",
-                kwargs={"prefecture_id": self.kwargs["prefecture_id"]},
-            )
-        )
+        return context
 
 
 class ADSManagerExportView(ExcelExporter, View):
@@ -525,6 +655,8 @@ class RenouvellementDemandeGestionPrefecture(ADSManagerAdministratorMixin, View)
                 DemandeGestionPrefecture.EXPIRE,
             ],
         )
+        if not demande_gestion_prefecture.renouvelable:
+            raise SuspiciousOperation("Demande non renouvelable")
         envoi_email(
             content_template_txt="demande_gestion_prefecture/email_demande_gestion_prefecture_demande_renouvellement.txt",
             content_template_mjml="demande_gestion_prefecture/email_demande_gestion_prefecture_demande_renouvellement.mjml",

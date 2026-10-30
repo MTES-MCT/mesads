@@ -33,7 +33,7 @@ def set_next_date_fin_validite(obj: InscriptionListeAttente):
 def _notification_doublon(inscription: InscriptionListeAttente):
     ads_manager = inscription.ads_manager
     ads_manager_requests = ADSManagerRequest.objects.filter(
-        ads_manager=ads_manager, accepted=True
+        ads_manager=ads_manager, statut=ADSManagerRequest.ACCEPTE
     )
     emails = [
         ads_manager_request.user.email for ads_manager_request in ads_manager_requests
@@ -88,9 +88,9 @@ def notification_delai_liste_attente():
 
     for ads_manager in (
         ADSManager.objects.prefetch_related(
-            "adsmanagerrequest_set", "adsmanagerrequest_set__user"
+            "ads_manager_requests", "ads_manager_requests__user"
         )
-        .filter(adsmanagerrequest__accepted=True)
+        .filter(ads_manager_requests__statut=ADSManagerRequest.ACCEPTE)
         .distinct()
     ):
         inscriptions = (
@@ -108,7 +108,7 @@ def notification_delai_liste_attente():
         )
         if inscriptions.count() > 0:
             ads_manager_requests = ADSManagerRequest.objects.filter(
-                ads_manager=ads_manager, accepted=True
+                ads_manager=ads_manager, statut=ADSManagerRequest.ACCEPTE
             )
             emails = [
                 ads_manager_request.user.email

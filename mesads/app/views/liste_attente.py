@@ -279,7 +279,7 @@ class InscriptionTraitementListeAttenteView(ADSManagerMixin, TemplateView):
                     ads_manager__content_type=content_type,
                     ads_manager__object_id=ads_manager.epci_delegate.pk,
                     user=self.request.user,
-                    accepted=True,
+                    statut=ADSManagerRequest.ACCEPTE,
                 ).first()
                 if req:
                     ads_manager = req.ads_manager

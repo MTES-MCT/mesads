@@ -26,7 +26,13 @@ class UserQuerySet(models.QuerySet):
         return (
             Q(is_staff=True)
             | Q(is_superuser=True)
-            | Q(Exists(ADSManagerRequest.objects.filter(user=user, accepted=True)))
+            | Q(
+                Exists(
+                    ADSManagerRequest.objects.filter(
+                        user=user, statut=ADSManagerRequest.ACCEPTE
+                    )
+                )
+            )
             | Q(
                 Exists(
                     DemandeAccesLectureSeule.objects.filter(

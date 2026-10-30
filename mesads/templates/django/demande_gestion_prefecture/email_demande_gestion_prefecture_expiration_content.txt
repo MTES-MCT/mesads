@@ -4,10 +4,10 @@
 
 Bonjour,
 
-Vos droits de gestionnaires sur {{demande.adminstrator.prefecture.display_fulltext}} vont arriver à terme le {{demande.expire_at}}
+Vos droits de gestionnaire sur {{demande.administrator.prefecture.display_fulltext|safe}} vont arriver à terme le {{demande.expire_at}}
 
-Vous pouvez les renouveller en vous rendant sur la page suivante: {{base_url}}{% url 'app.mes_acces' %}
-En l'absence d'action de votre part, vos accès expireront automatiquement à la date mentionné ci dessus.
+Vous pouvez les renouveler en vous rendant sur la page suivante: {{base_url}}{% url 'app.mes_acces' %}
+En l'absence d'action de votre part, vos accès expireront automatiquement à la date mentionnée ci-dessus.
 
 Nous restons à votre disposition pour tout renseignement complémentaire, 
 

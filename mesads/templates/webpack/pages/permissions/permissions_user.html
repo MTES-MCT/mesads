@@ -20,22 +20,71 @@
         <div>
           <h2 class="fr-notice__title">Renouvellement des droits d'accès : </h2>
           <p class="fr-notice__desc">
-            Tout les deux ans, vous devez faire renouveller vos accès à MesADS. 
+            Tous les deux ans, vous devez faire renouveler vos accès à MesADS. 
             Vous pouvez le faire depuis cette page, et une notification vous sera 
-            également un mois avant l'expiration de vos accès.
+            également envoyée un mois avant l'expiration de vos accès.
           </p>
         </div>
       </div>
     </div>
   </div>
 
-  {% if permissions_prefecture %}
+  {% if permissions_gestionnaire %}
   <div class="mt-3">
-    <div class="fr-table" id="table-0-component">
+    <div class="fr-table" id="table-permissions-gestionnaire-component">
       <div class="fr-table__wrapper">
         <div class="fr-table__container">
           <div class="fr-table__content">
-            <table id="table-0">
+            <table id="table-permissions-gestionnaire">
+              <caption> Permissions gestionnaire </caption>
+              <thead>
+                <tr>
+                  <th> Administration </th>
+                  <th> Date d'expiration </th>
+                  <th> Statut </th>
+                  <th> Action </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for permission_gestionnaire in permissions_gestionnaire %}
+                  <tr>
+                    <td>{{permission_gestionnaire.ads_manager.human_name}}</td>
+                    <td>{{permission_gestionnaire.expire_at}}</td>
+                    <td>{{permission_gestionnaire.get_statut_display}}</td>
+                    <td>
+                      {% if permission_gestionnaire.renouvelable %}
+
+                        {% if permission_gestionnaire.demande_renouvellement %}
+                          Demande de renouvellement effectuée
+                        {% else %}
+                          <form action="{% url 'app.ads-manager.renouvellement_demande_gestion' manager_id=permission_gestionnaire.ads_manager.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="fr-btn">Renouveler</button>
+                          </form>
+                        {% endif %}
+
+                      {% else %}
+                       - 
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if permissions_prefecture %}
+  <div class="mt-3">
+    <div class="fr-table" id="table-permissions-prefecture-component">
+      <div class="fr-table__wrapper">
+        <div class="fr-table__container">
+          <div class="fr-table__content">
+            <table id="table-permissions-prefecture">
               <caption> Permissions préfectures </caption>
               <thead>
                 <tr>
@@ -58,7 +107,7 @@
                         {% else %}
                           <form action="{% url 'app.ads-manager-admin.renouvellement_demande_gestion' prefecture_id=permission_prefecture.administrator.prefecture.id %}" method="post">
                             {% csrf_token %}
-                            <button type="submit" class="fr-btn">Renouveller</button>
+                            <button type="submit" class="fr-btn">Renouveler</button>
                           </form>
                         {% endif %}
                       {% else %}
@@ -73,10 +122,6 @@
         </div>
       </div>
     </div>
-    {% for permission_prefecture in permissions_prefecture %}
-    
-    {% endfor %}
-
   </div>
   {% endif %}
 

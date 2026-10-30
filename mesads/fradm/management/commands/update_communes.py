@@ -214,7 +214,7 @@ class Command(BaseCommand):
             )
             error = True
 
-        ads_manager_requests_count = ads_manager.adsmanagerrequest_set.count()
+        ads_manager_requests_count = ads_manager.ads_manager_requests.count()
         if ads_manager_requests_count != 0:
             print(
                 f"Impossible de supprimer la commune id={commune.id} "
@@ -291,7 +291,7 @@ class Command(BaseCommand):
             ads.epci_commune = new_commune
             ads.save()
 
-        for ads_manager_request in old_ads_manager.adsmanagerrequest_set.all():
+        for ads_manager_request in old_ads_manager.ads_manager_requests.all():
             ads_manager_request.ads_manager = new_ads_manager
             ads_manager_request.save()
 

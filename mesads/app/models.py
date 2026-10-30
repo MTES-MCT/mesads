@@ -216,34 +216,6 @@ class ADSManagerDecree(models.Model):
         return get_decree_filename(instance, filename)
 
 
-@reversion.register
-class ADSManagerRequest(models.Model):
-    """User request to become ADSManager. Has to be accepted by the
-    administrator (ie. the prefecture) of the ADSManager.
-    """
-
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=False, blank=False
-    )
-    ads_manager = models.ForeignKey(
-        ADSManager,
-        on_delete=models.CASCADE,
-        null=False,
-        blank=False,
-    )
-    created_at = models.DateTimeField(auto_now_add=True, null=False)
-    last_update_at = models.DateTimeField(auto_now=True, null=True)
-    accepted = models.BooleanField(null=True, default=None)
-
-    class Meta:
-        unique_together = (("user", "ads_manager"),)
-        verbose_name = "Demande pour devenir gestionnaire ADS"
-        verbose_name_plural = "Demandes pour devenir gestionnaire ADS"
-
-    def __str__(self):
-        return f"Requete de {self.user} pour être administrateur de {self.ads_manager}"
-
-
 class ADSManagerAdministrator(models.Model):
     """Administrator with the ability to manage users of ADSManager.
 
@@ -359,6 +331,36 @@ class DemandeAcces(models.Model):
     @property
     def acceptee(self):
         return self.statut == self.ACCEPTE
+
+
+@reversion.register
+class ADSManagerRequest(DemandeAcces):
+    """User request to become ADSManager. Has to be accepted by the
+    administrator (ie. the prefecture) of the ADSManager.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        related_name="ads_manager_requests",
+    )
+    ads_manager = models.ForeignKey(
+        ADSManager,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        related_name="ads_manager_requests",
+    )
+
+    class Meta:
+        unique_together = (("user", "ads_manager"),)
+        verbose_name = "Demande pour devenir gestionnaire ADS"
+        verbose_name_plural = "Demandes pour devenir gestionnaire ADS"
+
+    def __str__(self):
+        return f"Requete de {self.user} pour être administrateur de {self.ads_manager}"
 
 
 @reversion.register

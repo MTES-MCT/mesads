@@ -79,7 +79,7 @@ class HomepageView(TemplateView):
             demandes_prefecture = self.request.user.demandes_gestion_prefecture.filter(
                 statut=DemandeGestionPrefecture.ACCEPTE
             )
-            ads_manager_requests = self.request.user.adsmanagerrequest_set.all()
+            ads_manager_requests = self.request.user.ads_manager_requests.all()
             proprietaire_vehicule_relais = self.request.user.proprietaire_set.all()
 
             inspecteur = self.request.user.demandes_acces_lecture_seule.filter(
@@ -159,7 +159,7 @@ class StatsView(TemplateView):
         """
 
         qs_ads_manager_by_trimester = (
-            ADSManagerRequest.objects.filter(accepted=True)
+            ADSManagerRequest.objects.filter(statut=ADSManagerRequest.ACCEPTE)
             .annotate(
                 year=ExtractYear("created_at"), quarter=ExtractQuarter("created_at")
             )
@@ -206,7 +206,7 @@ class StatsView(TemplateView):
         context["ads_count"] = ADS.objects.count()
 
         context["ads_manager_requests_count"] = ADSManagerRequest.objects.filter(
-            accepted=True
+            statut=ADSManagerRequest.ACCEPTE
         ).count()
 
         context["ads_managers_count"] = (
@@ -351,7 +351,7 @@ class PlanSiteView(TemplateView):
                 statut=DemandeGestionPrefecture.ACCEPTE
             )
             liens_plan = []
-            ads_manager_requests = self.request.user.adsmanagerrequest_set.all()
+            ads_manager_requests = self.request.user.ads_manager_requests.all()
             proprietaire_vehicule_relais = self.request.user.proprietaire_set.all()
             if len(demandes_prefecture):
                 administrator = demandes_prefecture.first().administrator

@@ -1,7 +1,10 @@
 from django.conf import settings
 from django.contrib import messages
+from django.core.exceptions import SuspiciousOperation
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.html import format_html
+from django.views.generic import View
 from django.views.generic.edit import FormView
 
 from mesads.common.mail import envoi_email
@@ -105,3 +108,44 @@ class DemandeGestionADSView(FormView):
             "prefecture": ads_manager.administrator.prefecture.display_fulltext(),
             "email": settings.MESADS_CONTACT_EMAIL,
         }
+
+
+class RenouvellementADSManagerRequest(View):
+    def post(self, request, *args, **kwargs):
+        ads_manager_request = get_object_or_404(
+            ADSManagerRequest.objects.select_related("ads_manager__administrator"),
+            user=request.user,
+            ads_manager_id=self.kwargs["manager_id"],
+            statut__in=[
+                ADSManagerRequest.ACCEPTE,
+                ADSManagerRequest.EXPIRE,
+            ],
+        )
+        if not ads_manager_request.renouvelable:
+            raise SuspiciousOperation("Demande non renouvelable")
+
+        administrator = ads_manager_request.ads_manager.administrator
+        demandes_prefecture = administrator.demandes_gestion_prefecture.filter(
+            statut=DemandeGestionPrefecture.ACCEPTE
+        ).select_related("user")
+        emails = [demande.user.email for demande in demandes_prefecture]
+
+        if emails:
+            envoi_email(
+                content_template_txt="pages/email_ads_manager_request_demande_renouvellement.txt",
+                content_template_mjml="pages/email_ads_manager_request_demande_renouvellement.mjml",
+                context={
+                    "demande": ads_manager_request,
+                    "base_url": settings.MESADS_BASE_URL,
+                },
+                destinataires=emails,
+                sujet="Mes ADS - Demande de renouvellement d'accès gestionnaire.",
+            )
+
+        ads_manager_request.demande_renouvellement = True
+        ads_manager_request.save(update_fields=["demande_renouvellement"])
+        messages.success(
+            self.request,
+            "Votre demande de renouvellement a bien été transmise à votre préfecture",
+        )
+        return redirect("app.mes_acces")

@@ -1,0 +1,29 @@
+{% extends "base_mail.mjml" %}
+
+{% block title %}Demande de renouvellement d'accès gestionnaire{% endblock %}
+
+{% block content %}
+<mj-column>
+  <mj-text>
+    <p>
+      L'utilisateur <strong>{{ demande.user.email }}</strong> demande le renouvellement de la permission de gérer les autorisations de stationnement de <strong>{{ demande.ads_manager.content_object.display_fulltext|safe }}</strong>.
+    </p>
+  </mj-text>
+
+  <mj-text>
+    <p>
+      En tant qu'administrateur, vous pouvez renouveler cette permission en cliquant sur le bouton ci-dessous.
+    </p>
+  </mj-text>
+
+  <mj-button href="{{ base_url }}{% url 'app.ads-manager-admin.requests' prefecture_id=demande.ads_manager.administrator.prefecture_id %}?id={{ demande.id }}">
+    Aller sur Mes ADS pour répondre à la demande
+  </mj-button>
+
+  <mj-text font-weight="bold">
+    <p>
+      Attention ! Avant de renouveler une permission, assurez-vous que le demandeur travaille toujours pour l'administration renseignée.
+    </p>
+  </mj-text>
+</mj-column>
+{% endblock %}

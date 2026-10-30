@@ -1,6 +1,8 @@
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from http import HTTPStatus
 
+import pytest
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.core import mail
 from django.urls import reverse
@@ -13,6 +15,8 @@ from mesads.app.models import (
 )
 from mesads.unittest import ClientTestCase
 
+from ..factories import DemandeGestionPrefectureFactory
+
 
 class TestADSManagerAdminRequestsView(ClientTestCase):
     def setUp(self):
@@ -20,7 +24,7 @@ class TestADSManagerAdminRequestsView(ClientTestCase):
         self.ads_manager_request = ADSManagerRequest.objects.create(
             user=self.create_user(),
             ads_manager=self.ads_manager_city35,
-            accepted=None,
+            statut=ADSManagerRequest.EN_ATTENTE,
         )
 
     def test_permissions(self):
@@ -37,58 +41,12 @@ class TestADSManagerAdminRequestsView(ClientTestCase):
                 )
                 self.assertEqual(resp.status_code, expected_status)
 
-    def test_invalid_action(self):
-        resp = self.ads_manager_administrator_35_client.post(
-            f"/espace-prefecture/{self.ads_manager_administrator_35.prefecture_id}/demandes-gestion/",
-            {"action": "xxx", "request_id": 1},
-        )
-        self.assertEqual(resp.status_code, 400)
-
-    def test_invalid_request_id(self):
-        resp = self.ads_manager_administrator_35_client.post(
-            f"/espace-prefecture/{self.ads_manager_administrator_35.prefecture_id}/demandes-gestion/",
-            {"action": "accept", "request_id": 12342},
-        )
-        self.assertEqual(resp.status_code, 404)
-
-    def test_accept(self):
-        self.assertEqual(len(mail.outbox), 0)
-
-        resp = self.ads_manager_administrator_35_client.post(
-            f"/espace-prefecture/{self.ads_manager_administrator_35.prefecture_id}/demandes-gestion/",
-            {"action": "accept", "request_id": self.ads_manager_request.id},
-        )
-        self.assertEqual(resp.status_code, 302)
-        self.assertEqual(
-            resp.url,
-            f"/espace-prefecture/{self.ads_manager_administrator_35.prefecture_id}/demandes-gestion/",
-        )
-        self.ads_manager_request.refresh_from_db()
-        self.assertTrue(self.ads_manager_request.accepted)
-        self.assertEqual(len(mail.outbox), 1)
-
-    def test_deny(self):
-        self.assertEqual(len(mail.outbox), 0)
-
-        resp = self.ads_manager_administrator_35_client.post(
-            f"/espace-prefecture/{self.ads_manager_administrator_35.prefecture_id}/demandes-gestion/",
-            {"action": "deny", "request_id": self.ads_manager_request.id},
-        )
-        self.assertEqual(resp.status_code, 302)
-        self.assertEqual(
-            resp.url,
-            f"/espace-prefecture/{self.ads_manager_administrator_35.prefecture_id}/demandes-gestion/",
-        )
-        self.ads_manager_request.refresh_from_db()
-        self.assertFalse(self.ads_manager_request.accepted)
-        self.assertEqual(len(mail.outbox), 1)
-
     def test_sort(self):
         for ads_manager in ADSManager.objects.all():
             ADSManagerRequest.objects.create(
                 user=self.create_user(),
                 ads_manager=ads_manager,
-                accepted=None,
+                statut=ADSManagerRequest.EN_ATTENTE,
             )
         resp = self.ads_manager_administrator_35_client.get(
             f"/espace-prefecture/{self.ads_manager_administrator_35.prefecture_id}/demandes-gestion/",
@@ -274,7 +232,7 @@ class TestAdsManagerAdministratorView(ClientTestCase):
             ADSManagerRequest.objects.filter(
                 user=self.ads_manager_administrator_35_user,
                 ads_manager=self.ads_manager_city35,
-                accepted=True,
+                statut=ADSManagerRequest.ACCEPTE,
             ).count(),
             1,
         )
@@ -334,3 +292,390 @@ class TestDemandeGestionPrefecture(ClientTestCase):
             email.subject, f"Mes ADS : Demande d'accès préfecture de {self.user.email}"
         )
         self.assertEqual(email.to, [settings.MESADS_CONTACT_EMAIL])
+
+
+# --- ADSManagerRequestsChangeView ---------------------------------------------
+
+
+@pytest.fixture
+def administrateur_client(ads_manager_administrator, user_factory, client_factory):
+    """Client connecté en tant que gestionnaire de la préfecture."""
+    administrateur = user_factory()
+    DemandeGestionPrefectureFactory(
+        user=administrateur,
+        administrator=ads_manager_administrator,
+        statut=DemandeGestionPrefecture.ACCEPTE,
+    )
+    return client_factory(administrateur)
+
+
+@pytest.fixture
+def demande_factory(
+    ads_manager_administrator, ads_manager_factory, ads_manager_request_factory
+):
+    """Demande d'accès sur une administration de la préfecture du fixture
+    ads_manager_administrator."""
+
+    def _demande_factory(**kwargs):
+        return ads_manager_request_factory(
+            manager_=ads_manager_factory(administrator=ads_manager_administrator),
+            **kwargs,
+        )
+
+    return _demande_factory
+
+
+def url_change(demande, action):
+    return reverse(
+        "app.ads-manager-admin-request-change",
+        kwargs={
+            "prefecture_id": demande.ads_manager.administrator.prefecture_id,
+            "ads_manager_request_id": demande.id,
+            "action": action,
+        },
+    )
+
+
+def url_liste(ads_manager_administrator):
+    return reverse(
+        "app.ads-manager-admin.requests",
+        kwargs={"prefecture_id": ads_manager_administrator.prefecture_id},
+    )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "statut", [ADSManagerRequest.EN_ATTENTE, ADSManagerRequest.REFUSE]
+)
+def test_change_autoriser(
+    administrateur_client,
+    ads_manager_administrator,
+    demande_factory,
+    mailoutbox,
+    statut,
+):
+    demande = demande_factory(statut=statut)
+
+    response = administrateur_client.post(url_change(demande, "autoriser"))
+
+    assert response.status_code == 302
+    assert response.url == url_liste(ads_manager_administrator)
+    demande.refresh_from_db()
+    assert demande.statut == ADSManagerRequest.ACCEPTE
+    assert demande.accepted_at == date.today()
+    assert demande.expire_at == date.today() + relativedelta(years=2)
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].to == [demande.user.email]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "statut", [ADSManagerRequest.ACCEPTE, ADSManagerRequest.EXPIRE]
+)
+def test_change_autoriser_statut_invalide(
+    administrateur_client, demande_factory, mailoutbox, statut
+):
+    demande = demande_factory(statut=statut)
+
+    response = administrateur_client.post(url_change(demande, "autoriser"))
+
+    assert response.status_code == 400
+    demande.refresh_from_db()
+    assert demande.statut == statut
+    assert len(mailoutbox) == 0
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "statut",
+    [
+        ADSManagerRequest.EN_ATTENTE,  # refus
+        ADSManagerRequest.ACCEPTE,  # révocation
+    ],
+)
+def test_change_refuser(
+    administrateur_client,
+    ads_manager_administrator,
+    demande_factory,
+    mailoutbox,
+    statut,
+):
+    demande = demande_factory(statut=statut)
+
+    response = administrateur_client.post(url_change(demande, "refuser"))
+
+    assert response.status_code == 302
+    assert response.url == url_liste(ads_manager_administrator)
+    demande.refresh_from_db()
+    assert demande.statut == ADSManagerRequest.REFUSE
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].to == [demande.user.email]
+
+
+@pytest.mark.django_db
+def test_change_renouveler_acceptee_bientot_expiree(
+    administrateur_client, ads_manager_administrator, demande_factory, mailoutbox
+):
+    expire_at = date.today() + timedelta(days=15)
+    demande = demande_factory(
+        statut=ADSManagerRequest.ACCEPTE,
+        expire_at=expire_at,
+        demande_renouvellement=True,
+        notified=True,
+    )
+
+    response = administrateur_client.post(url_change(demande, "renouveler"))
+
+    assert response.status_code == 302
+    assert response.url == url_liste(ads_manager_administrator)
+    demande.refresh_from_db()
+    assert demande.statut == ADSManagerRequest.ACCEPTE
+    # Les droits sont prolongés à partir de la date d'expiration actuelle
+    assert demande.expire_at == expire_at + relativedelta(years=2)
+    assert demande.last_renew == date.today()
+    assert demande.demande_renouvellement is False
+    assert demande.notified is False
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].to == [demande.user.email]
+
+
+@pytest.mark.django_db
+def test_change_renouveler_expiree(administrateur_client, demande_factory):
+    demande = demande_factory(
+        statut=ADSManagerRequest.EXPIRE,
+        expire_at=date.today() - timedelta(days=30),
+        demande_renouvellement=True,
+        notified=True,
+    )
+
+    response = administrateur_client.post(url_change(demande, "renouveler"))
+
+    assert response.status_code == 302
+    demande.refresh_from_db()
+    assert demande.statut == ADSManagerRequest.ACCEPTE
+    # Une demande expirée repart de la date du jour, pas de l'ancienne expiration
+    assert demande.expire_at == date.today() + relativedelta(years=2)
+    assert demande.last_renew == date.today()
+    assert demande.demande_renouvellement is False
+    assert demande.notified is False
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "statut, expire_dans_jours, demande_renouvellement",
+    [
+        # Pas de demande de renouvellement de l'utilisateur
+        (ADSManagerRequest.ACCEPTE, 15, False),
+        (ADSManagerRequest.EXPIRE, -30, False),
+        # Acceptée mais expiration trop lointaine : pas encore renouvelable
+        (ADSManagerRequest.ACCEPTE, 365, True),
+        # Statuts non renouvelables
+        (ADSManagerRequest.EN_ATTENTE, None, True),
+        (ADSManagerRequest.REFUSE, None, True),
+    ],
+)
+def test_change_renouveler_invalide(
+    administrateur_client,
+    demande_factory,
+    statut,
+    expire_dans_jours,
+    demande_renouvellement,
+):
+    expire_at = (
+        date.today() + timedelta(days=expire_dans_jours)
+        if expire_dans_jours is not None
+        else None
+    )
+    demande = demande_factory(
+        statut=statut,
+        expire_at=expire_at,
+        demande_renouvellement=demande_renouvellement,
+    )
+
+    response = administrateur_client.post(url_change(demande, "renouveler"))
+
+    assert response.status_code == 400
+    demande.refresh_from_db()
+    assert demande.statut == statut
+    assert demande.expire_at == expire_at
+    assert demande.last_renew is None
+
+
+@pytest.mark.django_db
+def test_change_action_invalide(administrateur_client, demande_factory):
+    demande = demande_factory(statut=ADSManagerRequest.EN_ATTENTE)
+
+    response = administrateur_client.post(url_change(demande, "xxx"))
+
+    assert response.status_code == 400
+    demande.refresh_from_db()
+    assert demande.statut == ADSManagerRequest.EN_ATTENTE
+
+
+@pytest.mark.django_db
+def test_change_demande_inexistante(administrateur_client, ads_manager_administrator):
+    url = reverse(
+        "app.ads-manager-admin-request-change",
+        kwargs={
+            "prefecture_id": ads_manager_administrator.prefecture_id,
+            "ads_manager_request_id": 999999,
+            "action": "autoriser",
+        },
+    )
+
+    response = administrateur_client.post(url)
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_change_demande_autre_prefecture(
+    administrateur_client,
+    ads_manager_administrator,
+    ads_manager_request_factory,
+):
+    """Un gestionnaire de préfecture ne peut pas modifier une demande d'une autre
+    préfecture en mettant son propre prefecture_id dans l'URL."""
+    demande_autre_prefecture = ads_manager_request_factory(
+        statut=ADSManagerRequest.EN_ATTENTE
+    )
+    url = reverse(
+        "app.ads-manager-admin-request-change",
+        kwargs={
+            "prefecture_id": ads_manager_administrator.prefecture_id,
+            "ads_manager_request_id": demande_autre_prefecture.id,
+            "action": "autoriser",
+        },
+    )
+
+    response = administrateur_client.post(url)
+
+    assert response.status_code == 404
+    demande_autre_prefecture.refresh_from_db()
+    assert demande_autre_prefecture.statut == ADSManagerRequest.EN_ATTENTE
+
+
+@pytest.mark.django_db
+def test_change_permissions(client, client_factory, user_factory, demande_factory):
+    demande = demande_factory(statut=ADSManagerRequest.EN_ATTENTE)
+    url = url_change(demande, "autoriser")
+
+    # Anonyme
+    assert client.post(url).status_code == 404
+    # Utilisateur connecté sans droit sur la préfecture
+    assert client_factory(user_factory()).post(url).status_code == 404
+    # Le demandeur lui-même ne peut pas valider sa propre demande
+    assert client_factory(demande.user).post(url).status_code == 404
+
+    demande.refresh_from_db()
+    assert demande.statut == ADSManagerRequest.EN_ATTENTE
+
+
+@pytest.mark.django_db
+def test_change_get_non_autorise(administrateur_client, demande_factory):
+    demande = demande_factory(statut=ADSManagerRequest.EN_ATTENTE)
+
+    response = administrateur_client.get(url_change(demande, "autoriser"))
+
+    assert response.status_code == 405
+
+
+# --- Boutons d'action dans ads_manager_admin_requests.html -------------------
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "statut, expire_dans_jours, demande_renouvellement, actions_attendues",
+    [
+        (ADSManagerRequest.EN_ATTENTE, None, False, {"autoriser", "refuser"}),
+        (ADSManagerRequest.REFUSE, None, False, {"autoriser"}),
+        (ADSManagerRequest.ACCEPTE, 365, False, {"refuser"}),
+        (ADSManagerRequest.ACCEPTE, 365, True, {"refuser"}),
+        (ADSManagerRequest.ACCEPTE, 15, False, {"refuser"}),
+        (ADSManagerRequest.ACCEPTE, 15, True, {"refuser", "renouveler"}),
+        (ADSManagerRequest.EXPIRE, -30, False, set()),
+        (ADSManagerRequest.EXPIRE, -30, True, {"renouveler"}),
+    ],
+)
+def test_liste_boutons_actions(
+    administrateur_client,
+    ads_manager_administrator,
+    demande_factory,
+    statut,
+    expire_dans_jours,
+    demande_renouvellement,
+    actions_attendues,
+):
+    expire_at = (
+        date.today() + timedelta(days=expire_dans_jours)
+        if expire_dans_jours is not None
+        else None
+    )
+    demande = demande_factory(
+        statut=statut,
+        expire_at=expire_at,
+        demande_renouvellement=demande_renouvellement,
+    )
+
+    response = administrateur_client.get(url_liste(ads_manager_administrator))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    for action in ("autoriser", "refuser", "renouveler"):
+        assert (url_change(demande, action) in content) == (
+            action in actions_attendues
+        ), action
+    if expire_at:
+        assert expire_at.strftime("%d/%m/%Y") in content
+
+
+@pytest.mark.django_db
+def test_liste_filtre_id(
+    administrateur_client, ads_manager_administrator, demande_factory
+):
+    demande = demande_factory(statut=ADSManagerRequest.EN_ATTENTE)
+    autre_demande = demande_factory(statut=ADSManagerRequest.EN_ATTENTE)
+
+    response = administrateur_client.get(
+        url_liste(ads_manager_administrator), {"id": demande.id}
+    )
+
+    assert response.status_code == 200
+    assert list(response.context["ads_manager_requests"]) == [demande]
+    assert response.context["selected_id"] == str(demande.id)
+    assert autre_demande not in response.context["ads_manager_requests"]
+
+
+@pytest.mark.django_db
+def test_liste_filtre_id_autre_prefecture(
+    administrateur_client, ads_manager_administrator, ads_manager_request_factory
+):
+    demande_autre_prefecture = ads_manager_request_factory(
+        statut=ADSManagerRequest.EN_ATTENTE
+    )
+
+    response = administrateur_client.get(
+        url_liste(ads_manager_administrator), {"id": demande_autre_prefecture.id}
+    )
+
+    assert response.status_code == 200
+    assert list(response.context["ads_manager_requests"]) == []
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("valeur", ["", "abc", "-1"])
+def test_liste_filtre_id_invalide_ignore(
+    administrateur_client, ads_manager_administrator, demande_factory, valeur
+):
+    demandes = {
+        demande_factory(statut=ADSManagerRequest.EN_ATTENTE),
+        demande_factory(statut=ADSManagerRequest.EN_ATTENTE),
+    }
+
+    response = administrateur_client.get(
+        url_liste(ads_manager_administrator), {"id": valeur}
+    )
+
+    assert response.status_code == 200
+    assert set(response.context["ads_manager_requests"]) == demandes
+    assert "selected_id" not in response.context

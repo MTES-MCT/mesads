@@ -41,7 +41,8 @@ class ClientTestCase(BaseClientTestCase):
         self.ads_manager_request = ADSManagerRequest.objects.create(
             user=self.ads_manager_city35_user,
             ads_manager=self.ads_manager_city35,
-            accepted=True,
+            statut=ADSManagerRequest.ACCEPTE,
+            accepted_at=date.today(),
         )
 
         # Create User and authenticate flask client

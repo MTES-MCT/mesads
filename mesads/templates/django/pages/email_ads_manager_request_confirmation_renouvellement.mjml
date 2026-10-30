@@ -1,0 +1,35 @@
+{% extends "base_mail.mjml" %}
+
+{% block title %}
+Accès MesADS renouvelé
+{% endblock %}
+
+{% block content %}
+<mj-column>
+  <mj-text>
+    <p>
+      Bonjour,
+    </p>
+    <p>
+      Nous vous confirmons que votre accès gestionnaire des autorisations de stationnement de {{ demande.ads_manager.content_object.display_fulltext|safe }} a été renouvelé jusqu'au {{ demande.expire_at }}.
+    </p>
+    <ul>
+      <li>
+        Pour toute question concernant l'utilisation de l'outil MesADS, vous pouvez consulter la FAQ ou nous contacter par mail (<a href="mailto:{{ email_contact }}">{{ email_contact }}</a>)
+      </li>
+      <li>
+        Pour toute question d'ordre réglementaire, nous vous invitons à contacter votre préfecture.
+      </li>
+    </ul>
+    <p>
+    Nous restons à votre disposition pour tout renseignement complémentaire,
+    </p>
+    <p>
+    Bien cordialement,
+    </p>
+    <p>
+    L'équipe MesADS
+    </p>
+  </mj-text>
+</mj-column>
+{% endblock %}

@@ -1,7 +1,7 @@
 {% extends "base_mail.mjml" %}
 
 {% block title %}
-{% if ads_manager_request.accepted %}
+{% if ads_manager_request.statut == "ACCEPTE" %}
 Demande Mes ADS acceptée
 {% else %}
 Demande Mes ADS refusée
@@ -9,7 +9,7 @@ Demande Mes ADS refusée
 {% endblock %}
 
 {% block content %}
-{% if ads_manager_request.accepted %}
+{% if ads_manager_request.statut == "ACCEPTE" %}
 <mj-column>
   <mj-text>
     <p>
