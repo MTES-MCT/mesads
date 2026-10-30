@@ -4,7 +4,11 @@ import pytest
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
-from mesads.app.models import DemandeAccesLectureSeule, DemandeGestionPrefecture
+from mesads.app.models import (
+    DemandeAcces,
+    DemandeAccesLectureSeule,
+    DemandeGestionPrefecture,
+)
 from mesads.app.tests.factories import (
     ADSManagerAdministratorFactory,
     ADSManagerRequestFactory,
@@ -136,7 +140,7 @@ def test_show_notation_with_last_younger_than_a_month_and_note_older_than_six(
 
 
 def _accept_ads_manager_request(user):
-    ADSManagerRequestFactory(user=user, accepted=True)
+    ADSManagerRequestFactory(user=user, statut=DemandeAcces.ACCEPTE)
 
 
 def _accept_lecture_seule(user):
@@ -193,8 +197,8 @@ def test_permission_mesads(grant):
 
 def test_no_permission_mesads_with_pending_or_refused_requests():
     user = UserFactory()
-    ADSManagerRequestFactory(user=user, accepted=None)
-    ADSManagerRequestFactory(user=user, accepted=False)
+    ADSManagerRequestFactory(user=user, statut=DemandeAcces.EN_ATTENTE)
+    ADSManagerRequestFactory(user=user, statut=DemandeAcces.REFUSE)
     DemandeAccesLectureSeule.objects.create(
         user=user,
         administrator=ADSManagerAdministratorFactory(),

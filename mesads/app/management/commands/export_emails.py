@@ -19,7 +19,7 @@ class Command(BaseCommand):
         writer = csv.writer(sys.stdout)
         query = (
             ADSManagerRequest.objects.filter(
-                accepted=True, ads_manager__no_ads_declared=False
+                statut=ADSManagerRequest.ACCEPTE, ads_manager__no_ads_declared=False
             )
             .annotate(ads_count=Count("ads_manager__ads"))
             .filter(ads_count=0)

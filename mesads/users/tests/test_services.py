@@ -6,7 +6,7 @@ import pytest
 from dateutil.relativedelta import relativedelta
 
 import mesads.users.services as services
-from mesads.app.models import ADSUpdateFile
+from mesads.app.models import ADSUpdateFile, DemandeAcces
 from mesads.app.tests.factories import ADSManagerRequestFactory
 from mesads.users.tests.factories import UserAuditEntryFactory, UserFactory
 
@@ -31,7 +31,7 @@ def sent_emails(monkeypatch):
 
 def user_with_permission(**kwargs):
     user = UserFactory(**kwargs)
-    ADSManagerRequestFactory(user=user, accepted=True)
+    ADSManagerRequestFactory(user=user, statut=DemandeAcces.ACCEPTE)
     return user
 
 

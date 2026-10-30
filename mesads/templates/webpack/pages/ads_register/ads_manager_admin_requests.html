@@ -1,5 +1,5 @@
 {% extends "base_container.html" %}
-
+{% load demande_acces %}
 {% block breadcrumb %}
   <li>
     <a class="fr-breadcrumb__link"
@@ -13,15 +13,6 @@
 {% endblock %}
 
 {% block body-content %}
-  <nav role="navigation" class="fr-breadcrumb" aria-label="vous êtes ici :">
-    <button class="fr-breadcrumb__button"
-            aria-expanded="false"
-            aria-controls="breadcrumb-1">Voir le fil d'Ariane</button>
-    <div class="fr-collapse" id="breadcrumb-1">
-      <ol class="fr-breadcrumb__list">
-      </ol>
-    </div>
-  </nav>
 
   <div class="fr-grid-row fr-grid-row--gutters">
     <div class="fr-col-12 fr-col-lg-8">
@@ -37,127 +28,6 @@
           Avant d’accepter une demande, assurez-vous qu’elle provient bien d’un agent travaillant pour une administration dépendant de votre préfecture. Vous pouvez accepter plusieurs demandes d'accès pour une même commune (ou EPCI) gérée par plusieurs gestionnaires.
         </p>
       </div>
-      <p class="fr-mt-3w">
-        Pour toute question concernant les accès, contactez notre équipe par email à <a href="mailto:{{ MESADS_CONTACT_EMAIL }}">{{ MESADS_CONTACT_EMAIL }}</a>
-      </p>
-      <div class="fr-grid-row">
-        <div class="fr-table fr-table--no-caption fr-table--md fr-table--no-scroll">
-          <div class="fr-table__wrapper">
-            <div class="fr-table__container">
-              <div class="fr-table__content">
-                <table>
-                  <caption>Demandes pour la {{ ads_manager_administrator.prefecture.display_text }}</caption>
-                  <thead>
-                    <tr>
-                      <th>Utilisateur</th>
-                      <th>
-                        {% if sort == "name" %}
-                          Administration ▲
-                        {% else %}
-                          <a href="?sort=name">Administration ▶</a>
-                        {% endif %}
-                      </th>
-                      <th>
-                        {% if sort == "name" %}
-                          <a href="?">Date de la demande ▶</a>
-                        {% else %}
-                          Date de la demande ▲
-                        {% endif %}
-                      </th>
-                      <th>Dernière connexion de l'utilisateur</th>
-                      <th>Statut</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for ads_manager_request in ads_manager_requests %}
-                      <tr class="table-row-{% if ads_manager_request.accepted is True %}success{% elif ads_manager_request.accepted is False %}failure{% else %}unknown{% endif %}">
-                        <td {% if ads_manager_request.accepted is False %}class="line-through"{% endif %}>
-                          {{ ads_manager_request.user.email }}
-                        </td>
-                        <td>{{ ads_manager_request.ads_manager.content_object.display_text|capfirst }}</td>
-                        <td>{{ ads_manager_request.created_at|date:"d/m/Y" }}</td>
-                        <td>{{ ads_manager_request.user.last_login|date:"d/m/Y" }}</td>
-                        <td>
-                          {% comment %}
-                        Display the button to accept/deny when the request is pending.
-
-                        In the past, we used to also display the buttons when the request
-                        was accepted or denied. It was error prone. Instead, we want the
-                        users to contact our team to revoke an access, or grant when the
-                        request has been mistakenly denied.
-                          {% endcomment %}
-                          {% if ads_manager_request.accepted is None %}
-                            <div class="fr-grid-row fr-grid-row--gutters">
-                              <div class="fr-p-1w">
-                                <form method="post">
-                                  {% csrf_token %}
-                                  <input type="hidden" name="request_id" value="{{ ads_manager_request.id }}" />
-                                  <input type="hidden" name="action" value="accept" />
-                                  <button title="Accepter" type="submit" class="fr-btn fr-btn--tertiary fr-btn--sm">
-                                    <span aria-hidden="true" class="fr-icon-check-line"></span>
-                                    <span class="fr-sr-only">Accepter</span>
-                                  </button>
-                                </form>
-                              </div>
-                              <div class="fr-p-1w">
-                                <form method="post">
-                                  {% csrf_token %}
-                                  <input type="hidden" name="request_id" value="{{ ads_manager_request.id }}" />
-                                  <input type="hidden" name="action" value="deny" />
-                                  <button title="Refuser" type="submit" class="fr-btn fr-btn--tertiary fr-btn--sm">
-                                    <span aria-hidden="true" class="fr-icon-close-line"></span>
-                                    <span class="fr-sr-only">Refuser</span>
-                                  </button>
-                                </form>
-                              </div>
-                            </div>
-                          {% else %}
-                            <div>
-                              Demande
-                              {% if ads_manager_request.accepted %}
-                                <strong>acceptée</strong>
-                              {% else %}
-                                <strong>refusée</strong>
-                              {% endif %}
-                              {% if ads_manager_request.last_update_at %}le {{ ads_manager_request.last_update_at|date:"d/m/Y" }}{% endif %}
-                            {% endif %}
-                          </div>
-                        </td>
-                        <td>
-                          {% if ads_manager_request.accepted %}
-                            <form method="post">
-                              {% csrf_token %}
-                              <input type="hidden" name="request_id" value="{{ ads_manager_request.id }}" />
-                              <input type="hidden" name="action" value="revoke" />
-                              <button class="fr-btn" type="submit">
-                                Révoquer
-                              </button>
-                            </form>
-                          {% elif ads_manager_request.accepted is not None %}
-                            <form method="post">
-                              {% csrf_token %}
-                              <input type="hidden" name="request_id" value="{{ ads_manager_request.id }}" />
-                              <input type="hidden" name="action" value="authorize" />
-                              <button class="fr-btn" type="submit">
-                                Autoriser
-                              </button>
-                            </form>
-                          {% endif %}
-                        </td>
-                      </tr>
-                    {% empty %}
-                      <tr>
-                        <td colspan="4">Aucune demande en cours</td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
     
     <div class="fr-col-12 fr-col-lg-4">
@@ -166,6 +36,114 @@
         alt=""
         src="../../images/logo_prefecture.png"
       />
+    </div>
+  </div>
+
+  <div class="fr-table fr-table--no-caption fr-table--md fr-table--no-scroll">
+    <form method="get" class="fr-grid-row fr-grid-row--gutters fr-grid-row--bottom fr-mb-2w">
+      <div class="fr-col-12 fr-col-md-6">
+        <div class="fr-search-bar" role="search">
+          <label class="fr-label" for="search-input"> Rechercher </label>
+          <input class="fr-input" aria-describedby="search-input-messages" placeholder="Rechercher" name="search" id="search-input" type="search" value="{{search}}">
+          <div class="fr-messages-group" id="search-input-messages" aria-live="polite">
+          </div>
+          <button title="Rechercher" type="submit" class="fr-btn">Rechercher</button>
+        </div>
+      </div>
+
+      <div class="fr-col-12 fr-col-md-3">
+        <div class="fr-select-group fr-mb-0">
+          <label class="fr-label" for="statut-select"> Statut </label>
+          <select onchange="this.form.requestSubmit()" class="fr-select" aria-describedby="statut-select-1-messages" id="statut-select" name="statut">
+            <option value="" {% if not selected_statut %}selected{% endif %}>Sélectionnez une option</option>
+            {% for statut in statuts %}
+              <option {% if selected_statut == statut.0 %}selected{% endif %} value="{{statut.0}}">{{statut.1}}</option>
+            {% endfor %}
+          </select>
+          <div class="fr-messages-group" id="statut-select-1-messages" aria-live="polite">
+          </div>
+        </div>
+      </div>
+    </form>
+    {% if selected_id %}
+      <p class="fr-mb-2w">
+        Affichage de la demande n°{{ selected_id }} uniquement.
+        <a class="fr-link" href="{% url 'app.ads-manager-admin.requests' prefecture_id=ads_manager_administrator.prefecture.id %}">Voir toutes les demandes</a>
+      </p>
+    {% endif %}
+    <div class="fr-table__wrapper">
+      <div class="fr-table__container">
+        <div class="fr-table__content">
+          <table>
+            <caption>Demandes pour la {{ ads_manager_administrator.prefecture.display_text }}</caption>
+            <thead>
+              <tr>
+                <th>Utilisateur</th>
+                <th>Administration</th>
+                <th>Date de la demande</th>
+                <th>Dernière connexion de l'utilisateur</th>
+                <th>Statut</th>
+                <th>Date d'expiration</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ads_manager_request in ads_manager_requests %}
+                <tr class="table-row-{% if ads_manager_request.statut == "ACCEPTE" %}success{% elif ads_manager_request.statut == "REFUSE" %}failure{% else %}unknown{% endif %}">
+                  <td {% if ads_manager_request.statut == "REFUSE" %}class="line-through"{% endif %}>
+                    {{ ads_manager_request.user.email }}
+                  </td>
+                  <td>{{ ads_manager_request.ads_manager.content_object.display_text|capfirst }}</td>
+                  <td>{{ ads_manager_request.created_at|date:"d/m/Y" }}</td>
+                  <td>{{ ads_manager_request.user.last_login|date:"d/m/Y" }}</td>
+                  <td>
+                    <p class="fr-badge {{ads_manager_request|statut_css_class}} fr-badge--no-icon">
+                      {{ads_manager_request.get_statut_display}}
+                    </p>
+                  </td>
+                  <td>{{ ads_manager_request.expire_at|date:"d/m/Y"|default:"-" }}</td>
+                  <td>
+                    <ul class="fr-btns-group fr-btns-group--sm fr-btns-group--inline">
+                      {% if ads_manager_request.statut == ads_manager_request.EN_ATTENTE or ads_manager_request.statut == ads_manager_request.REFUSE %}
+                        <li>
+                          <form method="post" action="{% url 'app.ads-manager-admin-request-change' prefecture_id=ads_manager_administrator.prefecture.id ads_manager_request_id=ads_manager_request.id action='autoriser' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="fr-btn">Autoriser</button>
+                          </form>
+                        </li>
+                      {% endif %}
+
+                      {% if ads_manager_request.statut == ads_manager_request.EN_ATTENTE or ads_manager_request.statut == ads_manager_request.ACCEPTE %}
+                        <li>
+                          <form method="post" action="{% url 'app.ads-manager-admin-request-change' prefecture_id=ads_manager_administrator.prefecture.id ads_manager_request_id=ads_manager_request.id action='refuser' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="fr-btn fr-btn--secondary">
+                              {% if ads_manager_request.statut == ads_manager_request.ACCEPTE %}Révoquer{% else %}Refuser{% endif %}
+                            </button>
+                          </form>
+                        </li>
+                      {% endif %}
+
+                      {% if ads_manager_request.renouvelable and ads_manager_request.demande_renouvellement %}
+                        <li>
+                          <form method="post" action="{% url 'app.ads-manager-admin-request-change' prefecture_id=ads_manager_administrator.prefecture.id ads_manager_request_id=ads_manager_request.id action='renouveler' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="fr-btn fr-btn--tertiary">Renouveler</button>
+                          </form>
+                        </li>
+                      {% endif %}
+                    </ul>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="7">Aucune demande en cours</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
   

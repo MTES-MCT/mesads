@@ -75,7 +75,7 @@ def notify_managers_for_verification(prefecture, progress):
         recipients = [
             req.user.email
             for req in ADSManagerRequest.objects.filter(
-                ads_manager=ads_manager, accepted=True
+                ads_manager=ads_manager, statut=ADSManagerRequest.ACCEPTE
             )
         ]
 

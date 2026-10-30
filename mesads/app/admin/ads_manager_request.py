@@ -35,28 +35,15 @@ class ADSManagerRequestAdmin(VersionAdmin):
         "created_at",
         "user",
         "administration",
-        "accepted",
+        "statut",
     )
     ordering = ("-created_at",)
     list_filter = (
-        "accepted",
+        "statut",
         "user__is_active",
         AdministratorSelectFilter,
     )
     search_fields = ("user__email",)
-
-    fields = (
-        "user",
-        "ads_manager",
-        "accepted",
-        "created_at",
-        "last_update_at",
-    )
-
-    readonly_fields = (
-        "created_at",
-        "last_update_at",
-    )
 
     actions = ["download_as_csv"]
 
@@ -71,7 +58,7 @@ class ADSManagerRequestAdmin(VersionAdmin):
                 "Identifiant du gestionnaire ADS",
                 "Nom du gestionnaire",
                 "Statut de la demande",
-                "Dernière mise à jour",
+                "Date d'acceptation",
             ]
         )
         for obj in queryset:
@@ -81,10 +68,8 @@ class ADSManagerRequestAdmin(VersionAdmin):
                     obj.user.email,
                     obj.ads_manager.id,
                     obj.ads_manager.content_object.display_text(),
-                    {True: "Acceptée", False: "Rejetée", None: "Sans réponse"}[
-                        obj.accepted
-                    ],
-                    obj.last_update_at,
+                    obj.get_statut_display(),
+                    obj.accepted_at,
                 ]
             )
         return response

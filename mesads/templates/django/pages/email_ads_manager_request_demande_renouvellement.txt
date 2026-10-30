@@ -1,0 +1,11 @@
+{% extends "base_mail.txt" %}
+
+{% block body %}
+L'utilisateur {{ demande.user.email }} demande le renouvellement de la permission de gérer les autorisations de stationnement de {{ demande.ads_manager.content_object.display_fulltext|safe }}.
+
+En tant qu'administrateur, vous pouvez renouveler cette permission.
+
+Rendez-vous sur MesADS sur {{ base_url }}{% url 'app.ads-manager-admin.requests' prefecture_id=demande.ads_manager.administrator.prefecture_id %}?id={{ demande.id }} pour répondre à la demande.
+
+Attention ! Avant de renouveler une permission, assurez-vous que le demandeur travaille toujours pour l'administration renseignée.
+{% endblock %}

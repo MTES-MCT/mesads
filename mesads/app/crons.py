@@ -8,7 +8,9 @@ from django_cron import CronJobBase, Schedule
 from sentry_sdk import capture_exception
 
 from mesads.app.services.demande_gestion import (
+    notify_ads_manager_request,
     notify_demande_gestion_prefecture,
+    update_statut_ads_manager_request,
     update_statut_demande_gestion_prefecture,
 )
 from mesads.app.services.liste_attente import (
@@ -161,3 +163,27 @@ class UpdateStatutDemandeGestionPrefecture(CronJobBase):
     def do(self):
         nb_notifications = update_statut_demande_gestion_prefecture()
         return f"{nb_notifications} demandes ont expirés"
+
+
+class NotificationExpirationADSManagerRequest(CronJobBase):
+    # Tous les jours
+    schedule = Schedule(run_every_mins=60 * 24)
+
+    code = "notification_expiration_ads_manager_request"
+
+    @sentry_exceptions
+    def do(self):
+        nb_notifications = notify_ads_manager_request()
+        return f"{nb_notifications} notifications ont été envoyées"
+
+
+class UpdateStatutADSManagerRequest(CronJobBase):
+    # Tous les jours
+    schedule = Schedule(run_every_mins=60 * 24)
+
+    code = "update_statut_ads_manager_request"
+
+    @sentry_exceptions
+    def do(self):
+        nb_expirees = update_statut_ads_manager_request()
+        return f"{nb_expirees} demandes de gestion ADS ont expiré"

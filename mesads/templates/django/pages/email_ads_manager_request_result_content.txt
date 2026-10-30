@@ -1,7 +1,7 @@
 {% extends "base_mail.txt" %}
 
 {% block body %}
-{% if not ads_manager_request.accepted %}
+{% if not ads_manager_request.statut == "ACCEPTE" %}
 Votre demande pour gérer les autorisations de stationnement de {{ ads_manager_request.ads_manager.content_object.display_fulltext|safe }} a été refusée.
 
 Si vous pensez qu'il s'agit d'une erreur, contactez votre préfecture ou notre équipe par email sur {{ MESADS_CONTACT_EMAIL }}.

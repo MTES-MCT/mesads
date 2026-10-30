@@ -1,6 +1,6 @@
 from django.views.generic import TemplateView
 
-from mesads.app.models import DemandeGestionPrefecture
+from mesads.app.models import ADSManagerRequest, DemandeGestionPrefecture
 
 
 class PermissionsUserListView(TemplateView):
@@ -8,12 +8,18 @@ class PermissionsUserListView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        permissions_prefecture = DemandeGestionPrefecture.objects.filter(
+        context["permissions_prefecture"] = DemandeGestionPrefecture.objects.filter(
             user=self.request.user,
             statut__in=[
                 DemandeGestionPrefecture.ACCEPTE,
                 DemandeGestionPrefecture.EXPIRE,
             ],
         )
-        context["permissions_prefecture"] = permissions_prefecture
+        context["permissions_gestionnaire"] = ADSManagerRequest.objects.filter(
+            user=self.request.user,
+            statut__in=[
+                ADSManagerRequest.ACCEPTE,
+                ADSManagerRequest.EXPIRE,
+            ],
+        )
         return context

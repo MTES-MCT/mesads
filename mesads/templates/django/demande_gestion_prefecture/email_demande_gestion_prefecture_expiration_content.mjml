@@ -11,14 +11,14 @@ MesADS - Expiration de vos droits d'accès
       Bonjour,
     </p>
     <p>
-      Vos droits de gestionnaires sur {{demande.adminstrator.prefecture.display_fulltext}} vont arriver à terme le {{demande.expire_at}}
+      Vos droits de gestionnaire sur {{demande.administrator.prefecture.display_fulltext|safe}} vont arriver à terme le {{demande.expire_at}}
     </p>
     <ul>
       <li>
-        Vous pouvez les renouveller en vous rendant sur la page suivante: <a href="{{base_url}}{% url 'app.mes_acces' %}">Mes accès</a>
+        Vous pouvez les renouveler en vous rendant sur la page suivante: <a href="{{base_url}}{% url 'app.mes_acces' %}">Mes accès</a>
       </li>
       <li>
-        En l'absence d'action de votre part, vos accès expireront automatiquement à la date mentionné ci dessus.
+        En l'absence d'action de votre part, vos accès expireront automatiquement à la date mentionnée ci-dessus.
       </li>
     </ul>
     <p>

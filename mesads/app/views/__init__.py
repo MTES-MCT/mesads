@@ -19,12 +19,14 @@ from .ads_manager_admin import (  # noqa: F401
     ADSManagerAdminRequestsView,
     ADSManagerAdminUpdatesView,
     ADSManagerExportView,
+    ADSManagerRequestsChangeView,
     DemandeGestionPrefectureView,
     PrefectureExportView,
     RenouvellementDemandeGestionPrefecture,
 )
 from .ads_manager_request import (  # noqa: F401
     DemandeGestionADSView,
+    RenouvellementADSManagerRequest,
 )
 from .arretes import ListeArretesFilesView, TelechargementArreteView  # noqa: F401
 from .consultation_ads_views import (  # noqa: F401

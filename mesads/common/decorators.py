@@ -24,7 +24,7 @@ def is_manager(user, *args, **kwargs):
         manager_request = ADSManagerRequest.objects.filter(
             user=user,
             ads_manager__id=kwargs.get("manager_id"),
-            accepted=True,
+            statut=ADSManagerRequest.ACCEPTE,
         ).first()
         if not manager_request:
             return False

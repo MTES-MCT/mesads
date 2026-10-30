@@ -31,6 +31,13 @@ url_prefectures = [
         # A GARDER
     ),
     path(
+        "espace-prefecture/<int:prefecture_id>/demandes-gestion/<int:ads_manager_request_id>/<str:action>/",
+        profil_required(is_staff, is_administrator)(
+            views.ADSManagerRequestsChangeView.as_view()
+        ),
+        name="app.ads-manager-admin-request-change",
+    ),
+    path(
         "espace-prefecture/<int:prefecture_id>/changements",
         profil_required(is_staff, is_administrator)(
             views.ADSManagerAdminUpdatesView.as_view()
@@ -68,6 +75,11 @@ url_gestionnaire = [
         "registre_ads/demande_gestion_ads/",
         login_required(views.DemandeGestionADSView.as_view()),
         name="app.ads-manager.demande_gestion_ads",
+    ),
+    path(
+        "mes-acces/gestionnaire/<int:manager_id>/renouvellement",
+        login_required(views.RenouvellementADSManagerRequest.as_view()),
+        name="app.ads-manager.renouvellement_demande_gestion",
     ),
     path(
         "registre_ads/gestion/<int:manager_id>/",

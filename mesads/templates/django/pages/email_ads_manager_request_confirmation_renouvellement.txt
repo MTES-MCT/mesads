@@ -1,0 +1,17 @@
+{% extends "base_mail.txt" %}
+
+{% block body %}
+
+Bonjour,
+
+Nous vous confirmons que votre accès gestionnaire des autorisations de stationnement de {{ demande.ads_manager.content_object.display_fulltext|safe }} a été renouvelé jusqu'au {{ demande.expire_at }}.
+
+- Pour toute question concernant l'utilisation de l'outil MesADS, vous pouvez consulter la FAQ ou nous contacter par mail ({{ email_contact }})
+- Pour toute question d'ordre réglementaire, nous vous invitons à contacter votre préfecture.
+
+Nous restons à votre disposition pour tout renseignement complémentaire,
+
+Bien cordialement,
+
+L'équipe MesADS
+{% endblock %}
