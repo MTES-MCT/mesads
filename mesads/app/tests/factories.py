@@ -32,21 +32,16 @@ class ADSManagerFactory(factory.django.DjangoModelFactory):
 
     administrator = factory.SubFactory(ADSManagerAdministratorFactory)
 
-    class Params:
-        for_object = None
+    for_object = factory.SubFactory(CommuneFactory)
 
+    class Params:
         for_prefecture = factory.Trait(for_object=factory.SubFactory(PrefectureFactory))
         for_epci = factory.Trait(for_object=factory.SubFactory(EPCIFactory))
-        for_commune = factory.Trait(for_object=factory.SubFactory(CommuneFactory))
 
     content_type = factory.LazyAttribute(
         lambda o: ContentType.objects.get_for_model(o.for_object)
-        if o.for_object is not None
-        else None
     )
-    object_id = factory.LazyAttribute(
-        lambda o: o.for_object.pk if o.for_object is not None else None
-    )
+    object_id = factory.LazyAttribute(lambda o: o.for_object.pk)
 
 
 class ADSManagerRequestFactory(factory.django.DjangoModelFactory):

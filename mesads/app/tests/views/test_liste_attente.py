@@ -41,7 +41,7 @@ class ClientTestCase(BaseClientTestCase):
     def setUp(self):
         super().setUp()
         self.client, self.user = self.create_client()
-        self.ads_manager = ADSManagerFactory(for_commune=True)
+        self.ads_manager = ADSManagerFactory()
         self.ads_manager_request = ADSManagerRequestFactory(
             user=self.user, ads_manager=self.ads_manager
         )
@@ -105,7 +105,7 @@ def test_set_next_date_fin_validite(inscription, date_fin):
 class TestListeAttenteView(ClientTestCase):
     def test_get_liste_attente(self):
         inscription = InscriptionListeAttenteFactory(ads_manager=self.ads_manager)
-        other_ads_manager = ADSManagerFactory(for_commune=True)
+        other_ads_manager = ADSManagerFactory()
         other_inscription = InscriptionListeAttenteFactory(
             ads_manager=other_ads_manager
         )
@@ -145,7 +145,7 @@ class TestListeAttenteView(ClientTestCase):
 class TestListeAttenteArchivesView(ClientTestCase):
     def test_get_liste_attente_archives(self):
         inscription = InscriptionListeAttenteFactory(ads_manager=self.ads_manager)
-        other_ads_manager = ADSManagerFactory(for_commune=True)
+        other_ads_manager = ADSManagerFactory()
         other_inscription = InscriptionListeAttenteFactory(
             ads_manager=other_ads_manager
         )
@@ -501,7 +501,7 @@ class TestModificationInscriptionListeAttenteView(ClientTestCase):
         )
 
     def test_get_formulaire_modification_inscription_wrong_ads_manager(self):
-        ads_manager = ADSManagerFactory(for_commune=True)
+        ads_manager = ADSManagerFactory()
         ADSManagerRequestFactory(user=self.user, ads_manager=ads_manager)
         inscription = InscriptionListeAttenteFactory(ads_manager=self.ads_manager)
         self.assertEqual(InscriptionListeAttente.objects.count(), 1)
@@ -624,7 +624,7 @@ class TestFormulaireArchivageView(ClientTestCase):
         )
 
     def test_get_formulaire_archivage_inscription_wrong_manager(self):
-        ads_manager = ADSManagerFactory(for_commune=True)
+        ads_manager = ADSManagerFactory()
         ADSManagerRequestFactory(user=self.user, ads_manager=ads_manager)
         inscription = InscriptionListeAttenteFactory(ads_manager=self.ads_manager)
         self.assertEqual(InscriptionListeAttente.objects.count(), 1)
@@ -728,7 +728,7 @@ class TestRestaurationInscriptionView(ClientTestCase):
         assert inscription.commentaire == ""
 
     def test_post_restauration_inscription_other_manager(self):
-        ads_manager = ADSManagerFactory(for_commune=True)
+        ads_manager = ADSManagerFactory()
         inscription = InscriptionListeAttenteFactory(
             ads_manager=ads_manager,
             deleted_at=timezone.now(),

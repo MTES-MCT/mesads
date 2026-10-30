@@ -20,8 +20,8 @@ class ClientTestCase(BaseClientTestCase):
     def setUp(self):
         super().setUp()
         self.client, self.user = self.create_client()
-        self.ads_manager = ADSManagerFactory(for_commune=True)
-        self.other_manager = ADSManagerFactory(for_commune=True)
+        self.ads_manager = ADSManagerFactory()
+        self.other_manager = ADSManagerFactory()
         self.ads_manager_request = ADSManagerRequestFactory(
             user=self.user, ads_manager=self.ads_manager
         )

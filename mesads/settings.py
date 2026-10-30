@@ -150,7 +150,8 @@ CRON_CLASSES = [
     "mesads.app.crons.DeleteOldUsers",
     "mesads.app.crons.NotificationListeAttente",
     "mesads.app.crons.NotificationVerification",
-    "mesads.app.crons.SupressionInscriptionsArchivees",
+    "mesads.app.crons.SuppressionInscriptionsArchivees",
+    "mesads.app.crons.NotifyOldUsers",
 ]
 
 AUTH_USER_MODEL = "users.User"
