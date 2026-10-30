@@ -7,10 +7,7 @@ from django.utils.safestring import mark_safe
 from mesads.fradm.models import EPCI, Aeroport, Commune, Prefecture
 
 from ..forms import ADSImportForm
-from ..models import (
-    ADSManager,
-    ADSManagerDecree,
-)
+from ..models import ADSManager, ADSManagerDecree, ADSManagerRequest
 from ..services.import_ads import import_ads_from_excel
 
 
@@ -58,7 +55,8 @@ class ADSManagerRequestCount(admin.SimpleListFilter):
 
         queryset = queryset.annotate(
             ads_manager_request_count=Count(
-                "adsmanagerrequest", filter=Q(adsmanagerrequest__accepted=True)
+                "adsmanagerrequest",
+                filter=Q(adsmanagerrequest__statut=ADSManagerRequest.ACCEPTE),
             )
         )
         if self.value() == "yes":
@@ -164,7 +162,9 @@ class ADSManagerAdmin(admin.ModelAdmin):
 
     @admin.display(description="Gestionnaire configuré ?")
     def display_ads_manager_request_count(self, ads_manager):
-        if ads_manager.adsmanagerrequest_set.filter(accepted=True).count():
+        if ads_manager.adsmanagerrequest_set.filter(
+            statut=ADSManagerRequest.ACCEPTE
+        ).count():
             return "✅"
         return "❌"
 
@@ -234,9 +234,15 @@ class ADSManagerAdmin(admin.ModelAdmin):
         url = (
             reverse("admin:app_adsmanagerrequest_changelist") + f"?ads_manager={obj.id}"
         )
-        accepted = obj.adsmanagerrequest_set.filter(accepted=True).count()
-        pending = obj.adsmanagerrequest_set.filter(accepted=None).count()
-        refused = obj.adsmanagerrequest_set.filter(accepted=False).count()
+        accepted = obj.adsmanagerrequest_set.filter(
+            statut=ADSManagerRequest.ACCEPTE
+        ).count()
+        pending = obj.adsmanagerrequest_set.filter(
+            statut=ADSManagerRequest.EN_ATTENTE
+        ).count()
+        refused = obj.adsmanagerrequest_set.filter(
+            statut=ADSManagerRequest.REFUSE
+        ).count()
         return mark_safe(
             f"""
             <a href="{url}">Voir les {accepted + pending + refused} demandes</a>

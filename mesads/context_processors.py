@@ -23,7 +23,7 @@ def user_roles(request):
         gestionnaire_prefecture = request.user.demandes_gestion_prefecture.filter(
             statut=DemandeGestionPrefecture.ACCEPTE
         )
-        ads_manager_requests = request.user.adsmanagerrequest_set.all()
+        ads_manager_requests = request.user.ads_manager_requests.all()
         proprietaire_vehicule_relais = request.user.proprietaire_set.all()
         inspecteurs = request.user.demandes_acces_lecture_seule.filter(
             statut=DemandeAccesLectureSeule.ACCEPTE

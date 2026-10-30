@@ -32,7 +32,7 @@ def set_next_date_fin_validite(obj: InscriptionListeAttente):
 def _notification_doublon(inscription: InscriptionListeAttente):
     ads_manager = inscription.ads_manager
     ads_manager_requests = ADSManagerRequest.objects.filter(
-        ads_manager=ads_manager, accepted=True
+        ads_manager=ads_manager, statut=ADSManagerRequest.ACCEPTE
     )
     emails = [
         ads_manager_request.user.email for ads_manager_request in ads_manager_requests

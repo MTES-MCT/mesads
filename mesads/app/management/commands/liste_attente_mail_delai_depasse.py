@@ -20,9 +20,9 @@ class Command(BaseCommand):
 
         for ads_manager in (
             ADSManager.objects.prefetch_related(
-                "adsmanagerrequest_set", "adsmanagerrequest_set__user"
+                "ads_manager_requests", "ads_manager_requests__user"
             )
-            .filter(adsmanagerrequest__accepted=True)
+            .filter(ads_manager_requests__statut=ADSManagerRequest.ACCEPTE)
             .distinct()
         ):
             inscriptions = (
@@ -41,7 +41,7 @@ class Command(BaseCommand):
             )
             if inscriptions.count() > 0:
                 ads_manager_requests = ADSManagerRequest.objects.filter(
-                    ads_manager=ads_manager, accepted=True
+                    ads_manager=ads_manager, statut=ADSManagerRequest.ACCEPTE
                 )
                 emails = [
                     ads_manager_request.user.email

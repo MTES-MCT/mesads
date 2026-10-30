@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, timedelta
 
 from django.conf import settings
 from django.contrib import messages
@@ -112,7 +112,7 @@ class ADSManagerAdministratorListeGestionnaires(ADSManagerAdministratorMixin, Li
         nb_requests_subq = Subquery(
             ADSManagerRequest.objects.filter(
                 ads_manager=OuterRef("pk"),
-                accepted=True,
+                statut=ADSManagerRequest.ACCEPTE,
             )
             .values("ads_manager")
             .annotate(c=Count("pk"))
@@ -243,7 +243,10 @@ class ADSManagerAdministratorListeGestionnaires(ADSManagerAdministratorMixin, Li
             ADSManager, id=request.POST.get("ads_manager_id")
         )
         ADSManagerRequest.objects.create(
-            user=self.request.user, ads_manager=ads_manager, accepted=True
+            user=self.request.user,
+            ads_manager=ads_manager,
+            statut=ADSManagerRequest.ACCEPTE,
+            accepted_at=date.today(),
         )
         url_access = reverse(
             "app.ads-manager-admin.requests",
@@ -313,9 +316,9 @@ class ADSManagerAdminRequestsView(ADSManagerAdministratorMixin, TemplateView):
         ads_manager_request = get_object_or_404(ADSManagerRequest, id=request_id)
 
         if action == "accept" or action == "authorize":
-            ads_manager_request.accepted = True
+            ads_manager_request.statut = ADSManagerRequest.ACCEPTE
         else:
-            ads_manager_request.accepted = False
+            ads_manager_request.statut = ADSManagerRequest.ACCEPTE
         ads_manager_request.save()
 
         # Send notification to user

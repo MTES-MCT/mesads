@@ -44,7 +44,7 @@
               <h2 class="fr-card__title">
                 {{ ads_manager_request.ads_manager.content_object.display_text|capfirst }}
               </h2>
-              {% if ads_manager_request.accepted %}
+              {% if ads_manager_request.statut == "ACCEPTE" %}
                 <p class="fr-card__desc">{{ads_manager_request.nb_ads}} ADS enregistrées.</p>
                 <div class="fr-card__end">
                   <span class="mb-2">
@@ -76,13 +76,13 @@
                 </div>
                 {% endif %}
 
-              {% elif ads_manager.request.accepted is None %}
+              {% elif ads_manager.request.statut == "EN_ATTENTE" %}
                 <div class="fr-card__start">
                   <span>
                     <p
-                      class="fr-badge {% if ads_manager_request.accepted == False %}fr-badge--error{% endif %}"
+                      class="fr-badge {% if ads_manager_request.statut == 'REFUSE' %}fr-badge--error{% endif %}"
                     >
-                      {% if ads_manager_request.accepted is None %}
+                      {% if ads_manager_request.statut == "EN_ATTENTE" %}
                       Accès en attente
                       {% else %}
                       Accès refusé

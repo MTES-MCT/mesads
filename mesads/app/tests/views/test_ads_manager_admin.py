@@ -20,7 +20,7 @@ class TestADSManagerAdminRequestsView(ClientTestCase):
         self.ads_manager_request = ADSManagerRequest.objects.create(
             user=self.create_user(),
             ads_manager=self.ads_manager_city35,
-            accepted=None,
+            statut=ADSManagerRequest.EN_ATTENTE,
         )
 
     def test_permissions(self):
@@ -64,7 +64,7 @@ class TestADSManagerAdminRequestsView(ClientTestCase):
             f"/espace-prefecture/{self.ads_manager_administrator_35.prefecture_id}/demandes-gestion/",
         )
         self.ads_manager_request.refresh_from_db()
-        self.assertTrue(self.ads_manager_request.accepted)
+        self.assertEqual(self.ads_manager_request.statut, ADSManagerRequest.ACCEPTE)
         self.assertEqual(len(mail.outbox), 1)
 
     def test_deny(self):
@@ -80,7 +80,7 @@ class TestADSManagerAdminRequestsView(ClientTestCase):
             f"/espace-prefecture/{self.ads_manager_administrator_35.prefecture_id}/demandes-gestion/",
         )
         self.ads_manager_request.refresh_from_db()
-        self.assertFalse(self.ads_manager_request.accepted)
+        self.assertEqual(self.ads_manager_request.statut, ADSManagerRequest.ACCEPTE)
         self.assertEqual(len(mail.outbox), 1)
 
     def test_sort(self):
@@ -88,7 +88,7 @@ class TestADSManagerAdminRequestsView(ClientTestCase):
             ADSManagerRequest.objects.create(
                 user=self.create_user(),
                 ads_manager=ads_manager,
-                accepted=None,
+                statut=ADSManagerRequest.EN_ATTENTE,
             )
         resp = self.ads_manager_administrator_35_client.get(
             f"/espace-prefecture/{self.ads_manager_administrator_35.prefecture_id}/demandes-gestion/",
@@ -274,7 +274,7 @@ class TestAdsManagerAdministratorView(ClientTestCase):
             ADSManagerRequest.objects.filter(
                 user=self.ads_manager_administrator_35_user,
                 ads_manager=self.ads_manager_city35,
-                accepted=True,
+                statut=ADSManagerRequest.ACCEPTE,
             ).count(),
             1,
         )
