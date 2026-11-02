@@ -23,6 +23,7 @@ from mesads.common.mixins import (
     SmartValidationMixin,
     SoftDeleteMixin,
 )
+from mesads.common.validators import validate_file_size, validate_file_type
 from mesads.fradm.models import EPCI, Aeroport, Commune, Prefecture
 
 
@@ -188,7 +189,12 @@ class ADSManagerDecree(models.Model):
         null=True, blank=True, verbose_name="Nombre d'ADS autorisées"
     )
 
-    file = models.FileField(upload_to=get_decree_filename, null=False, blank=False)
+    file = models.FileField(
+        upload_to=get_decree_filename,
+        null=False,
+        blank=False,
+        validators=[validate_file_size, validate_file_type],
+    )
 
     def __str__(self):
         return f"Decree for ADSManager {self.ads_manager.id}"
@@ -954,6 +960,7 @@ class ADSLegalFile(
         null=False,
         max_length=512,
         verbose_name="Fichier",
+        validators=[validate_file_size, validate_file_type],
     )
 
     class Meta:

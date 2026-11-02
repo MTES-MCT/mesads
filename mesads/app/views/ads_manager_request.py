@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib import messages
 from django.urls import reverse
+from django.utils.html import format_html
 from django.views.generic.edit import FormView
 
 from mesads.common.mail import envoi_email
@@ -28,13 +29,19 @@ class DemandeGestionADSView(FormView):
         if not created:
             messages.warning(
                 self.request,
-                self.get_message_for_existing_request(form.cleaned_data["ads_manager"]),
+                format_html(
+                    self.get_message_for_existing_request(
+                        form.cleaned_data["ads_manager"]
+                    )
+                ),
             )
         # Send notifications to administrators.
         else:
             messages.success(
                 self.request,
-                self.get_message_for_new_request(form.cleaned_data["ads_manager"]),
+                format_html(
+                    self.get_message_for_new_request(form.cleaned_data["ads_manager"])
+                ),
             )
 
             demandes_prefecture = form.cleaned_data[

@@ -32,13 +32,11 @@ class ConsultationADSSearchView(ListView):
     paginate_by = 50
 
     def get_initial(self):
-        departement = None
-        if self.request.GET.get("departement"):
-            departement = self.request.GET.get("departement")
-        elif self.request.GET:
-            departement = None
-        elif self.request.user.prefecture_consultation:
+        departement = self.request.GET.get("departement")
+
+        if not self.request.GET and self.request.user.prefecture_consultation.id:
             departement = self.request.user.prefecture_consultation.id
+
         return {
             "departement": departement,
             "commune": self.request.GET.get("commune", ""),
@@ -50,17 +48,35 @@ class ConsultationADSSearchView(ListView):
         }
 
     def get_queryset(self):
-        if not self.request.GET:
-            return []
+        filters = self.request.GET
+        if not filters.get("departement") or not any(
+            filters.get(field)
+            for field in (
+                "commune",
+                "ads_aeroport",
+                "immatriculation",
+                "conducteur",
+                "siret",
+                "numero",
+            )
+        ):
+            return ADS.objects.none()
 
         qs = ADS.objects.all()
-        departement = self.request.GET.get("departement")
-        commune = self.request.GET.get("commune")
-        ads_aeroport = self.request.GET.get("ads_aeroport")
-        immatriculation = self.request.GET.get("immatriculation")
-        conducteur = self.request.GET.get("conducteur")
-        siret = self.request.GET.get("siret")
-        numero = self.request.GET.get("numero")
+        departement = filters.get("departement")
+        commune = filters.get("commune")
+        ads_aeroport = filters.get("ads_aeroport")
+        conducteur = filters.get("conducteur")
+
+        simple_filters = {
+            "immatriculation": "immatriculation_plate",
+            "siret": "owner_siret",
+            "numero": "number",
+        }
+
+        for param, field in simple_filters.items():
+            if value := filters.get(param):
+                qs = qs.filter(**{field: value})
 
         content_type_commune = ContentType.objects.get_for_model(Commune)
         content_type_prefecture = ContentType.objects.get_for_model(Prefecture)
@@ -83,27 +99,22 @@ class ConsultationADSSearchView(ListView):
                 epcis = epcis.filter(name__unaccent__icontains=term)
                 aeroports = aeroports.filter(name__unaccent__icontains=term)
 
-            communes_ids = communes.values("pk")
-            prefectures_ids = prefectures.values("pk")
-            epcis_ids = epcis.values("pk")
-            aeroport_ids = aeroports.values("pk")
-
             qs = qs.filter(
                 Q(
                     ads_manager__content_type=content_type_commune,
-                    ads_manager__object_id__in=Subquery(communes_ids),
+                    ads_manager__object_id__in=communes.values("pk"),
                 )
                 | Q(
                     ads_manager__content_type=content_type_prefecture,
-                    ads_manager__object_id__in=Subquery(prefectures_ids),
+                    ads_manager__object_id__in=prefectures.values("pk"),
                 )
                 | Q(
                     ads_manager__content_type=content_type_epci,
-                    ads_manager__object_id__in=Subquery(epcis_ids),
+                    ads_manager__object_id__in=epcis.values("pk"),
                 )
                 | Q(
                     ads_manager__content_type=content_type_aeroport,
-                    ads_manager__object_id__in=Subquery(aeroport_ids),
+                    ads_manager__object_id__in=aeroports.values("pk"),
                 )
                 | Q(epci_commune__libelle__icontains=commune)
             )
@@ -116,8 +127,6 @@ class ConsultationADSSearchView(ListView):
                 ]
             )
 
-        if immatriculation:
-            qs = qs.filter(immatriculation_plate=immatriculation)
         if conducteur:
             terms = re.findall(r"\w+", conducteur.strip())
             for term in terms:
@@ -125,10 +134,6 @@ class ConsultationADSSearchView(ListView):
                     Q(owner_name__unaccent__icontains=term)
                     | Q(adsuser__name__unaccent__icontains=term)
                 )
-        if siret:
-            qs = qs.filter(owner_siret=siret)
-        if numero:
-            qs = qs.filter(number=numero)
 
         latest_log_qs = ADSUpdateLog.objects.filter(ads=OuterRef("pk")).order_by(
             "-update_at"
