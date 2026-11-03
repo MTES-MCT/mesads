@@ -65,7 +65,7 @@ class User(AbstractUser):
     )
 
     proconnect_sub = models.UUIDField(
-        "Identifiant unique proconnect", null=True, blank=True
+        "Identifiant unique proconnect", null=True, blank=True, unique=True
     )
     proconnect_uid = models.CharField("ID chez le FI", default="", blank=True)
     proconnect_idp_id = models.UUIDField("Identifiant du FI", null=True, blank=True)
