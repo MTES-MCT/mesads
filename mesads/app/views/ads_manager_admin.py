@@ -240,7 +240,9 @@ class ADSManagerAdministratorListeGestionnaires(ADSManagerAdministratorMixin, Li
 
     def post(self, request, *args, **kwargs):
         ads_manager = get_object_or_404(
-            ADSManager, id=request.POST.get("ads_manager_id")
+            ADSManager,
+            id=request.POST.get("ads_manager_id"),
+            administrator=self.ads_manager_administrator,
         )
         ADSManagerRequest.objects.create(
             user=self.request.user, ads_manager=ads_manager, accepted=True
@@ -310,7 +312,11 @@ class ADSManagerAdminRequestsView(ADSManagerAdministratorMixin, TemplateView):
         if action not in ("accept", "deny", "revoke", "authorize"):
             raise SuspiciousOperation("Invalid action")
 
-        ads_manager_request = get_object_or_404(ADSManagerRequest, id=request_id)
+        ads_manager_request = get_object_or_404(
+            ADSManagerRequest,
+            id=request_id,
+            ads_manager__administrator=self.ads_manager_administrator,
+        )
 
         if action == "accept" or action == "authorize":
             ads_manager_request.accepted = True

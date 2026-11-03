@@ -267,10 +267,13 @@ class ADSCreateView(ADSView, CreateView):
             return super().form_invalid(form)
 
 
-class ADSHistoryView(DetailView):
+class ADSHistoryView(ADSManagerMixin, DetailView):
     template_name = "pages/ads_register/ads_history.html"
     model = ADS
     pk_url_kwarg = "ads_id"
+
+    def get_queryset(self):
+        return ADS.objects.filter(ads_manager=self.ads_manager)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -297,10 +300,15 @@ class ADSVerificationView(ADSManagerMixin, DetailView):
     model = ADS
     pk_url_kwarg = "ads_id"
 
+    def get_queryset(self):
+        return ADS.objects.filter(ads_manager=self.ads_manager)
 
-class ADSVerificationConfirmationView(View):
+
+class ADSVerificationConfirmationView(ADSManagerMixin, View):
     def post(self, request, *args, **kwargs):
-        ads = get_object_or_404(ADS, id=kwargs.get("ads_id"))
+        ads = get_object_or_404(
+            ADS, id=kwargs.get("ads_id"), ads_manager=self.ads_manager
+        )
         ADSUpdateLog.create_for_ads(ads, self.request.user)
         messages.success(
             self.request,
