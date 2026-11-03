@@ -385,6 +385,10 @@ REST_FRAMEWORK = {
         "anon": "100/hour",
         "user": "1000/hour",
     },
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
 }
 
 MESADS_SENTRY_JS_URL = os.environ.get("SENTRY_JS_URL")
