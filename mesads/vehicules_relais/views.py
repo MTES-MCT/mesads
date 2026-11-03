@@ -457,7 +457,9 @@ class VehiculeDepartementView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["vehicule"] = get_object_or_404(Vehicule, numero=kwargs["numero"])
+        context["vehicule"] = get_object_or_404(
+            Vehicule, numero=kwargs["numero"], departement_id=kwargs["prefecture_id"]
+        )
         context["prefecture"] = get_object_or_404(
             Prefecture, pk=self.kwargs["prefecture_id"]
         )
