@@ -20,7 +20,7 @@ pytestmark = pytest.mark.django_db
 
 def test_get_export_data_liste_attente():
     administrator = ADSManagerAdministratorFactory()
-    commune = ADSManagerFactory(administrator=administrator, for_commune=True)
+    commune = ADSManagerFactory(administrator=administrator)
 
     ads = ADS.objects.create(ads_manager=commune, number="1", ads_in_use=False)
 

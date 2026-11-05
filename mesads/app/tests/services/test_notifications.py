@@ -21,7 +21,7 @@ def test_notify_verification_no_ads(mailoutbox):
     manager_prefecture = ADSManagerFactory(
         administrator=administrator, for_object=administrator.prefecture
     )
-    manager_commune = ADSManagerFactory(administrator=administrator, for_commune=True)
+    manager_commune = ADSManagerFactory(administrator=administrator)
     manager_epci = ADSManagerFactory(administrator=administrator, for_epci=True)
     ADSManagerRequestFactory(ads_manager=manager_prefecture, user=UserFactory())
     ADSManagerRequestFactory(ads_manager=manager_commune, user=UserFactory())

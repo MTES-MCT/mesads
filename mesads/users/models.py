@@ -1,4 +1,5 @@
 from dateutil.relativedelta import relativedelta
+from django.apps import apps
 from django.contrib.auth.models import (
     AbstractUser,
     UserManager,
@@ -6,16 +7,56 @@ from django.contrib.auth.models import (
 from django.contrib.auth.signals import (
     user_logged_in,
     user_logged_out,
-    user_login_failed,
 )
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Exists, OuterRef, Q
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
-class EmailUserManager(UserManager):
+class UserQuerySet(models.QuerySet):
+    @staticmethod
+    def permission_mesads_q():
+        """Condition vraie si l'utilisateur a au moins une permission sur
+        MesADS (admin, gestionnaire ADS, gestionnaire de préfecture, inspecteur,
+        propriétaire de véhicule relais)."""
+        ADSManagerRequest = apps.get_model("app", "ADSManagerRequest")
+        DemandeAccesLectureSeule = apps.get_model("app", "DemandeAccesLectureSeule")
+        DemandeGestionPrefecture = apps.get_model("app", "DemandeGestionPrefecture")
+        Proprietaire = apps.get_model("vehicules_relais", "Proprietaire")
+
+        user = OuterRef("pk")
+        return (
+            Q(is_staff=True)
+            | Q(is_superuser=True)
+            | Q(Exists(ADSManagerRequest.objects.filter(user=user, accepted=True)))
+            | Q(
+                Exists(
+                    DemandeAccesLectureSeule.objects.filter(
+                        user=user, statut=DemandeAccesLectureSeule.ACCEPTE
+                    )
+                )
+            )
+            | Q(
+                Exists(
+                    DemandeGestionPrefecture.objects.filter(
+                        user=user, statut=DemandeGestionPrefecture.ACCEPTE
+                    )
+                )
+            )
+            | Q(Exists(Proprietaire.objects.filter(users=user)))
+        )
+
+    def with_permission_mesads(self):
+        return self.filter(self.permission_mesads_q())
+
+    def without_permission_mesads(self):
+        return self.exclude(self.permission_mesads_q())
+
+
+class EmailUserManager(UserManager.from_queryset(UserQuerySet)):
     """Custom manager for users, similar to UserManager, but using email only
     for authentication."""
 
@@ -80,11 +121,21 @@ class User(AbstractUser):
         blank=True,
     )
 
+    delete_notification_sent_at = models.DateTimeField(
+        verbose_name="Date d'envoi de notification préalable à la suppression",
+        null=True,
+        blank=True,
+    )
+
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
     objects = EmailUserManager()
+
+    @property
+    def has_permission_mesads(self):
+        return User.objects.filter(pk=self.pk).with_permission_mesads().exists()
 
     @property
     def prefecture_consultation(self):
@@ -173,20 +224,11 @@ def get_client_ip(request):
 @receiver(user_logged_in)
 def user_logged_in_callback(sender, request, user, **kwargs):
     UserAuditEntry.objects.create(user=user, action="login", ip=get_client_ip(request))
+    if user.delete_notification_sent_at:
+        user.delete_notification_sent_at = None
+        user.save(update_fields=["delete_notification_sent_at"])
 
 
 @receiver(user_logged_out)
 def user_logged_out_callback(sender, request, user, **kwargs):
     UserAuditEntry.objects.create(user=user, action="logout", ip=get_client_ip(request))
-
-
-@receiver(user_login_failed)
-def user_login_failed_callback(sender, credentials, request, **kwargs):
-    try:
-        user = User.objects.get(email=credentials.get("username"))
-    except User.DoesNotExist:
-        user = None
-
-    UserAuditEntry.objects.create(
-        user=user, action="login_failed", ip=get_client_ip(request), body=credentials
-    )
