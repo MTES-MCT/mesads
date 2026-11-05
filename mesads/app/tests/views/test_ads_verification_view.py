@@ -10,11 +10,16 @@ from mesads.app.models import ADS, ADSUpdateLog, ADSUser
 pytestmark = pytest.mark.django_db
 
 
-def test_get_verification(user, client_logged, commune, ads_manager_request):
-    ads_manager_request(user)
+def test_get_verification(
+    user,
+    client_logged,
+    ads_manager,
+    ads_manager_request_factory,
+):
+    ads_manager_request_factory(user, ads_manager)
     ads = ADS.objects.create(
         number="12346",
-        ads_manager=commune,
+        ads_manager=ads_manager,
         ads_in_use=True,
         creation_date=date(2020, 1, 1),
         owner_name="Nom Prénom",
@@ -30,22 +35,28 @@ def test_get_verification(user, client_logged, commune, ads_manager_request):
 
     response = client_logged.get(
         reverse(
-            "app.ads.verification", kwargs={"manager_id": commune.id, "ads_id": ads.id}
+            "app.ads.verification",
+            kwargs={"manager_id": ads_manager.id, "ads_id": ads.id},
         )
     )
     assert response.status_code == HTTPStatus.OK
     assert response.context["ads"] == ads
-    assert response.context["ads_manager"] == commune
+    assert response.context["ads_manager"] == ads_manager
     assert "pages/ads_register/ads_verification.html" in [
         t.name for t in response.templates
     ]
 
 
-def test_post_confirm_verification(user, client_logged, commune, ads_manager_request):
-    ads_manager_request(user)
+def test_post_confirm_verification(
+    user,
+    client_logged,
+    ads_manager,
+    ads_manager_request_factory,
+):
+    ads_manager_request_factory(user, ads_manager)
     ads = ADS.objects.create(
         number="12346",
-        ads_manager=commune,
+        ads_manager=ads_manager,
         ads_in_use=True,
         ads_creation_date=date(2020, 1, 1),
         owner_name="Nom Prénom",
@@ -68,7 +79,7 @@ def test_post_confirm_verification(user, client_logged, commune, ads_manager_req
     response = client_logged.post(
         reverse(
             "app.ads.verification-confirmation",
-            kwargs={"manager_id": commune.id, "ads_id": ads.id},
+            kwargs={"manager_id": ads_manager.id, "ads_id": ads.id},
         )
     )
     ads.refresh_from_db()
@@ -78,5 +89,5 @@ def test_post_confirm_verification(user, client_logged, commune, ads_manager_req
     assert last_log.debug_missing_fields == "[]"
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse(
-        "app.ads-manager.detail", kwargs={"manager_id": commune.id}
+        "app.ads-manager.detail", kwargs={"manager_id": ads_manager.id}
     )
