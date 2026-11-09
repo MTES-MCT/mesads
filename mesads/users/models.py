@@ -191,6 +191,50 @@ class UserAuditEntry(models.Model):
         verbose_name_plural = "Historiques des connexions"
 
 
+class PermissionAuditEntry(models.Model):
+    """Journal des changements de permissions et d'identité des utilisateurs."""
+
+    class Action(models.TextChoices):
+        PROCONNECT_LINK_ALLOWED = (
+            "proconnect_link_allowed",
+            "Rattachement ProConnect par email autorisé",
+        )
+        PROCONNECT_LINK_REVOKED = (
+            "proconnect_link_revoked",
+            "Rattachement ProConnect par email révoqué",
+        )
+        PROCONNECT_LINKED = (
+            "proconnect_linked",
+            "Compte rattaché à ProConnect par email",
+        )
+
+    created_at = models.DateTimeField("Date", auto_now_add=True, db_index=True)
+    action = models.CharField("Action", max_length=64, choices=Action.choices)
+    target_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="permission_audit_entries",
+        verbose_name="Utilisateur concerné",
+    )
+    actor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="Auteur",
+        help_text="Vide si l'action a été réalisée automatiquement par l'application.",
+    )
+    ip = models.GenericIPAddressField("Adresse IP", null=True, blank=True)
+    details = models.JSONField("Détails", default=dict, blank=True)
+
+    class Meta:
+        verbose_name = "Historique des changements de permissions"
+        verbose_name_plural = "Historiques des changements de permissions"
+        ordering = ("-created_at",)
+
+
 class NoteUtilisateur(models.Model):
     MINIMUM_NOTE = 1
     MAXIMUM_NOTE = 5

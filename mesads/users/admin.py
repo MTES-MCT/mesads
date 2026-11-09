@@ -15,7 +15,8 @@ from reversion.models import Revision
 from mesads.app.models import Notification
 from mesads.vehicules_relais.models import Proprietaire
 
-from .models import NoteUtilisateur, User, UserAuditEntry, get_client_ip
+from .models import NoteUtilisateur, PermissionAuditEntry, User, UserAuditEntry
+from .services import log_permission_change
 
 
 class ADSManagerRequestFilter(admin.SimpleListFilter):
@@ -144,6 +145,7 @@ class UserAdmin(BaseUserAdmin):
         "notifications_link",
         "relais_links",
         "audit_entries_link",
+        "permission_audit_entries_link",
     )
 
     readonly_fields = (
@@ -159,6 +161,7 @@ class UserAdmin(BaseUserAdmin):
         "is_superuser",
         "relais_links",
         "audit_entries_link",
+        "permission_audit_entries_link",
         "proconnect_sub",
     )
 
@@ -175,15 +178,13 @@ class UserAdmin(BaseUserAdmin):
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
         if "proconnect_link_allowed" in form.changed_data:
-            UserAuditEntry.objects.create(
-                user=obj,
-                action="proconnect_link_allowed",
-                ip=get_client_ip(request),
-                body=(
-                    "Rattachement ProConnect par email "
-                    f"{'autorisé' if obj.proconnect_link_allowed else 'révoqué'} "
-                    f"par {request.user.email}"
-                ),
+            log_permission_change(
+                PermissionAuditEntry.Action.PROCONNECT_LINK_ALLOWED
+                if obj.proconnect_link_allowed
+                else PermissionAuditEntry.Action.PROCONNECT_LINK_REVOKED,
+                obj,
+                actor=request.user,
+                request=request,
             )
 
     def pro_connect(self, obj):
@@ -370,6 +371,14 @@ class UserAdmin(BaseUserAdmin):
         )
         return format_html('<a href="{}">Voir les connexions</a>', url)
 
+    @admin.display(description="Historique des changements de permissions")
+    def permission_audit_entries_link(self, obj):
+        url = (
+            reverse("admin:users_permissionauditentry_changelist")
+            + f"?target_user__id__exact={obj.id}"
+        )
+        return format_html('<a href="{}">Voir les changements de permissions</a>', url)
+
 
 @admin.register(UserAuditEntry)
 class UserAuditEntryAdmin(admin.ModelAdmin):
@@ -383,6 +392,25 @@ class UserAuditEntryAdmin(admin.ModelAdmin):
         return obj.body[:75] + "..." if len(obj.body) > 75 else obj.body
 
     short_body.short_description = "Body"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PermissionAuditEntry)
+class PermissionAuditEntryAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "action", "target_user", "actor", "ip")
+    list_filter = ("action",)
+    list_select_related = ("target_user", "actor")
+    date_hierarchy = "created_at"
+    ordering = ("-created_at",)
+    raw_id_fields = ("target_user", "actor")
 
     def has_add_permission(self, request):
         return False

@@ -3,7 +3,8 @@ from mozilla_django_oidc.auth import (
     OIDCAuthenticationBackend as MozillaOIDCAuthenticationBackend,
 )
 
-from mesads.users.models import UserAuditEntry, get_client_ip
+from mesads.users.models import PermissionAuditEntry
+from mesads.users.services import log_permission_change
 
 from .mfa import MFA_ACR_VALUES
 
@@ -167,13 +168,14 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
         user.proconnect_link_allowed = False
         user.refresh_from_db(fields=PROCONNECT_IDENTITY_FIELDS)
 
-        UserAuditEntry.objects.create(
-            user=user,
-            action="proconnect_link",
-            ip=get_client_ip(self.request),
-            body=(
-                "Rattachement ProConnect par email autorisé par un administrateur "
-                f"(sub={user.proconnect_sub}, idp_id={user.proconnect_idp_id})"
+        log_permission_change(
+            PermissionAuditEntry.Action.PROCONNECT_LINKED,
+            user,
+            request=self.request,
+            proconnect_sub=str(user.proconnect_sub),
+            proconnect_uid=user.proconnect_uid,
+            proconnect_idp_id=(
+                str(user.proconnect_idp_id) if user.proconnect_idp_id else None
             ),
         )
         return True

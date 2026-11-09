@@ -10,7 +10,7 @@ from mozilla_django_oidc.auth import (
 
 from mesads.mesads_oidc.backends import OIDCAuthenticationBackend
 from mesads.mesads_oidc.mfa import MFA_ACR_VALUES
-from mesads.users.models import User, UserAuditEntry
+from mesads.users.models import PermissionAuditEntry, User
 
 
 @pytest.fixture
@@ -405,9 +405,14 @@ def test_update_user_links_legacy_user(backend, legacy_user, claims):
     assert legacy_user.proconnect_link_allowed is False
     assert backend.request.session == {}
 
-    entry = UserAuditEntry.objects.get(user=legacy_user)
-    assert entry.action == "proconnect_link"
-    assert claims["sub"] in entry.body
+    entry = PermissionAuditEntry.objects.get(target_user=legacy_user)
+    assert entry.action == PermissionAuditEntry.Action.PROCONNECT_LINKED
+    assert entry.actor is None
+    assert entry.details == {
+        "proconnect_sub": claims["sub"],
+        "proconnect_uid": claims["uid"],
+        "proconnect_idp_id": claims["idp_id"],
+    }
 
 
 @pytest.mark.django_db
@@ -420,6 +425,8 @@ def test_update_user_links_legacy_user_without_idp_id(backend, legacy_user, clai
     assert legacy_user.proconnect_sub == UUID(claims["sub"])
     assert legacy_user.proconnect_uid == ""
     assert legacy_user.proconnect_idp_id is None
+    entry = PermissionAuditEntry.objects.get(target_user=legacy_user)
+    assert entry.details["proconnect_idp_id"] is None
 
 
 @pytest.mark.django_db
@@ -432,7 +439,7 @@ def test_update_user_legacy_user_without_link_allowed(backend, legacy_user, clai
     legacy_user.refresh_from_db()
     assert legacy_user.proconnect_sub is None
     assert legacy_user.first_name == "Old name"
-    assert not UserAuditEntry.objects.exists()
+    assert not PermissionAuditEntry.objects.exists()
 
 
 @pytest.mark.django_db
