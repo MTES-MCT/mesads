@@ -6,13 +6,29 @@ from django.utils import timezone
 from sentry_sdk import capture_exception
 
 from mesads.common.mail import envoi_email
-from mesads.users.models import User
+from mesads.users.models import PermissionAuditEntry, User, get_client_ip
 
 INACTIVITY_DELAY = relativedelta(years=2)
 NOTIFICATION_DELAY = relativedelta(months=1)
 # Nombre maximum d'utilisateurs traités par exécution de `notify_old_users`, pour
 # étaler l'envoi des emails (et donc les suppressions) sur plusieurs jours.
 NOTIFICATION_BATCH_SIZE = 1000
+
+
+def log_permission_change(action, target_user, *, actor=None, request=None, **details):
+    """Enregistre un changement de permission ou d'identité dans le journal
+    `PermissionAuditEntry`.
+
+    `actor` est l'utilisateur à l'origine du changement, ou `None` si le
+    changement est réalisé automatiquement par l'application. Les `details`
+    doivent être sérialisables en JSON."""
+    return PermissionAuditEntry.objects.create(
+        action=action,
+        target_user=target_user,
+        actor=actor,
+        ip=get_client_ip(request) if request is not None else None,
+        details=details,
+    )
 
 
 def _inactive_users(since):

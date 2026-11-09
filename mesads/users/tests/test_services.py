@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from datetime import timezone as dt_timezone
+from types import SimpleNamespace
 
 import pytest
 from dateutil.relativedelta import relativedelta
@@ -9,7 +10,7 @@ from mesads.app.models import ADSUpdateFile
 from mesads.app.tests.factories import ADSManagerRequestFactory
 from mesads.users.tests.factories import UserFactory
 
-from ..models import User
+from ..models import PermissionAuditEntry, User
 
 pytestmark = pytest.mark.django_db
 
@@ -383,3 +384,35 @@ def test_delete_old_users_query_count_does_not_depend_on_user_count(now):
     queries_for_five = _count_queries(services.delete_old_users)
 
     assert queries_for_one == queries_for_five
+
+
+@pytest.mark.django_db
+def test_log_permission_change(user_factory):
+    target = user_factory()
+    actor = user_factory()
+    request = SimpleNamespace(META={"HTTP_X_FORWARDED_FOR": "1.2.3.4, 10.0.0.1"})
+
+    entry = services.log_permission_change(
+        PermissionAuditEntry.Action.PROCONNECT_LINK_ALLOWED,
+        target,
+        actor=actor,
+        request=request,
+        foo="bar",
+    )
+
+    entry.refresh_from_db()
+    assert entry.target_user == target
+    assert entry.actor == actor
+    assert entry.ip == "1.2.3.4"
+    assert entry.details == {"foo": "bar"}
+
+
+@pytest.mark.django_db
+def test_log_permission_change_without_request(user_factory):
+    entry = services.log_permission_change(
+        PermissionAuditEntry.Action.PROCONNECT_LINKED, user_factory()
+    )
+
+    assert entry.actor is None
+    assert entry.ip is None
+    assert entry.details == {}
