@@ -6,13 +6,36 @@ from django.utils import timezone
 from sentry_sdk import capture_exception
 
 from mesads.common.mail import envoi_email
-from mesads.users.models import PermissionAuditEntry, User, get_client_ip
+from mesads.users.models import PermissionAuditEntry, User, UserAuditEntry
 
 INACTIVITY_DELAY = relativedelta(years=2)
 NOTIFICATION_DELAY = relativedelta(months=1)
 # Nombre maximum d'utilisateurs traités par exécution de `notify_old_users`, pour
 # étaler l'envoi des emails (et donc les suppressions) sur plusieurs jours.
 NOTIFICATION_BATCH_SIZE = 1000
+# Durée de conservation de l'historique des connexions (`UserAuditEntry`).
+USER_AUDIT_ENTRY_RETENTION = relativedelta(years=1)
+
+
+def get_client_ip(request):
+    """In production, REMOTE_ADDR is the load balancer IP, not the client IP. On
+    Clever-Cloud, the client IP is in the X-Forwarded-For header."""
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        # In case of multiple IPs, take the first one
+        ip = x_forwarded_for.split(",")[0].strip()
+    else:
+        ip = request.META.get("REMOTE_ADDR")
+    return ip
+
+
+def delete_old_user_audit_entries():
+    """Supprime les entrées de l'historique des connexions de plus d'un an,
+    qui contiennent des données personnelles (adresses IP)."""
+    deleted_count, _ = UserAuditEntry.objects.filter(
+        created_at__lt=timezone.now() - USER_AUDIT_ENTRY_RETENTION
+    ).delete()
+    return deleted_count
 
 
 def log_permission_change(action, target_user, *, actor=None, request=None, **details):

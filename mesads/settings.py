@@ -148,6 +148,7 @@ INSTALLED_APPS = [
 CRON_CLASSES = [
     "mesads.app.crons.ImportDataForParis",
     "mesads.app.crons.DeleteOldUsers",
+    "mesads.app.crons.DeleteOldUserAuditEntries",
     "mesads.app.crons.NotificationListeAttente",
     "mesads.app.crons.NotificationVerification",
     "mesads.app.crons.SuppressionInscriptionsArchivees",

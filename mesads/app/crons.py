@@ -13,6 +13,7 @@ from mesads.app.services.liste_attente import (
 )
 from mesads.users.services import (
     NOTIFICATION_BATCH_SIZE,
+    delete_old_user_audit_entries,
     delete_old_users,
     notify_old_users,
 )
@@ -75,6 +76,18 @@ class DeleteOldUsers(CronJobBase):
     def do(self):
         deleted_count = delete_old_users()
         return f"{deleted_count} utilisateurs inactifs supprimés"
+
+
+class DeleteOldUserAuditEntries(CronJobBase):
+    # Run every day
+    schedule = Schedule(run_every_mins=60 * 24)
+
+    code = "delete_old_user_audit_entries"  # unique code to represent this cron job
+
+    @sentry_exceptions
+    def do(self):
+        deleted_count = delete_old_user_audit_entries()
+        return f"{deleted_count} entrées de l'historique des connexions supprimées"
 
 
 class NotificationListeAttente(CronJobBase):

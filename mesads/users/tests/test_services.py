@@ -8,9 +8,9 @@ from dateutil.relativedelta import relativedelta
 import mesads.users.services as services
 from mesads.app.models import ADSUpdateFile
 from mesads.app.tests.factories import ADSManagerRequestFactory
-from mesads.users.tests.factories import UserFactory
+from mesads.users.tests.factories import UserAuditEntryFactory, UserFactory
 
-from ..models import PermissionAuditEntry, User
+from ..models import PermissionAuditEntry, User, UserAuditEntry
 
 pytestmark = pytest.mark.django_db
 
@@ -416,3 +416,65 @@ def test_log_permission_change_without_request(user_factory):
     assert entry.actor is None
     assert entry.ip is None
     assert entry.details == {}
+
+
+# ---------------------------------------------------------------------------
+# delete_old_user_audit_entries
+# ---------------------------------------------------------------------------
+
+
+def audit_entry_created_at(created_at, **kwargs):
+    entry = UserAuditEntryFactory(action="login", **kwargs)
+    UserAuditEntry.objects.filter(pk=entry.pk).update(created_at=created_at)
+    return entry
+
+
+def test_delete_old_user_audit_entries(now):
+    user = UserFactory()
+    old = audit_entry_created_at(now - relativedelta(years=1, seconds=1), user=user)
+    anonymous_old = audit_entry_created_at(now - relativedelta(years=2), user=None)
+    limit = audit_entry_created_at(now - relativedelta(years=1))
+    recent = audit_entry_created_at(now - timedelta(days=1), user=user)
+
+    assert services.delete_old_user_audit_entries() == 2
+
+    remaining = set(UserAuditEntry.objects.values_list("pk", flat=True))
+    assert remaining == {limit.pk, recent.pk}
+    assert old.pk not in remaining and anonymous_old.pk not in remaining
+    assert User.objects.filter(pk=user.pk).exists()
+
+
+def test_delete_old_user_audit_entries_nothing_to_delete(now):
+    audit_entry_created_at(now - timedelta(days=30))
+
+    assert services.delete_old_user_audit_entries() == 0
+    assert UserAuditEntry.objects.count() == 1
+
+
+def test_delete_old_user_audit_entries_cron_message(monkeypatch):
+    from mesads.app import crons
+
+    monkeypatch.setattr(crons, "delete_old_user_audit_entries", lambda: 3)
+
+    assert (
+        crons.DeleteOldUserAuditEntries().do()
+        == "3 entrées de l'historique des connexions supprimées"
+    )
+
+
+# ---------------------------------------------------------------------------
+# get_client_ip
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("meta", "expected"),
+    [
+        ({"HTTP_X_FORWARDED_FOR": "1.2.3.4", "REMOTE_ADDR": "10.0.0.1"}, "1.2.3.4"),
+        ({"HTTP_X_FORWARDED_FOR": " 1.2.3.4 , 10.0.0.2"}, "1.2.3.4"),
+        ({"REMOTE_ADDR": "10.0.0.1"}, "10.0.0.1"),
+        ({}, None),
+    ],
+)
+def test_get_client_ip(meta, expected):
+    assert services.get_client_ip(SimpleNamespace(META=meta)) == expected

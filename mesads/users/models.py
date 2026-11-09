@@ -4,14 +4,9 @@ from django.contrib.auth.models import (
     AbstractUser,
     UserManager,
 )
-from django.contrib.auth.signals import (
-    user_logged_in,
-    user_logged_out,
-)
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Exists, OuterRef, Q
-from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -262,28 +257,3 @@ class NoteUtilisateur(models.Model):
     class Meta:
         verbose_name = "Note de l'utilisateur"
         verbose_name_plural = "Notes des utilisateurs"
-
-
-def get_client_ip(request):
-    """In production, REMOTE_ADDR is the load balancer IP, not the client IP. On
-    Clever-Cloud, the client IP is in the X-Forwarded-For header."""
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        # In case of multiple IPs, take the first one
-        ip = x_forwarded_for.split(",")[0].strip()
-    else:
-        ip = request.META.get("REMOTE_ADDR")
-    return ip
-
-
-@receiver(user_logged_in)
-def user_logged_in_callback(sender, request, user, **kwargs):
-    UserAuditEntry.objects.create(user=user, action="login", ip=get_client_ip(request))
-    if user.delete_notification_sent_at:
-        user.delete_notification_sent_at = None
-        user.save(update_fields=["delete_notification_sent_at"])
-
-
-@receiver(user_logged_out)
-def user_logged_out_callback(sender, request, user, **kwargs):
-    UserAuditEntry.objects.create(user=user, action="logout", ip=get_client_ip(request))
