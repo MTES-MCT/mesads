@@ -10,13 +10,13 @@ from mozilla_django_oidc.auth import (
 
 from mesads.mesads_oidc.backends import OIDCAuthenticationBackend
 from mesads.mesads_oidc.mfa import MFA_ACR_VALUES
-from mesads.users.models import User
+from mesads.users.models import User, UserAuditEntry
 
 
 @pytest.fixture
 def backend():
     instance = OIDCAuthenticationBackend()
-    instance.request = SimpleNamespace(session={})
+    instance.request = SimpleNamespace(session={}, META={})
     return instance
 
 
@@ -352,3 +352,120 @@ def test_update_user_preserves_empty_claims(backend, existing_user, claims):
 def test_get_username(backend, claims):
     assert backend.get_username(claims) == claims["email"]
     assert backend.get_username({}) is None
+
+
+@pytest.fixture
+def legacy_user(user_factory, claims):
+    return user_factory(
+        email=claims["email"],
+        first_name="Old name",
+        proconnect_sub=None,
+        proconnect_link_allowed=True,
+    )
+
+
+@pytest.mark.django_db
+def test_filter_users_matches_email_when_link_allowed(backend, legacy_user, claims):
+    claims["email"] = claims["email"].upper()
+
+    assert list(backend.filter_users_by_claims(claims)) == [legacy_user]
+
+
+@pytest.mark.django_db
+def test_filter_users_prefers_sub_over_link_allowed(
+    backend, user_factory, legacy_user, claims
+):
+    linked = user_factory(proconnect_sub=claims["sub"])
+
+    assert list(backend.filter_users_by_claims(claims)) == [linked]
+
+
+@pytest.mark.django_db
+def test_filter_users_ignores_link_allowed_when_already_linked(
+    backend, user_factory, claims
+):
+    user_factory(
+        email=claims["email"],
+        proconnect_sub="11111111-1111-4111-8111-111111111111",
+        proconnect_link_allowed=True,
+    )
+
+    assert not backend.filter_users_by_claims(claims).exists()
+
+
+@pytest.mark.django_db
+def test_update_user_links_legacy_user(backend, legacy_user, claims):
+    assert backend.update_user(legacy_user, claims) is legacy_user
+
+    legacy_user.refresh_from_db()
+    assert legacy_user.proconnect_sub == UUID(claims["sub"])
+    assert legacy_user.proconnect_uid == claims["uid"]
+    assert legacy_user.proconnect_idp_id == UUID(claims["idp_id"])
+    assert legacy_user.first_name == "Alice"
+    assert legacy_user.proconnect_link_allowed is False
+    assert backend.request.session == {}
+
+    entry = UserAuditEntry.objects.get(user=legacy_user)
+    assert entry.action == "proconnect_link"
+    assert claims["sub"] in entry.body
+
+
+@pytest.mark.django_db
+def test_update_user_links_legacy_user_without_idp_id(backend, legacy_user, claims):
+    claims.pop("idp_id")
+    claims["uid"] = ""
+
+    assert backend.update_user(legacy_user, claims) is legacy_user
+    legacy_user.refresh_from_db()
+    assert legacy_user.proconnect_sub == UUID(claims["sub"])
+    assert legacy_user.proconnect_uid == ""
+    assert legacy_user.proconnect_idp_id is None
+
+
+@pytest.mark.django_db
+def test_update_user_legacy_user_without_link_allowed(backend, legacy_user, claims):
+    legacy_user.proconnect_link_allowed = False
+    legacy_user.save()
+
+    assert backend.update_user(legacy_user, claims) is None
+    assert backend.request.session["oidc_account_conflict"] is True
+    legacy_user.refresh_from_db()
+    assert legacy_user.proconnect_sub is None
+    assert legacy_user.first_name == "Old name"
+    assert not UserAuditEntry.objects.exists()
+
+
+@pytest.mark.django_db
+def test_update_user_legacy_user_with_other_email(backend, legacy_user, claims):
+    claims["email"] = "other@example.com"
+
+    assert backend.update_user(legacy_user, claims) is None
+    assert backend.request.session["oidc_account_conflict"] is True
+    legacy_user.refresh_from_db()
+    assert legacy_user.proconnect_sub is None
+    assert legacy_user.proconnect_link_allowed is True
+
+
+@pytest.mark.django_db
+def test_update_user_link_allowed_consumed_concurrently(backend, legacy_user, claims):
+    # Une autre connexion a consommé l'autorisation entre la lecture du compte
+    # et sa mise à jour.
+    User.objects.filter(pk=legacy_user.pk).update(
+        proconnect_sub="11111111-1111-4111-8111-111111111111",
+        proconnect_link_allowed=False,
+    )
+
+    assert backend.update_user(legacy_user, claims) is None
+    assert backend.request.session["oidc_account_conflict"] is True
+    legacy_user.refresh_from_db()
+    assert str(legacy_user.proconnect_sub) == "11111111-1111-4111-8111-111111111111"
+
+
+@pytest.mark.django_db
+def test_update_user_link_allowed_is_single_use(backend, legacy_user, claims):
+    assert backend.update_user(legacy_user, claims) is legacy_user
+
+    other_claims = {**claims, "sub": "33333333-3333-4333-8333-333333333333"}
+    assert not backend.filter_users_by_claims(other_claims).exists()
+    assert backend.create_user(other_claims) is None
+    assert backend.request.session["oidc_account_conflict"] is True

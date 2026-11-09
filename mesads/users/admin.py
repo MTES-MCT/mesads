@@ -15,7 +15,7 @@ from reversion.models import Revision
 from mesads.app.models import Notification
 from mesads.vehicules_relais.models import Proprietaire
 
-from .models import NoteUtilisateur, User, UserAuditEntry
+from .models import NoteUtilisateur, User, UserAuditEntry, get_client_ip
 
 
 class ADSManagerRequestFilter(admin.SimpleListFilter):
@@ -137,6 +137,8 @@ class UserAdmin(BaseUserAdmin):
         "is_superuser",
         "is_staff",
         "is_active",
+        "proconnect_sub",
+        "proconnect_link_allowed",
         "admin_roles_link",
         "ads_manager_request_link",
         "notifications_link",
@@ -157,9 +159,32 @@ class UserAdmin(BaseUserAdmin):
         "is_superuser",
         "relais_links",
         "audit_entries_link",
+        "proconnect_sub",
     )
 
     search_fields = ("email",)
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = super().get_readonly_fields(request, obj)
+        # L'autorisation de rattachement par email n'a de sens que pour un
+        # compte qui n'est pas encore rattaché à une identité ProConnect.
+        if obj is None or obj.proconnect_sub:
+            readonly_fields = (*readonly_fields, "proconnect_link_allowed")
+        return readonly_fields
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if "proconnect_link_allowed" in form.changed_data:
+            UserAuditEntry.objects.create(
+                user=obj,
+                action="proconnect_link_allowed",
+                ip=get_client_ip(request),
+                body=(
+                    "Rattachement ProConnect par email "
+                    f"{'autorisé' if obj.proconnect_link_allowed else 'révoqué'} "
+                    f"par {request.user.email}"
+                ),
+            )
 
     def pro_connect(self, obj):
         return bool(obj.proconnect_sub)

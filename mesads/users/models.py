@@ -120,6 +120,17 @@ class User(AbstractUser):
         default="",
         blank=True,
     )
+    proconnect_link_allowed = models.BooleanField(
+        "Autoriser le rattachement ProConnect par email",
+        default=False,
+        help_text=(
+            "Si coché, la prochaine connexion ProConnect avec l'adresse email de "
+            "ce compte y sera rattachée, même si le compte n'a pas encore "
+            "d'identifiant ProConnect. Ne cocher qu'après avoir vérifié l'identité "
+            "de l'utilisateur. L'autorisation est automatiquement retirée une fois "
+            "le rattachement effectué."
+        ),
+    )
 
     delete_notification_sent_at = models.DateTimeField(
         verbose_name="Date d'envoi de notification préalable à la suppression",

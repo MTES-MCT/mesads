@@ -3,7 +3,11 @@ from mozilla_django_oidc.auth import (
     OIDCAuthenticationBackend as MozillaOIDCAuthenticationBackend,
 )
 
+from mesads.users.models import UserAuditEntry, get_client_ip
+
 from .mfa import MFA_ACR_VALUES
+
+PROCONNECT_IDENTITY_FIELDS = ("proconnect_sub", "proconnect_uid", "proconnect_idp_id")
 
 
 class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
@@ -60,7 +64,22 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
         if not sub:
             return self.UserModel.objects.none()
 
-        return self.UserModel.objects.filter(proconnect_sub=sub)
+        users = self.UserModel.objects.filter(proconnect_sub=sub)
+        if users.exists():
+            return users
+
+        # Comptes legacy jamais rattachés à ProConnect : le rattachement par
+        # email n'est possible que si un administrateur l'a explicitement
+        # autorisé après vérification de l'identité de l'utilisateur.
+        email = claims.get("email")
+        if not email:
+            return self.UserModel.objects.none()
+
+        return self.UserModel.objects.filter(
+            email__iexact=email,
+            proconnect_sub__isnull=True,
+            proconnect_link_allowed=True,
+        )
 
     def verify_claims(self, claims):
         return (
@@ -91,7 +110,13 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
             self.request.session["oidc_account_conflict"] = True
             return None
 
-        if (
+        data = self.get_data_for_user_create_and_update(claims)
+
+        if user.proconnect_sub is None:
+            if not self.link_legacy_user(user, data):
+                self.request.session["oidc_account_conflict"] = True
+                return None
+        elif (
             str(user.proconnect_sub) != claims.get("sub")
             or (user.proconnect_uid and user.proconnect_uid != claims.get("uid"))
             or (
@@ -102,9 +127,7 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
             self.request.session["oidc_account_conflict"] = True
             return None
 
-        data = self.get_data_for_user_create_and_update(claims)
-
-        for key in ("proconnect_sub", "proconnect_uid", "proconnect_idp_id"):
+        for key in PROCONNECT_IDENTITY_FIELDS:
             data.pop(key, None)
 
         for key, value in data.items():
@@ -113,6 +136,47 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
 
         user.save()
         return user
+
+    def link_legacy_user(self, user, data):
+        """Rattache un compte existant, sans identifiant ProConnect, à
+        l'identité ProConnect décrite par `data`, si un administrateur l'a
+        autorisé. L'autorisation est à usage unique."""
+
+        if (
+            not user.proconnect_link_allowed
+            or not data["email"]
+            or user.email.lower() != data["email"].lower()
+        ):
+            return False
+
+        identity = {
+            "proconnect_sub": data["proconnect_sub"],
+            "proconnect_uid": data["proconnect_uid"],
+            "proconnect_idp_id": data["proconnect_idp_id"] or None,
+        }
+
+        linked = self.UserModel.objects.filter(
+            pk=user.pk,
+            proconnect_sub__isnull=True,
+            proconnect_link_allowed=True,
+        ).update(proconnect_link_allowed=False, **identity)
+
+        if not linked:
+            return False
+
+        user.proconnect_link_allowed = False
+        user.refresh_from_db(fields=PROCONNECT_IDENTITY_FIELDS)
+
+        UserAuditEntry.objects.create(
+            user=user,
+            action="proconnect_link",
+            ip=get_client_ip(self.request),
+            body=(
+                "Rattachement ProConnect par email autorisé par un administrateur "
+                f"(sub={user.proconnect_sub}, idp_id={user.proconnect_idp_id})"
+            ),
+        )
+        return True
 
     def get_username(self, claims):
         return claims.get("email")
