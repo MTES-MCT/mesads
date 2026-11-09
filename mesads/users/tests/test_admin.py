@@ -113,3 +113,83 @@ def test_admin_user_change_page_links_permission_audit_entries(
 
     assert response.status_code == 200
     assert f"?target_user__id__exact={target.pk}".encode() in response.content
+
+
+@pytest.fixture
+def dated_audit_entries(user_factory):
+    from datetime import datetime
+    from datetime import timezone as dt_timezone
+
+    user = user_factory()
+    entries = {}
+    for day in (1, 10, 20):
+        entry = UserAuditEntry.objects.create(user=user, action="login")
+        UserAuditEntry.objects.filter(pk=entry.pk).update(
+            created_at=datetime(2026, 3, day, 12, 0, tzinfo=dt_timezone.utc)
+        )
+        entries[day] = entry
+    return user, entries
+
+
+def audit_changelist_pks(admin_client, user, **params):
+    response = admin_client.get(
+        reverse("admin:users_userauditentry_changelist"),
+        {"user__id__exact": user.pk, **params},
+    )
+    assert response.status_code == 200
+    return response, {entry.pk for entry in response.context["cl"].result_list}
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("params", "expected_days"),
+    [
+        ({}, {1, 10, 20}),
+        ({"created_at__gte": "2026-03-10"}, {10, 20}),
+        ({"created_at__lte": "2026-03-10"}, {1, 10}),
+        ({"created_at__gte": "2026-03-02", "created_at__lte": "2026-03-19"}, {10}),
+        ({"created_at__gte": "2026-03-10", "created_at__lte": "2026-03-10"}, {10}),
+        ({"created_at__gte": "", "created_at__lte": ""}, {1, 10, 20}),
+    ],
+)
+def test_user_audit_entry_admin_date_range_filter(
+    admin_client, dated_audit_entries, params, expected_days
+):
+    user, entries = dated_audit_entries
+
+    _, pks = audit_changelist_pks(admin_client, user, **params)
+
+    assert pks == {entries[day].pk for day in expected_days}
+
+
+@pytest.mark.django_db
+def test_user_audit_entry_admin_date_range_filter_keeps_other_params(
+    admin_client, dated_audit_entries
+):
+    user, _ = dated_audit_entries
+
+    response, _ = audit_changelist_pks(
+        admin_client, user, action="login", created_at__gte="2026-03-10"
+    )
+
+    content = response.content.decode()
+    assert 'name="created_at__gte" value="2026-03-10"' in content
+    assert f'name="user__id__exact" value="{user.pk}"' in content
+    assert 'name="action" value="login"' in content
+    assert "Réinitialiser" in content
+
+
+@pytest.mark.django_db
+def test_user_audit_entry_admin_date_range_filter_invalid_date(
+    admin_client, dated_audit_entries
+):
+    user, _ = dated_audit_entries
+
+    response = admin_client.get(
+        reverse("admin:users_userauditentry_changelist"),
+        {"user__id__exact": user.pk, "created_at__gte": "pas-une-date"},
+    )
+
+    # L'admin Django redirige vers la liste avec le paramètre d'erreur `e=1`.
+    assert response.status_code == 302
+    assert "e=1" in response.url
