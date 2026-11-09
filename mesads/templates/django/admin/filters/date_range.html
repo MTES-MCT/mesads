@@ -1,0 +1,31 @@
+{% load i18n %}
+<details data-filter-title="{{ title }}" open>
+  <summary>
+    {% blocktranslate with filter_title=title %} By {{ filter_title }} {% endblocktranslate %}
+  </summary>
+  {% for choice in choices %}
+    <form method="get">
+      {% for name, value in choice.hidden_params %}
+        <input type="hidden" name="{{ name }}" value="{{ value }}">
+      {% endfor %}
+      <ul>
+        <li>
+          <label>Du
+            <input type="date" name="{{ spec.lookup_gte }}" value="{{ choice.value_gte }}">
+          </label>
+        </li>
+        <li>
+          <label>Au
+            <input type="date" name="{{ spec.lookup_lte }}" value="{{ choice.value_lte }}">
+          </label>
+        </li>
+        <li>
+          <input type="submit" value="Filtrer">
+          {% if choice.selected %}
+            <a href="{{ choice.reset_query_string|iriencode }}">Réinitialiser</a>
+          {% endif %}
+        </li>
+      </ul>
+    </form>
+  {% endfor %}
+</details>

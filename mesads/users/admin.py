@@ -13,6 +13,7 @@ from django.utils.safestring import mark_safe
 from reversion.models import Revision
 
 from mesads.app.models import Notification
+from mesads.common.admin_filters import DateRangeFilter
 from mesads.vehicules_relais.models import Proprietaire
 
 from .models import NoteUtilisateur, PermissionAuditEntry, User, UserAuditEntry
@@ -383,7 +384,7 @@ class UserAdmin(BaseUserAdmin):
 @admin.register(UserAuditEntry)
 class UserAuditEntryAdmin(admin.ModelAdmin):
     list_display = ("created_at", "user", "action", "ip", "short_body")
-    list_filter = ("action",)
+    list_filter = ("action", ("created_at", DateRangeFilter))
     search_fields = ("ip", "body")
     date_hierarchy = "created_at"
     ordering = ("-created_at",)
