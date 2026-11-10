@@ -3,10 +3,10 @@ import logging
 
 from django.conf import settings
 from django.core import mail
-from django.core.management import call_command
 from django.urls import reverse
 
 from mesads.app.models import InscriptionListeAttente
+from mesads.app.services.liste_attente import notification_delai_liste_attente
 from mesads.users.unittest import ClientTestCase as BaseClientTestCase
 
 from ..factories import (
@@ -20,7 +20,7 @@ class ClientTestCase(BaseClientTestCase):
     def setUp(self):
         super().setUp()
         self.client, self.user = self.create_client()
-        self.ads_manager = ADSManagerFactory(for_commune=True)
+        self.ads_manager = ADSManagerFactory()
         self.ads_manager_request = ADSManagerRequestFactory(
             user=self.user, ads_manager=self.ads_manager
         )
@@ -63,7 +63,7 @@ class TestListeAttenteView(ClientTestCase):
             delai_reponse=3,
         )
 
-        call_command("liste_attente_mail_delai_depasse")
+        notification_delai_liste_attente()
         self.assertEqual(len(mail.outbox), 1)
         email = mail.outbox[0]
         self.assertEqual(email.to, [self.user.email])

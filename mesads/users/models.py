@@ -1,21 +1,57 @@
 from dateutil.relativedelta import relativedelta
+from django.apps import apps
 from django.contrib.auth.models import (
     AbstractUser,
     UserManager,
 )
-from django.contrib.auth.signals import (
-    user_logged_in,
-    user_logged_out,
-    user_login_failed,
-)
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.dispatch import receiver
+from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
-class EmailUserManager(UserManager):
+class UserQuerySet(models.QuerySet):
+    @staticmethod
+    def permission_mesads_q():
+        """Condition vraie si l'utilisateur a au moins une permission sur
+        MesADS (admin, gestionnaire ADS, gestionnaire de préfecture, inspecteur,
+        propriétaire de véhicule relais)."""
+        ADSManagerRequest = apps.get_model("app", "ADSManagerRequest")
+        DemandeAccesLectureSeule = apps.get_model("app", "DemandeAccesLectureSeule")
+        DemandeGestionPrefecture = apps.get_model("app", "DemandeGestionPrefecture")
+        Proprietaire = apps.get_model("vehicules_relais", "Proprietaire")
+
+        user = OuterRef("pk")
+        return (
+            Q(is_staff=True)
+            | Q(is_superuser=True)
+            | Q(Exists(ADSManagerRequest.objects.filter(user=user, accepted=True)))
+            | Q(
+                Exists(
+                    DemandeAccesLectureSeule.objects.filter(
+                        user=user, statut=DemandeAccesLectureSeule.ACCEPTE
+                    )
+                )
+            )
+            | Q(
+                Exists(
+                    DemandeGestionPrefecture.objects.filter(
+                        user=user, statut=DemandeGestionPrefecture.ACCEPTE
+                    )
+                )
+            )
+            | Q(Exists(Proprietaire.objects.filter(users=user)))
+        )
+
+    def with_permission_mesads(self):
+        return self.filter(self.permission_mesads_q())
+
+    def without_permission_mesads(self):
+        return self.exclude(self.permission_mesads_q())
+
+
+class EmailUserManager(UserManager.from_queryset(UserQuerySet)):
     """Custom manager for users, similar to UserManager, but using email only
     for authentication."""
 
@@ -65,7 +101,7 @@ class User(AbstractUser):
     )
 
     proconnect_sub = models.UUIDField(
-        "Identifiant unique proconnect", null=True, blank=True
+        "Identifiant unique proconnect", null=True, blank=True, unique=True
     )
     proconnect_uid = models.CharField("ID chez le FI", default="", blank=True)
     proconnect_idp_id = models.UUIDField("Identifiant du FI", null=True, blank=True)
@@ -79,12 +115,33 @@ class User(AbstractUser):
         default="",
         blank=True,
     )
+    proconnect_link_allowed = models.BooleanField(
+        "Autoriser le rattachement ProConnect par email",
+        default=False,
+        help_text=(
+            "Si coché, la prochaine connexion ProConnect avec l'adresse email de "
+            "ce compte y sera rattachée, même si le compte n'a pas encore "
+            "d'identifiant ProConnect. Ne cocher qu'après avoir vérifié l'identité "
+            "de l'utilisateur. L'autorisation est automatiquement retirée une fois "
+            "le rattachement effectué."
+        ),
+    )
+
+    delete_notification_sent_at = models.DateTimeField(
+        verbose_name="Date d'envoi de notification préalable à la suppression",
+        null=True,
+        blank=True,
+    )
 
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
     objects = EmailUserManager()
+
+    @property
+    def has_permission_mesads(self):
+        return User.objects.filter(pk=self.pk).with_permission_mesads().exists()
 
     @property
     def prefecture_consultation(self):
@@ -129,6 +186,50 @@ class UserAuditEntry(models.Model):
         verbose_name_plural = "Historiques des connexions"
 
 
+class PermissionAuditEntry(models.Model):
+    """Journal des changements de permissions et d'identité des utilisateurs."""
+
+    class Action(models.TextChoices):
+        PROCONNECT_LINK_ALLOWED = (
+            "proconnect_link_allowed",
+            "Rattachement ProConnect par email autorisé",
+        )
+        PROCONNECT_LINK_REVOKED = (
+            "proconnect_link_revoked",
+            "Rattachement ProConnect par email révoqué",
+        )
+        PROCONNECT_LINKED = (
+            "proconnect_linked",
+            "Compte rattaché à ProConnect par email",
+        )
+
+    created_at = models.DateTimeField("Date", auto_now_add=True, db_index=True)
+    action = models.CharField("Action", max_length=64, choices=Action.choices)
+    target_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="permission_audit_entries",
+        verbose_name="Utilisateur concerné",
+    )
+    actor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="Auteur",
+        help_text="Vide si l'action a été réalisée automatiquement par l'application.",
+    )
+    ip = models.GenericIPAddressField("Adresse IP", null=True, blank=True)
+    details = models.JSONField("Détails", default=dict, blank=True)
+
+    class Meta:
+        verbose_name = "Historique des changements de permissions"
+        verbose_name_plural = "Historiques des changements de permissions"
+        ordering = ("-created_at",)
+
+
 class NoteUtilisateur(models.Model):
     MINIMUM_NOTE = 1
     MAXIMUM_NOTE = 5
@@ -156,37 +257,3 @@ class NoteUtilisateur(models.Model):
     class Meta:
         verbose_name = "Note de l'utilisateur"
         verbose_name_plural = "Notes des utilisateurs"
-
-
-def get_client_ip(request):
-    """In production, REMOTE_ADDR is the load balancer IP, not the client IP. On
-    Clever-Cloud, the client IP is in the X-Forwarded-For header."""
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        # In case of multiple IPs, take the first one
-        ip = x_forwarded_for.split(",")[0].strip()
-    else:
-        ip = request.META.get("REMOTE_ADDR")
-    return ip
-
-
-@receiver(user_logged_in)
-def user_logged_in_callback(sender, request, user, **kwargs):
-    UserAuditEntry.objects.create(user=user, action="login", ip=get_client_ip(request))
-
-
-@receiver(user_logged_out)
-def user_logged_out_callback(sender, request, user, **kwargs):
-    UserAuditEntry.objects.create(user=user, action="logout", ip=get_client_ip(request))
-
-
-@receiver(user_login_failed)
-def user_login_failed_callback(sender, credentials, request, **kwargs):
-    try:
-        user = User.objects.get(email=credentials.get("username"))
-    except User.DoesNotExist:
-        user = None
-
-    UserAuditEntry.objects.create(
-        user=user, action="login_failed", ip=get_client_ip(request), body=credentials
-    )

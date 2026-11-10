@@ -6,7 +6,7 @@ from django.utils import timezone
 from mesads.app.models import InscriptionListeAttente
 from mesads.app.services.liste_attente import (
     check_and_notify_duplicated,
-    supression_inscriptions_archivees,
+    suppression_inscriptions_archivees,
 )
 from mesads.users.tests.factories import UserFactory
 
@@ -22,7 +22,7 @@ pytestmark = pytest.mark.django_db
 
 def test_get_export_data_liste_attente():
     administrator = ADSManagerAdministratorFactory()
-    commune = ADSManagerFactory(administrator=administrator, for_commune=True)
+    commune = ADSManagerFactory(administrator=administrator)
 
     inscription_1 = InscriptionListeAttenteFactory(
         ads_manager=commune
@@ -37,7 +37,7 @@ def test_get_export_data_liste_attente():
         ads_manager=commune, deleted_at=timezone.now() - relativedelta(months=8)
     )  # doit être supprimée
 
-    inscriptions_supprimees = supression_inscriptions_archivees()
+    inscriptions_supprimees = suppression_inscriptions_archivees()
     assert inscriptions_supprimees == 2
     assert InscriptionListeAttente.with_deleted.count() == 2
     inscription_ids = InscriptionListeAttente.with_deleted.values_list("pk", flat=True)
@@ -49,7 +49,7 @@ def test_get_export_data_liste_attente():
 
 def test_check_and_notify_duplicated_pas_de_doublon():
     administrator = ADSManagerAdministratorFactory()
-    commune = ADSManagerFactory(administrator=administrator, for_commune=True)
+    commune = ADSManagerFactory(administrator=administrator)
 
     inscription = InscriptionListeAttenteFactory(ads_manager=commune)
 
@@ -59,8 +59,8 @@ def test_check_and_notify_duplicated_pas_de_doublon():
 
 def test_check_and_notify_duplicated_doublon_detecte():
     administrator = ADSManagerAdministratorFactory()
-    commune_1 = ADSManagerFactory(administrator=administrator, for_commune=True)
-    commune_2 = ADSManagerFactory(administrator=administrator, for_commune=True)
+    commune_1 = ADSManagerFactory(administrator=administrator)
+    commune_2 = ADSManagerFactory(administrator=administrator)
     request_commune_1 = ADSManagerRequestFactory(
         ads_manager=commune_1, user=UserFactory()
     )

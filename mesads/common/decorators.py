@@ -3,10 +3,14 @@ from functools import wraps
 from django.http import Http404
 
 from mesads.app.models import (
+    ADS,
     ADSManager,
+    ADSManagerDecree,
     ADSManagerRequest,
     DemandeAccesLectureSeule,
     DemandeGestionPrefecture,
+    EntreeRegistreTransaction,
+    InscriptionListeAttente,
 )
 from mesads.vehicules_relais.models import Proprietaire, Vehicule
 
@@ -17,12 +21,33 @@ def is_staff(user, *args, **kwargs):
 
 def is_manager(user, *args, **kwargs):
     if kwargs.get("manager_id"):
-        return ADSManagerRequest.objects.filter(
+        manager_request = ADSManagerRequest.objects.filter(
             user=user,
             ads_manager__id=kwargs.get("manager_id"),
             accepted=True,
-        )
-    return None
+        ).first()
+        if not manager_request:
+            return False
+
+        if kwargs.get("entree_id"):
+            return EntreeRegistreTransaction.with_deleted.filter(
+                id=kwargs["entree_id"], ads__ads_manager=manager_request.ads_manager
+            ).exists()
+        if kwargs.get("ads_id"):
+            return ADS.with_deleted.filter(
+                id=kwargs["ads_id"], ads_manager=manager_request.ads_manager
+            ).exists()
+        if kwargs.get("inscription_id"):
+            return InscriptionListeAttente.with_deleted.filter(
+                id=kwargs["inscription_id"], ads_manager=manager_request.ads_manager
+            ).exists()
+        if kwargs.get("arrete_id"):
+            return ADSManagerDecree.objects.filter(
+                id=kwargs["arrete_id"], ads_manager=manager_request.ads_manager
+            ).exists()
+
+        return True
+    return False
 
 
 def is_administrator(user, *args, **kwargs):
@@ -59,10 +84,17 @@ def is_administrator(user, *args, **kwargs):
 
 def is_proprietaire(user, *args, **kwargs):
     if kwargs.get("proprietaire_id"):
-        return Proprietaire.objects.filter(
+        proprietaire = Proprietaire.objects.filter(
             id=kwargs.get("proprietaire_id"), users__in=[user]
-        ).exists()
-    return None
+        ).first()
+        if not proprietaire:
+            return False
+        if kwargs.get("vehicule_numero"):
+            return Vehicule.objects.filter(
+                proprietaire=proprietaire, numero=kwargs["vehicule_numero"]
+            )
+        return True
+    return False
 
 
 def is_inspecteur(user, *args, **kwargs):

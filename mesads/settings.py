@@ -148,9 +148,11 @@ INSTALLED_APPS = [
 CRON_CLASSES = [
     "mesads.app.crons.ImportDataForParis",
     "mesads.app.crons.DeleteOldUsers",
+    "mesads.app.crons.DeleteOldUserAuditEntries",
     "mesads.app.crons.NotificationListeAttente",
     "mesads.app.crons.NotificationVerification",
-    "mesads.app.crons.SupressionInscriptionsArchivees",
+    "mesads.app.crons.SuppressionInscriptionsArchivees",
+    "mesads.app.crons.NotifyOldUsers",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -319,6 +321,8 @@ OIDC_AUTH_REQUEST_EXTRA_PARAMS = {
 }
 OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 4 * 60 * 60
 OIDC_STORE_ID_TOKEN = True
+OIDC_CALLBACK_CLASS = "mesads.mesads_oidc.views.ProConnectCallbackView"
+LOGOUT_REDIRECT_URL = "/auth/login"
 ALLOW_LOGOUT_GET_METHOD = True
 
 MESADS_CONTACT_EMAIL = "equipe@mesads.beta.gouv.fr"

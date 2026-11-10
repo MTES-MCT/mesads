@@ -17,7 +17,7 @@ class TestTagUrlTransaction(BaseClientTestCase):
     def setUp(self):
         super().setUp()
         self.client, self.user = self.create_client()
-        self.ads_manager = ADSManagerFactory(for_commune=True)
+        self.ads_manager = ADSManagerFactory()
         self.old_ads = ADSFactory(
             ads_manager=self.ads_manager, ads_creation_date=date(2013, 1, 1)
         )

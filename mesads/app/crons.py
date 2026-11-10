@@ -7,6 +7,17 @@ from django.utils import timezone
 from django_cron import CronJobBase, Schedule
 from sentry_sdk import capture_exception
 
+from mesads.app.services.liste_attente import (
+    notification_delai_liste_attente,
+    suppression_inscriptions_archivees,
+)
+from mesads.users.services import (
+    NOTIFICATION_BATCH_SIZE,
+    delete_old_user_audit_entries,
+    delete_old_users,
+    notify_old_users,
+)
+
 
 def sentry_exceptions(func):
     @functools.wraps(func)
@@ -38,20 +49,45 @@ class ImportDataForParis(CronJobBase):
         return buf.getvalue()
 
 
+class NotifyOldUsers(CronJobBase):
+    # Run every day
+    schedule = Schedule(run_every_mins=60 * 24)
+    code = "notify_old_users"
+
+    @sentry_exceptions
+    def do(self):
+        notified_count = notify_old_users()
+        message = f"{notified_count} utilisateurs notifiés"
+        if notified_count >= NOTIFICATION_BATCH_SIZE:
+            message += (
+                f" (limite de {NOTIFICATION_BATCH_SIZE} atteinte, "
+                "la suite sera traitée au prochain passage)"
+            )
+        return message
+
+
 class DeleteOldUsers(CronJobBase):
-    # Run every week
-    schedule = Schedule(run_every_mins=60 * 24 * 7)
+    # Run every day
+    schedule = Schedule(run_every_mins=60 * 24)
 
     code = "remove_old_accounts"  # unique code to represent this cron job
 
     @sentry_exceptions
     def do(self):
-        # Redirect stdout and stderr to a buffer to capture the output of the
-        # command. By returning it, django-cron will log it in the database.
-        buf = io.StringIO()
-        with redirect_stdout(buf), redirect_stderr(buf):
-            call_command("remove_old_accounts")
-        return buf.getvalue()
+        deleted_count = delete_old_users()
+        return f"{deleted_count} utilisateurs inactifs supprimés"
+
+
+class DeleteOldUserAuditEntries(CronJobBase):
+    # Run every day
+    schedule = Schedule(run_every_mins=60 * 24)
+
+    code = "delete_old_user_audit_entries"  # unique code to represent this cron job
+
+    @sentry_exceptions
+    def do(self):
+        deleted_count = delete_old_user_audit_entries()
+        return f"{deleted_count} entrées de l'historique des connexions supprimées"
 
 
 class NotificationListeAttente(CronJobBase):
@@ -62,12 +98,8 @@ class NotificationListeAttente(CronJobBase):
 
     @sentry_exceptions
     def do(self):
-        # Redirect stdout and stderr to a buffer to capture the output of the
-        # command. By returning it, django-cron will log it in the database.
-        buf = io.StringIO()
-        with redirect_stdout(buf), redirect_stderr(buf):
-            call_command("liste_attente_mail_delai_depasse")
-        return buf.getvalue()
+        notified_count = notification_delai_liste_attente()
+        return f"{notified_count} gestionnaires notifiés"
 
 
 class NotificationVerification(CronJobBase):
@@ -91,7 +123,7 @@ class NotificationVerification(CronJobBase):
         return buf.getvalue()
 
 
-class SupressionInscriptionsArchivees(CronJobBase):
+class SuppressionInscriptionsArchivees(CronJobBase):
     # Run every week
     schedule = Schedule(run_every_mins=60 * 24 * 7)
 
@@ -99,9 +131,5 @@ class SupressionInscriptionsArchivees(CronJobBase):
 
     @sentry_exceptions
     def do(self):
-        # Redirect stdout and stderr to a buffer to capture the output of the
-        # command. By returning it, django-cron will log it in the database.
-        buf = io.StringIO()
-        with redirect_stdout(buf), redirect_stderr(buf):
-            call_command("supression_inscriptions_archivees")
-        return buf.getvalue()
+        inscriptions_count = suppression_inscriptions_archivees()
+        return f"{inscriptions_count} inscriptions archivées ont été supprimées."

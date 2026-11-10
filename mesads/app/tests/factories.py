@@ -1,5 +1,5 @@
 import random
-from datetime import timedelta
+from datetime import date, timedelta
 
 import factory
 from dateutil.relativedelta import relativedelta
@@ -13,6 +13,9 @@ from mesads.app.models import (
     ADSManagerAdministrator,
     ADSManagerDecree,
     ADSManagerRequest,
+    DemandeAccesLectureSeule,
+    DemandeGestionPrefecture,
+    EntreeRegistreTransaction,
     InscriptionListeAttente,
 )
 from mesads.fradm.tests.factories import CommuneFactory, EPCIFactory, PrefectureFactory
@@ -32,21 +35,16 @@ class ADSManagerFactory(factory.django.DjangoModelFactory):
 
     administrator = factory.SubFactory(ADSManagerAdministratorFactory)
 
-    class Params:
-        for_object = None
+    for_object = factory.SubFactory(CommuneFactory)
 
+    class Params:
         for_prefecture = factory.Trait(for_object=factory.SubFactory(PrefectureFactory))
         for_epci = factory.Trait(for_object=factory.SubFactory(EPCIFactory))
-        for_commune = factory.Trait(for_object=factory.SubFactory(CommuneFactory))
 
     content_type = factory.LazyAttribute(
         lambda o: ContentType.objects.get_for_model(o.for_object)
-        if o.for_object is not None
-        else None
     )
-    object_id = factory.LazyAttribute(
-        lambda o: o.for_object.pk if o.for_object is not None else None
-    )
+    object_id = factory.LazyAttribute(lambda o: o.for_object.pk)
 
 
 class ADSManagerRequestFactory(factory.django.DjangoModelFactory):
@@ -61,6 +59,8 @@ class ADSManagerDecreeFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = ADSManagerDecree
 
+    ads_manager = factory.SubFactory(ADSManagerFactory)
+    date_arrete = date.today()
     file = factory.LazyFunction(
         lambda: SimpleUploadedFile(
             "test.pdf", b"%PDF-1.4\n%Fake PDF\n", content_type="application/pdf"
@@ -81,6 +81,7 @@ class InscriptionListeAttenteFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = InscriptionListeAttente
 
+    ads_manager = factory.SubFactory(ADSManagerFactory)
     nom = factory.Faker("last_name", locale="fr_FR")
     prenom = factory.Faker("first_name", locale="fr_FR")
     email = factory.Faker("email")
@@ -126,3 +127,29 @@ class InscriptionListeAttenteFactory(factory.django.DjangoModelFactory):
                 lambda: (timezone.now().date() - timedelta(days=random.randint(1, 364)))
             )
         )
+
+
+class EntreeRegistreTransactionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = EntreeRegistreTransaction
+
+    ads = factory.SubFactory(
+        ADSFactory,
+        ads_creation_date=date(2014, 1, 1),
+    )
+
+
+class DemandeGestionPrefectureFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = DemandeGestionPrefecture
+
+    administrator = factory.SubFactory(ADSManagerAdministratorFactory)
+    statut = DemandeGestionPrefecture.ACCEPTE
+
+
+class DemandeAccesLectureSeuleFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = DemandeAccesLectureSeule
+
+    administrator = factory.SubFactory(ADSManagerAdministratorFactory)
+    statut = DemandeAccesLectureSeule.ACCEPTE

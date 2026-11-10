@@ -1,11 +1,7 @@
 {% extends "base_mail.mjml" %}
 
 {% block title %}
-{% if is_new_ads %}
-Nouvelle ADS enregistrée
-{% else %}
-ADS existante mise à jour
-{% endif %}
+Complétion de vos ADS
 {% endblock %}
 
 {% block content %}
