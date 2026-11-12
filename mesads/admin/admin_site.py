@@ -8,6 +8,24 @@ from django.utils.http import url_has_allowed_host_and_scheme
 
 
 class MesADSAdminSite(AdminSite):
+    @staticmethod
+    def has_valid_mfa(request):
+        if not request.user.is_authenticated:
+            return False
+
+        mfa = request.session.get("admin_mfa")
+
+        if not isinstance(mfa, dict):
+            return False
+
+        if mfa.get("user_id") != str(request.user.pk):
+            return False
+
+        return True
+
+    def has_permission(self, request):
+        return super().has_permission(request) and self.has_valid_mfa(request)
+
     def login(self, request, extra_context=None):
         next_url = request.GET.get(
             "next",
@@ -21,11 +39,15 @@ class MesADSAdminSite(AdminSite):
         ):
             next_url = reverse("admin:index")
 
+        url = reverse("oidc_admin_authenticate")
+
         if not request.user.is_authenticated:
-            url = reverse("oidc_authentication_init")
             return HttpResponseRedirect(f"{url}?{urlencode({'next': next_url})}")
 
-        if not self.has_permission(request):
+        if not request.user.is_active or not request.user.is_staff:
             raise PermissionDenied
 
-        return HttpResponseRedirect(next_url)
+        if self.has_valid_mfa(request):
+            return HttpResponseRedirect(next_url)
+
+        return HttpResponseRedirect(f"{url}?{urlencode({'next': next_url})}")
