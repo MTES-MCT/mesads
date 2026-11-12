@@ -7,7 +7,11 @@ from mesads.users.models import PermissionAuditEntry, UserAuditEntry
 @pytest.fixture
 def admin_client(user_factory, client_factory):
     admin = user_factory(email="admin@example.com", is_staff=True, is_superuser=True)
-    return client_factory(admin)
+    client = client_factory(admin)
+    session = client.session
+    session["admin_mfa"] = {"user_id": str(admin.pk), "acr": "eidas1-mfa"}
+    session.save()
+    return client
 
 
 def get_form_data(user, **overrides):
@@ -193,3 +197,42 @@ def test_user_audit_entry_admin_date_range_filter_invalid_date(
     # L'admin Django redirige vers la liste avec le paramètre d'erreur `e=1`.
     assert response.status_code == 302
     assert "e=1" in response.url
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("mfa_user", ["none", "other"])
+def test_admin_requires_mfa(user_factory, client_factory, mfa_user):
+    admin = user_factory(is_staff=True, is_superuser=True)
+    client = client_factory(admin)
+
+    if mfa_user == "other":
+        session = client.session
+        session["admin_mfa"] = {"user_id": str(admin.pk + 1), "acr": "eidas1-mfa"}
+        session.save()
+
+    response = client.get(reverse("admin:index"))
+    assert response.status_code == 302
+    assert response.url.startswith(reverse("admin:login"))
+
+    response = client.get(response.url)
+    assert response.status_code == 302
+    assert response.url.startswith(reverse("oidc_admin_authenticate"))
+
+
+@pytest.mark.django_db
+def test_admin_login_with_mfa_redirects_to_next(admin_client):
+    response = admin_client.get(reverse("admin:login"), {"next": "/admin/users/"})
+
+    assert response.status_code == 302
+    assert response.url == "/admin/users/"
+
+
+@pytest.mark.django_db
+def test_admin_login_with_mfa_non_staff_denied(user_factory, client_factory):
+    user = user_factory(is_staff=False)
+    client = client_factory(user)
+    session = client.session
+    session["admin_mfa"] = {"user_id": str(user.pk), "acr": "eidas1-mfa"}
+    session.save()
+
+    assert client.get(reverse("admin:login")).status_code == 403
