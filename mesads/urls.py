@@ -12,6 +12,7 @@ from .admin_views import (
     StatistiquesView,
 )
 from .app import views
+from .mesads_oidc.views import AdminOIDCAuthenticationRequestView
 
 urlpatterns = [
     path("api/", include("mesads.api.urls")),
@@ -44,6 +45,11 @@ urlpatterns = [
         "markdownx/markdownify/",
         staff_member_required(MarkdownifyView.as_view()),
         name="markdownx_markdownify",
+    ),
+    path(
+        "oidc/admin/authenticate/",
+        AdminOIDCAuthenticationRequestView.as_view(),
+        name="oidc_admin_authenticate",
     ),
     path("oidc/", include("mozilla_django_oidc.urls")),
 ]

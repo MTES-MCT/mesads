@@ -34,8 +34,10 @@ def claims():
     }
 
 
+@pytest.mark.parametrize("admin_mfa_requested", [False, True])
 @pytest.mark.parametrize("acr", sorted(MFA_ACR_VALUES))
-def test_verify_token_with_mfa(backend, acr):
+def test_verify_token_with_mfa(backend, acr, admin_mfa_requested):
+    backend.request.admin_mfa_requested = admin_mfa_requested
     payload = {"acr": acr}
 
     with patch.object(
@@ -49,10 +51,30 @@ def test_verify_token_with_mfa(backend, acr):
         )
 
     assert result == payload
+    assert backend.request.oidc_verified_acr == acr
 
 
 @pytest.mark.parametrize("acr", ["eidas0", "eidas1", None])
-def test_verify_token_without_mfa(backend, acr):
+def test_verify_token_without_mfa_on_classic_login(backend, acr):
+    payload = {"acr": acr}
+
+    with patch.object(
+        MozillaOIDCAuthenticationBackend,
+        "verify_token",
+        return_value=payload,
+    ):
+        result = backend.verify_token(
+            "fake-token",
+            nonce="fake-nonce",
+        )
+
+    assert result == payload
+    assert backend.request.oidc_verified_acr == acr
+
+
+@pytest.mark.parametrize("acr", ["eidas0", "eidas1", None])
+def test_verify_token_admin_without_mfa(backend, acr):
+    backend.request.admin_mfa_requested = True
     payload = {"acr": acr}
 
     with patch.object(
@@ -68,7 +90,9 @@ def test_verify_token_without_mfa(backend, acr):
     assert result is None
 
 
-def test_verify_token_without_acr(backend):
+def test_verify_token_admin_without_acr(backend):
+    backend.request.admin_mfa_requested = True
+
     with patch.object(
         MozillaOIDCAuthenticationBackend,
         "verify_token",
@@ -105,6 +129,7 @@ def test_verify_token_userinfo_jwt(backend):
         result = backend.verify_token("userinfo-jwt")
 
     assert result == payload
+    assert not hasattr(backend.request, "oidc_verified_acr")
 
 
 def test_get_userinfo_json(backend, claims):
