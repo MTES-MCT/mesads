@@ -20,7 +20,7 @@ class DemandeGestionADSView(FormView):
         return reverse("app.ads-manager.administrations")
 
     def form_valid(self, form):
-        _, created = ADSManagerRequest.objects.get_or_create(
+        ads_manager_request, created = ADSManagerRequest.objects.get_or_create(
             user=self.request.user,
             ads_manager=form.cleaned_data["ads_manager"],
         )
@@ -31,7 +31,7 @@ class DemandeGestionADSView(FormView):
                 self.request,
                 format_html(
                     self.get_message_for_existing_request(
-                        form.cleaned_data["ads_manager"]
+                        ads_manager_request.ads_manager
                     )
                 ),
             )
@@ -40,14 +40,13 @@ class DemandeGestionADSView(FormView):
             messages.success(
                 self.request,
                 format_html(
-                    self.get_message_for_new_request(form.cleaned_data["ads_manager"])
+                    self.get_message_for_new_request(ads_manager_request.ads_manager)
                 ),
             )
 
-            demandes_prefecture = form.cleaned_data[
-                "ads_manager"
-            ].administrator.demandes_gestion_prefecture.filter(
-                statut=DemandeGestionPrefecture.ACCEPTE
+            demandes_prefecture = DemandeGestionPrefecture.objects.filter(
+                statut=DemandeGestionPrefecture.ACCEPTE,
+                administrator=ads_manager_request.ads_manager.administrator,
             )
 
             emails = [

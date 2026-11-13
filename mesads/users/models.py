@@ -202,6 +202,44 @@ class PermissionAuditEntry(models.Model):
             "proconnect_linked",
             "Compte rattaché à ProConnect par email",
         )
+        ADS_MANAGER_GRANTED = (
+            "ads_manager_granted",
+            "Accès gestionnaire d'ADS accordé",
+        )
+        ADS_MANAGER_REFUSED = (
+            "ads_manager_refused",
+            "Accès gestionnaire d'ADS refusé",
+        )
+        ADS_MANAGER_REVOKED = (
+            "ads_manager_revoked",
+            "Accès gestionnaire d'ADS retiré",
+        )
+        PREFECTURE_MANAGER_GRANTED = (
+            "prefecture_manager_granted",
+            "Accès gestionnaire de préfecture accordé",
+        )
+        PREFECTURE_MANAGER_REFUSED = (
+            "prefecture_manager_refused",
+            "Accès gestionnaire de préfecture refusé",
+        )
+        PREFECTURE_MANAGER_REVOKED = (
+            "prefecture_manager_revoked",
+            "Accès gestionnaire de préfecture retiré",
+        )
+        READ_ONLY_GRANTED = (
+            "read_only_granted",
+            "Accès en lecture seule accordé",
+        )
+        READ_ONLY_REFUSED = (
+            "read_only_refused",
+            "Accès en lecture seule refusé",
+        )
+        READ_ONLY_REVOKED = (
+            "read_only_revoked",
+            "Accès en lecture seule retiré",
+        )
+        USER_ACTIVATED = ("user_activated", "Compte activé")
+        USER_DEACTIVATED = ("user_deactivated", "Compte désactivé")
 
     created_at = models.DateTimeField("Date", auto_now_add=True, db_index=True)
     action = models.CharField("Action", max_length=64, choices=Action.choices)

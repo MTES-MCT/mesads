@@ -12,6 +12,7 @@ from mesads.app.models import (
     DemandeGestionPrefecture,
 )
 from mesads.unittest import ClientTestCase
+from mesads.users.models import PermissionAuditEntry
 
 
 class TestADSManagerAdminRequestsView(ClientTestCase):
@@ -67,6 +68,16 @@ class TestADSManagerAdminRequestsView(ClientTestCase):
         self.assertTrue(self.ads_manager_request.accepted)
         self.assertEqual(len(mail.outbox), 1)
 
+        entry = PermissionAuditEntry.objects.get(
+            target_user=self.ads_manager_request.user
+        )
+        self.assertEqual(entry.action, PermissionAuditEntry.Action.ADS_MANAGER_GRANTED)
+        self.assertEqual(entry.actor, self.ads_manager_administrator_35_user)
+        self.assertEqual(
+            entry.details["ads_manager_request_id"], self.ads_manager_request.id
+        )
+        self.assertEqual(entry.details["ads_manager_id"], self.ads_manager_city35.id)
+
     def test_deny(self):
         self.assertEqual(len(mail.outbox), 0)
 
@@ -82,6 +93,44 @@ class TestADSManagerAdminRequestsView(ClientTestCase):
         self.ads_manager_request.refresh_from_db()
         self.assertFalse(self.ads_manager_request.accepted)
         self.assertEqual(len(mail.outbox), 1)
+
+        entry = PermissionAuditEntry.objects.get(
+            target_user=self.ads_manager_request.user
+        )
+        self.assertEqual(entry.action, PermissionAuditEntry.Action.ADS_MANAGER_REFUSED)
+        self.assertEqual(entry.actor, self.ads_manager_administrator_35_user)
+
+    def test_revoke(self):
+        self.ads_manager_request.accepted = True
+        self.ads_manager_request.save()
+
+        resp = self.ads_manager_administrator_35_client.post(
+            f"/espace-prefecture/{self.ads_manager_administrator_35.prefecture_id}/demandes-gestion/",
+            {"action": "revoke", "request_id": self.ads_manager_request.id},
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.ads_manager_request.refresh_from_db()
+        self.assertFalse(self.ads_manager_request.accepted)
+
+        entry = PermissionAuditEntry.objects.get(
+            target_user=self.ads_manager_request.user
+        )
+        self.assertEqual(entry.action, PermissionAuditEntry.Action.ADS_MANAGER_REVOKED)
+
+    def test_accept_already_accepted_is_not_logged(self):
+        self.ads_manager_request.accepted = True
+        self.ads_manager_request.save()
+
+        self.ads_manager_administrator_35_client.post(
+            f"/espace-prefecture/{self.ads_manager_administrator_35.prefecture_id}/demandes-gestion/",
+            {"action": "accept", "request_id": self.ads_manager_request.id},
+        )
+
+        self.assertFalse(
+            PermissionAuditEntry.objects.filter(
+                target_user=self.ads_manager_request.user
+            ).exists()
+        )
 
     def test_sort(self):
         for ads_manager in ADSManager.objects.all():
@@ -278,6 +327,12 @@ class TestAdsManagerAdministratorView(ClientTestCase):
             ).count(),
             1,
         )
+
+        entry = PermissionAuditEntry.objects.get(
+            target_user=self.ads_manager_administrator_35_user
+        )
+        self.assertEqual(entry.action, PermissionAuditEntry.Action.ADS_MANAGER_GRANTED)
+        self.assertEqual(entry.actor, self.ads_manager_administrator_35_user)
 
 
 class TestDemandeGestionPrefecture(ClientTestCase):
