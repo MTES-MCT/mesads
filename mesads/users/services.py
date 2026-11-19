@@ -38,7 +38,7 @@ def delete_old_user_audit_entries():
     return deleted_count
 
 
-def log_permission_change(action, target_user, *, actor=None, request=None, **details):
+def log_permission_change(action, target_user, actor=None, request=None, **details):
     """Enregistre un changement de permission ou d'identité dans le journal
     `PermissionAuditEntry`.
 
@@ -51,6 +51,55 @@ def log_permission_change(action, target_user, *, actor=None, request=None, **de
         actor=actor,
         ip=get_client_ip(request) if request is not None else None,
         details=details,
+    )
+
+
+# Actions à journaliser pour chaque type d'accès : (accordé, refusé, retiré).
+ACCESS_ACTIONS = {
+    "ads_manager": (
+        PermissionAuditEntry.Action.ADS_MANAGER_GRANTED,
+        PermissionAuditEntry.Action.ADS_MANAGER_REFUSED,
+        PermissionAuditEntry.Action.ADS_MANAGER_REVOKED,
+    ),
+    "prefecture_manager": (
+        PermissionAuditEntry.Action.PREFECTURE_MANAGER_GRANTED,
+        PermissionAuditEntry.Action.PREFECTURE_MANAGER_REFUSED,
+        PermissionAuditEntry.Action.PREFECTURE_MANAGER_REVOKED,
+    ),
+    "read_only": (
+        PermissionAuditEntry.Action.READ_ONLY_GRANTED,
+        PermissionAuditEntry.Action.READ_ONLY_REFUSED,
+        PermissionAuditEntry.Action.READ_ONLY_REVOKED,
+    ),
+}
+
+
+def log_access_change(
+    access_type,
+    target_user,
+    was_granted,
+    is_granted,
+    actor=None,
+    request=None,
+    **details,
+):
+    """Journalise le changement d'état d'un accès, s'il y en a un."""
+    granted_action, refused_action, revoked_action = ACCESS_ACTIONS[access_type]
+
+    if is_granted is True and was_granted is not True:
+        action = granted_action
+    elif was_granted is True and is_granted is not True:
+        action = revoked_action
+    elif was_granted is None and is_granted is False:
+        action = refused_action
+    else:
+        action = None
+
+    if action is None:
+        return None
+
+    return log_permission_change(
+        action, target_user, actor=actor, request=request, **details
     )
 
 

@@ -187,6 +187,15 @@ class UserAdmin(BaseUserAdmin):
                 actor=request.user,
                 request=request,
             )
+        if change and "is_active" in form.changed_data:
+            log_permission_change(
+                PermissionAuditEntry.Action.USER_ACTIVATED
+                if obj.is_active
+                else PermissionAuditEntry.Action.USER_DEACTIVATED,
+                obj,
+                actor=request.user,
+                request=request,
+            )
 
     def pro_connect(self, obj):
         return bool(obj.proconnect_sub)
@@ -385,9 +394,22 @@ class UserAdmin(BaseUserAdmin):
 class UserAuditEntryAdmin(admin.ModelAdmin):
     list_display = ("created_at", "user", "action", "ip", "short_body")
     list_filter = ("action", ("created_at", DateRangeFilter))
-    search_fields = ("ip", "body")
+    # user_email_det est une annotation ajoutée dans get_search_results.
+    search_fields = ("ip", "body", "user_email_det")
+    search_help_text = "Rechercher par IP, contenu ou email de l'utilisateur"
     date_hierarchy = "created_at"
     ordering = ("-created_at",)
+
+    def get_search_results(self, request, queryset, search_term):
+        """The field User.email uses a non-deterministic collation, which makes
+        it impossible to perform a LIKE query on it.
+
+        By annotating the queryset with the email in a deterministic collation,
+        the default admin search can be used on it alongside ip and body.
+        """
+        if search_term:
+            queryset = queryset.annotate(user_email_det=Collate("user__email", "C"))
+        return super().get_search_results(request, queryset, search_term)
 
     def short_body(self, obj):
         return obj.body[:75] + "..." if len(obj.body) > 75 else obj.body
@@ -407,11 +429,29 @@ class UserAuditEntryAdmin(admin.ModelAdmin):
 @admin.register(PermissionAuditEntry)
 class PermissionAuditEntryAdmin(admin.ModelAdmin):
     list_display = ("created_at", "action", "target_user", "actor", "ip")
-    list_filter = ("action",)
+    list_filter = ("action", ("created_at", DateRangeFilter))
     list_select_related = ("target_user", "actor")
     date_hierarchy = "created_at"
     ordering = ("-created_at",)
     raw_id_fields = ("target_user", "actor")
+    search_fields = ("target_user__email", "actor__email")
+    search_help_text = "Rechercher par email de l'utilisateur concerné ou de l'auteur"
+
+    def get_search_results(self, request, queryset, search_term):
+        """The field User.email uses a non-deterministic collation, which makes
+        it impossible to perform a LIKE query on it.
+
+        By overriding this method, we can specify the collation to use for the search.
+        """
+        if search_term:
+            queryset = queryset.annotate(
+                target_user_email_det=Collate("target_user__email", "C"),
+                actor_email_det=Collate("actor__email", "C"),
+            ).filter(
+                Q(target_user_email_det__icontains=search_term)
+                | Q(actor_email_det__icontains=search_term)
+            )
+        return queryset, False
 
     def has_add_permission(self, request):
         return False

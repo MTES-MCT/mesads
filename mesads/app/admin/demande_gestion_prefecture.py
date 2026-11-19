@@ -8,6 +8,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 
 from mesads.app.models import ADSManagerAdministrator, DemandeGestionPrefecture
+from mesads.app.services.permissions import log_demande_acces_change
 
 
 class AdministratorSelectFilter(admin.SimpleListFilter):
@@ -43,8 +44,10 @@ class DemandeGestionPrefectureAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         accepted = False
+        old_statut = None
         if obj.pk and change:
             old_obj = self.model.objects.get(pk=obj.pk)
+            old_statut = old_obj.statut
             if (
                 old_obj.statut != DemandeGestionPrefecture.ACCEPTE
                 and obj.statut == DemandeGestionPrefecture.ACCEPTE
@@ -54,8 +57,33 @@ class DemandeGestionPrefectureAdmin(admin.ModelAdmin):
 
         super().save_model(request, obj, form, change)
 
+        log_demande_acces_change(
+            obj, old_statut=old_statut, actor=request.user, request=request
+        )
+
         if accepted:
             self.validation_demande(obj, request)
+
+    def delete_model(self, request, obj):
+        log_demande_acces_change(
+            obj,
+            old_statut=obj.statut,
+            deleted=True,
+            actor=request.user,
+            request=request,
+        )
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset.select_related("user", "administrator__prefecture"):
+            log_demande_acces_change(
+                obj,
+                old_statut=obj.statut,
+                deleted=True,
+                actor=request.user,
+                request=request,
+            )
+        super().delete_queryset(request, queryset)
 
     def validation_demande(self, obj, request):
         email_subject = render_to_string(

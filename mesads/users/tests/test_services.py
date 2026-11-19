@@ -478,3 +478,45 @@ def test_delete_old_user_audit_entries_cron_message(monkeypatch):
 )
 def test_get_client_ip(meta, expected):
     assert services.get_client_ip(SimpleNamespace(META=meta)) == expected
+
+
+# ---------------------------------------------------------------------------
+# log_access_change
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("was_granted", "is_granted", "expected"),
+    [
+        (None, True, PermissionAuditEntry.Action.ADS_MANAGER_GRANTED),
+        (False, True, PermissionAuditEntry.Action.ADS_MANAGER_GRANTED),
+        (True, False, PermissionAuditEntry.Action.ADS_MANAGER_REVOKED),
+        (True, None, PermissionAuditEntry.Action.ADS_MANAGER_REVOKED),
+        (None, False, PermissionAuditEntry.Action.ADS_MANAGER_REFUSED),
+        (True, True, None),
+        (False, False, None),
+        (None, None, None),
+        (False, None, None),
+    ],
+)
+def test_log_access_change(was_granted, is_granted, expected):
+    target = UserFactory()
+    actor = UserFactory()
+
+    entry = services.log_access_change(
+        "ads_manager",
+        target,
+        was_granted=was_granted,
+        is_granted=is_granted,
+        actor=actor,
+        foo="bar",
+    )
+
+    if expected is None:
+        assert entry is None
+        assert not PermissionAuditEntry.objects.exists()
+    else:
+        assert entry.action == expected
+        assert entry.target_user == target
+        assert entry.actor == actor
+        assert entry.details == {"foo": "bar"}

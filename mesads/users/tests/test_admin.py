@@ -193,3 +193,29 @@ def test_user_audit_entry_admin_date_range_filter_invalid_date(
     # L'admin Django redirige vers la liste avec le paramètre d'erreur `e=1`.
     assert response.status_code == 302
     assert "e=1" in response.url
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("is_active_before", "is_active_after", "expected"),
+    [
+        (True, False, PermissionAuditEntry.Action.USER_DEACTIVATED),
+        (False, True, PermissionAuditEntry.Action.USER_ACTIVATED),
+    ],
+)
+def test_admin_logs_is_active_change(
+    admin_client, user_factory, is_active_before, is_active_after, expected
+):
+    target = user_factory(is_active=is_active_before, proconnect_sub=None)
+    data = get_form_data(target)
+    if not is_active_after:
+        del data["is_active"]
+
+    response = admin_client.post(
+        reverse("admin:users_user_change", args=[target.pk]), data
+    )
+
+    assert response.status_code == 302
+    entry = PermissionAuditEntry.objects.get(target_user=target)
+    assert entry.action == expected
+    assert entry.actor.email == "admin@example.com"

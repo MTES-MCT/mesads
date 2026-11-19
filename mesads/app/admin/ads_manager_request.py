@@ -7,6 +7,10 @@ from django.http import HttpResponse
 from reversion.admin import VersionAdmin
 
 from ..models import ADSManagerAdministrator, ADSManagerRequest
+from ..services.permissions import (
+    log_ads_manager_request_change,
+    log_ads_manager_request_deletion,
+)
 
 
 class AdministratorSelectFilter(admin.SimpleListFilter):
@@ -59,6 +63,24 @@ class ADSManagerRequestAdmin(VersionAdmin):
     )
 
     actions = ["download_as_csv"]
+
+    def save_model(self, request, obj, form, change):
+        was_accepted = (
+            ADSManagerRequest.objects.get(pk=obj.pk).accepted if change else None
+        )
+        super().save_model(request, obj, form, change)
+        log_ads_manager_request_change(
+            obj, was_accepted=was_accepted, actor=request.user, request=request
+        )
+
+    def delete_model(self, request, obj):
+        log_ads_manager_request_deletion(obj, actor=request.user, request=request)
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset.select_related("user", "ads_manager"):
+            log_ads_manager_request_deletion(obj, actor=request.user, request=request)
+        super().delete_queryset(request, queryset)
 
     def download_as_csv(self, request, queryset):
         response = HttpResponse(content_type="text/csv")

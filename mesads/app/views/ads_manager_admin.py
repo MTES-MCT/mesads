@@ -42,6 +42,7 @@ from ..services.export import (
     get_ads_data_for_excel_export,
     get_gestionnaires_data_for_excel_export,
 )
+from ..services.permissions import log_ads_manager_request_change
 from .export import ExcelExporter
 
 
@@ -244,8 +245,11 @@ class ADSManagerAdministratorListeGestionnaires(ADSManagerAdministratorMixin, Li
             id=request.POST.get("ads_manager_id"),
             administrator=self.ads_manager_administrator,
         )
-        ADSManagerRequest.objects.create(
+        ads_manager_request = ADSManagerRequest.objects.create(
             user=self.request.user, ads_manager=ads_manager, accepted=True
+        )
+        log_ads_manager_request_change(
+            ads_manager_request, was_accepted=None, actor=request.user, request=request
         )
         url_access = reverse(
             "app.ads-manager-admin.requests",
@@ -318,11 +322,18 @@ class ADSManagerAdminRequestsView(ADSManagerAdministratorMixin, TemplateView):
             ads_manager__administrator=self.ads_manager_administrator,
         )
 
+        was_accepted = ads_manager_request.accepted
         if action == "accept" or action == "authorize":
             ads_manager_request.accepted = True
         else:
             ads_manager_request.accepted = False
         ads_manager_request.save()
+        log_ads_manager_request_change(
+            ads_manager_request,
+            was_accepted=was_accepted,
+            actor=request.user,
+            request=request,
+        )
 
         # Send notification to user
         envoi_email(
