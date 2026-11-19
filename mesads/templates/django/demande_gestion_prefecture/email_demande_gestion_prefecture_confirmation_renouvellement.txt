@@ -1,0 +1,17 @@
+{% extends "base_mail.txt" %}
+
+{% block body %}
+
+Bonjour,
+
+Nous vous confirmons que votre accès "Préfecture" a été renouvellé.
+
+- Pour toute question concernant l'utilisation de l'outil MesADS, vous pouvez consulter la FAQ ou nous contacter par mail ({{email_contact}})
+- Pour toute question d'ordre réglementaire, nous vous invitons à utiliser la plateforme Cosmose.
+
+Nous restons à votre disposition pour tout renseignement complémentaire, 
+
+Bien cordialement, 
+
+L'équipe MesADS
+{% endblock %}

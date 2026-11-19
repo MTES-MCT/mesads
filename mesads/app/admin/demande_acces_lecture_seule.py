@@ -14,7 +14,7 @@ class DemandeAccesLectureSeuleAdmin(admin.ModelAdmin):
 
     search_fields = ("user__email",)
 
-    change_form_template = "admin/app/demande_gestion_prefecture/change_form.html"
+    change_form_template = "admin/app/demande_acces_lecture_seule/change_form.html"
     autocomplete_fields = ["user"]
 
     def response_change(self, request, obj):
