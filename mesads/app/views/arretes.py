@@ -18,7 +18,6 @@ class TelechargementArreteView(View):
     CHANGEMENT_VEHICULE_OLD = "changement_vehicule_old"
     CHANGEMENT_VEHICULE_NEW = "changement_vehicule_new"
     NOMBRE_ADS = "nombre_ads"
-    LOCATION_GERANCE = "location_gerance"
     CREATION_NOUVELLE_ADS = "creation_nouvelle_ads"
     RENOUVELLEMENT_ADS = "renouvellement_ads"
     CHANGEMENT_TITULAIRE = "changement_titulaire_old"
@@ -37,12 +36,6 @@ class TelechargementArreteView(View):
             "file_name": (
                 "Modèle arrêté délimitant le nombre d'ADS "
                 "autorisées sur le territoire d'une collectivité.docx"
-            ),
-        },
-        LOCATION_GERANCE: {
-            "file_path": "arrete_location_gerance.docx",
-            "file_name": (
-                "Modèle arrêté passage en location gérance (ancienne ADS).docx"
             ),
         },
         CREATION_NOUVELLE_ADS: {
